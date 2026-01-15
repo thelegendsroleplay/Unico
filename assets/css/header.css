@@ -1,4 +1,6 @@
-/* HEADER WRAPPER */
+/* =====================
+   HEADER WRAPPER
+===================== */
 .site-header {
     position: sticky;
     top: 20px;
@@ -7,16 +9,18 @@
     justify-content: center;
 }
 
-/* PILL CONTAINER */
+/* =====================
+   PILL CONTAINER
+===================== */
 .nav-pill {
-    width: calc(100% - 80px);
+    width: calc(100% - 24px);
     max-width: 1200px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    padding: 10px 24px;
+    padding: 8px 14px;
 
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
@@ -28,39 +32,56 @@
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* LOGO */
+/* =====================
+   LOGO
+===================== */
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 700;
 }
 
-.logo-icon {
-    background: #194f68;
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 8px;
+.logo-img {
+    height: 28px;
+    width: auto;
+    display: block;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.logo-text {
-    color: #194f68;
+.logo a:hover .logo-img {
+    transform: scale(1.03);
 }
 
-/* CENTER NAV */
+/* =====================
+   CENTER NAV (MOBILE FIRST)
+===================== */
 .nav-center {
-    display: flex;
+    display: none;
     gap: 22px;
 }
 
 .nav-center a {
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
     font-size: 13px;
     font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+
     color: #194f68;
+    text-decoration: none;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* RIGHT */
+.nav-center a:hover {
+    color: #ff5a3c;
+}
+
+/* =====================
+   RIGHT ACTIONS
+===================== */
 .nav-right {
     display: flex;
     align-items: center;
@@ -68,18 +89,36 @@
 }
 
 .search-btn {
-    border: none;
+    width: 36px;
+    height: 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     background: #f8fafc;
-    padding: 8px 10px;
-    border-radius: 999px;
+    border: none;
+    border-radius: 9999px;
+    padding: 0;
+
     cursor: pointer;
+    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-btn:hover {
+    background: #f1f5f9;
 }
 
 .signin {
-    font-weight: 600;
     font-size: 13px;
+    font-weight: 600;
     color: #194f68;
     text-decoration: none;
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.signin:hover {
+    color: #ff5a3c;
 }
 
 .signup {
@@ -91,38 +130,117 @@
     font-weight: 700;
     text-decoration: none;
 }
-.nav-center a {
-    text-decoration: none;
+
+/* =====================
+   DROPDOWNS
+===================== */
+.nav-item {
+    position: relative;
+}
+
+.dropdown,
+.mega-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px 18px;
+
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+}
+
+.nav-item:hover > .dropdown,
+.nav-item:hover > .mega-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown a,
+.mega-menu a {
+    display: block;
+    padding: 8px 6px;
     font-size: 13px;
     font-weight: 600;
     color: #194f68;
-    transition: color 0.3s ease;
-}
-
-.nav-center a:hover {
-    color: #ff5a3c;
-}
-.signin {
-    font-weight: 600;
-    font-size: 13px;
-    color: #194f68;
     text-decoration: none;
-    transition: color 0.3s ease;
 }
 
-.signin:hover {
+.dropdown a:hover,
+.mega-menu a:hover {
     color: #ff5a3c;
 }
-.nav-center a {
-    font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
-    letter-spacing: 0.02em;
-}
-.logo-img {
-    height: 32px;
-    width: auto;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* Sizes */
+.dropdown.small { min-width: 220px; }
+
+.dropdown.wide {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+    gap: 8px 20px;
+    min-width: 520px;
 }
 
-.logo a:hover .logo-img {
-    transform: scale(1.03);
+.mega-menu {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 40px;
+    min-width: 640px;
+}
+
+/* =====================
+   SVG ARROW
+===================== */
+.nav-arrow {
+    width: 12px;
+    height: 12px;
+    color: #194f68;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-item:hover .nav-arrow {
+    transform: rotate(180deg);
+}
+
+/* =====================
+   DESKTOP
+===================== */
+@media (min-width: 1024px) {
+    .nav-center {
+        display: flex;
+    }
+
+    .nav-pill {
+        width: calc(100% - 80px);
+        padding: 8px 20px;
+    }
+}
+
+/* =====================
+   MOBILE TWEAKS
+===================== */
+@media (max-width: 1023px) {
+    .signup {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
+    .signin {
+        font-size: 12px;
+    }
+
+    .search-btn {
+        width: 34px;
+        height: 34px;
+    }
 }

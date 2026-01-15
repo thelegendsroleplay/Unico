@@ -1,0 +1,346 @@
+.home-hero {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 20px 60px;
+}
+
+/* Badge */
+.hero-badge {
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 24px;
+}
+
+/* Headings */
+.hero-title {
+    margin: 0;
+    line-height: 1.05;
+}
+
+.hero-title-primary {
+    display: block;
+    font-size: 64px;
+    font-weight: 800;
+    color: #194f68;
+}
+
+.hero-title-accent {
+    display: block;
+    font-size: 64px;
+    font-weight: 800;
+    color: #f15a3c;
+}
+
+/* Subtext */
+.hero-subtext {
+    max-width: 760px;
+    margin-top: 24px;
+    font-size: 16px;
+    font-style: italic;
+    color: #64748b;
+    line-height: 1.7;
+}
+
+/* Buttons */
+.hero-actions {
+    display: flex;
+    gap: 18px;
+    margin-top: 40px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.btn img {
+    width: 14px;
+}
+
+.btn-primary {
+    background: #f15a3c;
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(241, 90, 60, 0.35);
+}
+
+.btn-secondary {
+    background: #194f68;
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(25, 79, 104, 0.35);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Slider dots */
+.hero-dots {
+    display: flex;
+    gap: 10px;
+    margin-top: 40px;
+}
+
+.hero-dots span {
+    width: 6px;
+    height: 6px;
+    background: #cbd5e1;
+    border-radius: 50%;
+}
+
+.hero-dots span.active {
+    width: 32px;
+    height: 4px;
+    background: #f15a3c;
+    border-radius: 999px;
+}
+@media (max-width: 768px) {
+    .hero-title-primary,
+    .hero-title-accent {
+        font-size: 36px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+}
+/* =====================
+   AUTHORIZED PARTNERS
+===================== */
+
+.partners {
+    text-align: center;
+    padding: 80px 0 60px;
+    overflow: hidden;
+}
+
+.partners-line {
+    width: 100%;
+    height: 1px;
+    background: #ffd5c8;
+    margin-bottom: 30px;
+}
+
+.partners-title {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: #94a3b8;
+    margin-bottom: 30px;
+}
+
+/* Marquee container */
+.partners-marquee {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Moving track */
+.partners-track {
+    display: flex;
+    width: max-content;
+    gap: 60px;
+
+    animation: partners-scroll 40s linear infinite;
+}
+
+/* Pause animation on hover */
+.partners-marquee:hover .partners-track {
+    animation-play-state: paused;
+}
+
+/* Partner items */
+.partners-track span {
+    font-size: 15px;              /* 👈 KEY FIX */
+    font-weight: 700;             /* 👈 bolder like client */
+    letter-spacing: 0.04em;       /* 👈 client spacing */
+    text-transform: uppercase;
+
+    color: #9fb4c3;
+    white-space: nowrap;
+
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+.partners-track span:hover {
+    color: #194f68; /* client navy */
+}
+@media (min-width: 1024px) {
+    .partners-track span {
+        font-size: 16px;
+    }
+}
+.partners-track {
+    will-change: transform;
+}
+
+
+/* Animation */
+@keyframes partners-scroll {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.excellence {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.excellence-tag {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: #f15a3c;
+}
+
+.excellence h2 {
+    font-size: 44px;
+    margin: 20px 0 60px;
+    color: #194f68;
+}
+
+.excellence-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.excellence-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 40px 30px;
+    text-align: left;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+}
+
+.excellence-card h3 {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #194f68;
+}
+
+.excellence-card p {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+.icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+.icon.orange { background: #f15a3c; }
+.icon.navy { background: #194f68; }
+.universities {
+    padding: 120px 20px;
+    background: #f8fafc;
+    text-align: center;
+}
+
+.universities h2 {
+    font-size: 44px;
+    margin: 20px 0 40px;
+}
+
+.universities h2 span {
+    color: #f15a3c;
+}
+
+.university-ticker {
+    background: #fff;
+    padding: 20px;
+    border-radius: 999px;
+    margin: 40px auto 80px;
+    max-width: 900px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.testimonials {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+.testimonial-card {
+    background: #fff;
+    padding: 40px;
+    border-radius: 24px;
+    text-align: left;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+}
+.destinations {
+    padding: 120px 20px;
+    text-align: center;
+}
+
+.destinations h2 span {
+    color: #f15a3c;
+}
+
+.destination-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1300px;
+    margin: 80px auto 0;
+}
+
+.destination-card {
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    text-align: left;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+}
+
+.destination-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.destination-card h3 {
+    padding: 20px;
+    font-size: 16px;
+}
+
+.destination-card .meta {
+    padding: 0 20px 10px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.destination-card a {
+    display: block;
+    padding: 20px;
+    font-weight: 600;
+    color: #194f68;
+}
