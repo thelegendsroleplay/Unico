@@ -5,7 +5,7 @@
 .unicou-footer {
   background: radial-gradient(circle at top left, #0b1b36, #060e1f);
   color: #cfd8e3;
-  padding: 80px 0 30px;
+  padding: 80px 20px 30px;
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -14,9 +14,8 @@
 
 /* INNER CONTAINER (ALIGN WITH SITE) */
 .footer-container {
-  max-width: 100%;
-  margin: 0;
-  padding: 0 40px;
+  max-width: 1200px; /* match header/container width */
+  margin: 0 auto;
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr 1fr;
   gap: 60px;
@@ -218,7 +217,6 @@
   .footer-container {
     grid-template-columns: 1fr 1fr;
     gap: 40px;
-    padding: 0 30px;
   }
 }
 
@@ -226,7 +224,6 @@
   .footer-container {
     grid-template-columns: 1fr;
     gap: 32px;
-    padding: 0 20px;
   }
 
   .brand-tagline {
