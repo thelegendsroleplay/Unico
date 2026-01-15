@@ -271,12 +271,17 @@
     }
 }
 
+/* --- Excellence Section Wrapper --- */
+.excellence-section {
+    background: #ffffff;
+    padding: 80px 20px;
+}
+
 /* --- Layout & Typography --- */
 .excellence {
-    background: #ffffff; /* Image shows white/clean background usually, or very light grey */
-    padding: 100px 20px;
     text-align: center;
     font-family: sans-serif; /* Ensure you have a font loaded */
+    padding-bottom: 20px;
 }
 
 .excellence-tag {

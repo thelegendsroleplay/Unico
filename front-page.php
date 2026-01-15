@@ -85,6 +85,10 @@
 </section>
 
 <section class="excellence-section">
+  <div class="excellence">
+    <span class="excellence-tag">THE UNICOU STANDARD</span>
+    <h2>Operational Excellence</h2>
+  </div>
   <div class="excellence-grid">
     
     <div class="excellence-card">
