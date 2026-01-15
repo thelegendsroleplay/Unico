@@ -3,17 +3,17 @@
 
     <!-- BRAND / LEFT -->
     <div class="footer-col footer-brand">
-<div class="brand-row">
-  <img 
-    src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.png" 
-    alt="UniCou Logo"
-    class="footer-logo"
-  >
-</div>
+      <div class="brand-row">
+        <img
+          src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.png"
+          alt="UniCou Logo"
+          class="footer-logo"
+        >
+      </div>
 
       <p class="brand-tagline">
-        “Premier global academic mobility platform with<br>
-        presence in Manchester, Dubai, and Lahore.”
+        "Premier global academic mobility platform with<br>
+        presence in Manchester, Dubai, and Lahore."
       </p>
 
       <h4 class="footer-subheading">Regional Offices</h4>
@@ -30,10 +30,10 @@
       <h4>Quick Links</h4>
       <ul class="footer-menu">
         <li><a href="/student-application-form">Apply Now</a></li>
-        <li><a href="https://lms.unicou.uk" target="_blank">Learning Hub</a></li>
-        <li><a href="https://vouchers.unicou.uk" target="_blank">Vouchers</a></li>
+        <li><a href="https://lms.unicou.uk" target="_blank" rel="noopener">Learning Hub</a></li>
+        <li><a href="https://vouchers.unicou.uk" target="_blank" rel="noopener">Vouchers</a></li>
         <li><a href="/contact-us">Contact Us</a></li>
-        <li><a href="/contact-us">Career</a></li>
+        <li><a href="/contact-us#career">Career</a></li>
       </ul>
     </div>
 

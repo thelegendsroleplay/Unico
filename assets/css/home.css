@@ -902,8 +902,44 @@ body {
   padding: 0;
 }
 
+/* =========================
+   CUSTOM SCROLLBAR STYLING
+========================= */
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #194f68, #103e54);
+  border-radius: 10px;
+  border: 2px solid #f1f5f9;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ff5a3c, #e84e33);
+}
+
+::-webkit-scrollbar-corner {
+  background: #f1f5f9;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #194f68 #f1f5f9;
+}
+
 html {
   overflow-x: hidden;
+  overflow-y: scroll;
   width: 100%;
 }
 
