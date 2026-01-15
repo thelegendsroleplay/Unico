@@ -21,18 +21,28 @@
         LanguageCert, Duolingo, GRE and more.
     </p>
 
-    <!-- CTA BUTTONS -->
-    <div class="hero-actions">
-        <a href="#" class="btn btn-primary">
-            BUY EXAM VOUCHERS
-            <img src="<?php echo get_template_directory_uri(); ?>/assets/img/lock.svg" alt="">
-        </a>
+<!-- CTA BUTTONS -->
+<div class="hero-actions">
 
-        <a href="#" class="btn btn-secondary">
-            APPLICATION HUB
-            <img src="<?php echo get_template_directory_uri(); ?>/assets/img/arrow-right.svg" alt="">
-        </a>
-    </div>
+    <!-- 1) APPLY NOW -->
+    <a href="/student-application-form" class="btn btn-secondary">
+        APPLY NOW
+        <img src="<?php echo get_template_directory_uri(); ?>/assets/img/arrow-right.svg" alt="">
+    </a>
+
+    <!-- 2) BUY DISCOUNTED VOUCHER -->
+    <a href="https://vouchers.unicou.uk" class="btn btn-primary">
+        BUY DISCOUNTED VOUCHER
+        <img src="<?php echo get_template_directory_uri(); ?>/assets/img/lock.svg" alt="">
+    </a>
+
+    <!-- 3) LEARNING HUB -->
+    <a href="https://lms.unicou.uk" class="btn btn-outline">
+        LEARNING HUB
+    </a>
+
+</div>
+
 
     <!-- SLIDER DOTS -->
     <div class="hero-dots">

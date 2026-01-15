@@ -14,7 +14,7 @@
     <div class="logo">
         <a href="<?php echo esc_url(home_url('/')); ?>">
             <img 
-            src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.svg"
+            src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.png"
             alt="<?php bloginfo('name'); ?>"
             class="logo-img"
             >
@@ -26,7 +26,7 @@
         <!-- CENTER -->
 <nav class="nav-center">
 
-    <!-- STUDY ABROAD (MEGA MENU) -->
+    <!-- STUDY ABROAD (MEGA MENU)
     <div class="nav-item has-mega">
          <a href="#">
         STUDY ABROAD
@@ -60,7 +60,7 @@
                 <a href="#">Cyprus</a>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- EXAMS (WIDE DROPDOWN) -->
     <div class="nav-item has-dropdown">
@@ -86,8 +86,8 @@
         </div>
     </div>
 
-    <!-- LEARNING HUB -->
-    <a href="#">LEARNING HUB</a>
+    <!-- LEARNING HUB
+    <a href="#">LEARNING HUB</a> -->
 
     <!-- BLOGS -->
     <a href="#">BLOGS</a>
@@ -104,10 +104,10 @@
         </svg>
     </a>
         <div class="dropdown small">
-            <a href="#">Student Admission</a>
-            <a href="#">Agent Registration</a>
-            <a href="#">Training Centers</a>
-            <a href="#">Institutional Sync</a>
+            <a href="#">Student</a>
+            <a href="#">Agent</a>
+            <!-- <a href="#">Training Centers</a> -->
+            <a href="#">Edu Institute</a>
         </div>
     </div>
 

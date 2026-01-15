@@ -16,6 +16,22 @@ add_action('wp_enqueue_scripts', function () {
         '1.0',
         true
     );
+    
+    /* FOOTER */
+    wp_enqueue_style(
+        'unico-footer',
+        get_template_directory_uri() . '/assets/css/footer.css',
+        [],
+        '1.0'
+    );
+
+    wp_enqueue_script(
+        'unico-footer-js',
+        get_template_directory_uri() . '/assets/js/footer.js',
+        [],
+        '1.0',
+        true
+    );
 
 });
 wp_enqueue_style(

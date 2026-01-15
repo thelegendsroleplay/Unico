@@ -1,0 +1,242 @@
+/* =========================
+   FOOTER BASE
+========================= */
+
+.unicou-footer {
+  background: radial-gradient(circle at top left, #0b1b36, #060e1f);
+  color: #cfd8e3;
+  padding: 80px 20px 30px;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* INNER CONTAINER (ALIGN WITH SITE) */
+.footer-container {
+  max-width: 1200px; /* match header/container width */
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2.2fr 1fr 1fr 1fr;
+  gap: 60px;
+}
+
+/* =========================
+   BRAND COLUMN
+========================= */
+
+.footer-brand h2 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border-radius: 6px;
+}
+
+.brand-tagline {
+  font-style: italic;
+  color: #9fb3c8;
+  margin: 18px 0 26px;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.footer-subheading {
+  color: #ff5a3c;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.office-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.office-list li {
+  font-size: 14px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* =========================
+   FOOTER COLUMNS
+========================= */
+
+.footer-col h4 {
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+  color: #ffffff;
+}
+
+.footer-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-menu li {
+  margin-bottom: 12px;
+}
+
+.footer-menu a {
+  color: #9fb3c8;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-menu a:hover {
+  color: #ffffff;
+}
+
+/* =========================
+   CONTACT
+========================= */
+
+.contact-email a {
+  color: #ff5a3c;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.contact-phone {
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+/* =========================
+   FOOTER BOTTOM
+========================= */
+
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 60px;
+  padding-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #7f8fa4;
+}
+
+/* =========================
+   FLOATING HELP DESK
+========================= */
+
+.help-desk {
+  position: fixed;
+  right: 24px;
+  bottom: 120px;
+  background: #ffffff;
+  color: #0b1b36;
+  padding: 14px 18px;
+  border-radius: 14px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.25);
+  font-size: 13px;
+  z-index: 999;
+}
+
+.help-title {
+  display: block;
+  font-size: 10px;
+  color: #7f8fa4;
+}
+
+.help-email {
+  font-weight: 700;
+}
+
+/* =========================
+   FLOATING BUTTONS
+========================= */
+
+.floating-buttons {
+  position: fixed;
+  right: 24px;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 999;
+}
+
+.float-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  text-decoration: none;
+}
+
+.float-btn.whatsapp {
+  background: #1f6f8b;
+  color: #fff;
+}
+
+.float-btn.chat {
+  background: #ff5a3c;
+  color: #fff;
+}
+
+/* =========================
+   RESPONSIVE FIXES
+========================= */
+
+@media (max-width: 1024px) {
+  .footer-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .brand-tagline {
+    max-width: 100%;
+  }
+
+  .help-desk {
+    display: none; /* hide on mobile */
+  }
+
+  .floating-buttons {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+.footer-logo {
+  max-width: 180px;
+  height: auto;
+  display: block;
+  margin-bottom: 18px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .footer-logo {
+    max-width: 150px;
+    margin: 0 auto 20px;
+  }
+}
+.brand-icon {
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border-radius: 6px;
+}

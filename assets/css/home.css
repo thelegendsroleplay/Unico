@@ -85,6 +85,79 @@
 .btn:hover {
     transform: translateY(-2px);
 }
+.hero-actions {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+/* BASE BUTTON */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.6px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+/* APPLY NOW */
+.btn-secondary {
+    background: #194f68;
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(25, 79, 104, 0.35);
+}
+
+/* BUY DISCOUNTED VOUCHER */
+.btn-primary {
+    background: #f15a3c;
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(241, 90, 60, 0.35);
+}
+
+/* LEARNING HUB */
+.btn-outline {
+    background: transparent;
+    color: #194f68;
+    border: 2px solid #194f68;
+}
+
+/* ICON SIZE */
+.btn img {
+    width: 16px;
+}
+
+/* HOVER */
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+    .hero-actions {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+.btn-outline {
+    background: #e9f1f5;
+    color: #194f68;
+    border: 2px solid #194f68;
+    box-shadow: 0 8px 16px rgba(25, 79, 104, 0.18);
+}
 
 /* Slider dots */
 .hero-dots {
