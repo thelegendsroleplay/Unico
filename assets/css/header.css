@@ -1,0 +1,81 @@
+.site-header {
+    width: 100%;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    font-family: system-ui, sans-serif;
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.logo-icon {
+    background: #0a2a66;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.logo-text {
+    color: #0a2a66;
+}
+
+/* Nav */
+.main-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 26px;
+    margin: 0;
+    padding: 0;
+}
+
+.main-nav a {
+    text-decoration: none;
+    color: #0a2a66;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Right Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.search-btn {
+    border: none;
+    background: #f5f7fb;
+    padding: 8px 10px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.sign-in {
+    color: #0a2a66;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.sign-up {
+    background: #ff5a3c;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+}
