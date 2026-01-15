@@ -46,16 +46,19 @@
 .brand-tagline {
   font-style: italic;
   color: #9fb3c8;
-  margin: 18px 0 26px;
+  font-size: 14px;
+  margin: 20px 0 32px;
   line-height: 1.6;
   max-width: 420px;
 }
 
 .footer-subheading {
-  color: #ff5a3c;
-  font-size: 12px;
-  letter-spacing: 1px;
-  margin-bottom: 12px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-bottom: 16px;
+  text-transform: none;
 }
 
 .office-list {
@@ -65,8 +68,14 @@
 
 .office-list li {
   font-size: 14px;
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 10px;
+  line-height: 1.6;
+  color: #cfd8e3;
+}
+
+.office-list li strong {
+  font-weight: 600;
+  color: #ffffff;
 }
 
 /* =========================
@@ -74,10 +83,12 @@
 ========================= */
 
 .footer-col h4 {
-  font-size: 13px;
-  letter-spacing: 1px;
-  margin-bottom: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin-bottom: 20px;
   color: #ffffff;
+  text-transform: none;
 }
 
 .footer-menu {
@@ -87,13 +98,15 @@
 }
 
 .footer-menu li {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .footer-menu a {
   color: #9fb3c8;
   text-decoration: none;
   font-size: 14px;
+  font-weight: 400;
+  transition: color 0.2s ease;
 }
 
 .footer-menu a:hover {
@@ -106,8 +119,14 @@
 
 .contact-email a {
   color: #ff5a3c;
+  font-size: 15px;
   font-weight: 600;
   text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contact-email a:hover {
+  color: #ff7a5c;
 }
 
 .contact-phone {
@@ -122,10 +141,10 @@
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.08);
   margin-top: 60px;
-  padding-top: 20px;
+  padding-top: 24px;
   text-align: center;
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
   color: #7f8fa4;
 }
 
