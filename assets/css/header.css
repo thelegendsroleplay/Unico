@@ -227,9 +227,22 @@
 }
 
 /* =====================
-   MOBILE TWEAKS
+   TABLET & MOBILE
 ===================== */
 @media (max-width: 1023px) {
+    .site-header {
+        top: 10px;
+    }
+
+    .nav-pill {
+        width: calc(100% - 20px);
+        padding: 6px 12px;
+    }
+
+    .logo-img {
+        height: 52px;
+    }
+
     .signup {
         padding: 6px 14px;
         font-size: 12px;
@@ -242,5 +255,46 @@
     .search-btn {
         width: 34px;
         height: 34px;
+    }
+
+    .nav-right {
+        gap: 10px;
+    }
+}
+
+/* =====================
+   MOBILE SMALL
+===================== */
+@media (max-width: 767px) {
+    .site-header {
+        top: 5px;
+    }
+
+    .nav-pill {
+        width: calc(100% - 12px);
+        padding: 5px 10px;
+    }
+
+    .logo-img {
+        height: 48px;
+    }
+
+    .signup {
+        padding: 5px 12px;
+        font-size: 11px;
+    }
+
+    .signin {
+        font-size: 11px;
+        display: none; /* Hide on very small screens */
+    }
+
+    .search-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .nav-right {
+        gap: 8px;
     }
 }

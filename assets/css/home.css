@@ -5,7 +5,10 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 140px 20px 100px; /* 👈 BIGGER */
+    padding: 140px 5% 100px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
 }
 /* Badge */
 .hero-badge {
@@ -1071,4 +1074,356 @@ body {
 .destination-card:hover .btn-arrow {
   background: #ff5a3c;
   transform: rotate(-45deg); /* Optional: Adds a cool effect on hover */
+}
+/* ================================================
+   COMPREHENSIVE RESPONSIVE DESIGN
+================================================ */
+
+/* ================================================
+   LARGE TABLET / SMALL DESKTOP (1024px - 1199px)
+================================================ */
+@media (max-width: 1199px) {
+    /* Hero Section */
+    .hero-title-primary {
+        font-size: 56px;
+    }
+
+    .hero-title-accent {
+        font-size: 62px;
+    }
+
+    .hero-subtext {
+        font-size: 15px;
+        max-width: 650px;
+    }
+
+    /* Section Titles */
+    .section-title {
+        font-size: 36px;
+    }
+
+    .excellence h2 {
+        font-size: 36px;
+    }
+
+    /* Grids */
+    .excellence-grid,
+    .destination-grid {
+        gap: 24px;
+        padding: 0 3%;
+    }
+
+    .excellence-section,
+    .destinations {
+        padding: 70px 3% 60px;
+    }
+}
+
+/* ================================================
+   TABLET (768px - 1023px)
+================================================ */
+@media (max-width: 1023px) {
+    /* Hero Section */
+    .home-hero {
+        padding: 100px 5% 80px;
+        min-height: auto;
+    }
+
+    .hero-title-primary {
+        font-size: 48px;
+    }
+
+    .hero-title-accent {
+        font-size: 54px;
+    }
+
+    .hero-subtext {
+        font-size: 14px;
+        max-width: 550px;
+    }
+
+    .hero-actions {
+        margin-top: 32px;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        font-size: 13px;
+    }
+
+    /* Sections */
+    .excellence-section,
+    .destinations {
+        padding: 60px 5% 50px;
+    }
+
+    .section-title {
+        font-size: 32px;
+    }
+
+    .excellence h2 {
+        font-size: 32px;
+        margin-bottom: 50px;
+    }
+
+    /* Excellence Grid */
+    .excellence-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 0 2%;
+    }
+
+    .excellence-card {
+        min-height: 240px;
+    }
+
+    /* Destination Cards */
+    .destination-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 0 2%;
+    }
+
+    .destination-card {
+        min-height: 520px;
+    }
+
+    .card-image-wrapper {
+        height: 240px;
+    }
+
+    .card-title-row h3 {
+        font-size: 20px;
+    }
+
+    /* Ecosystem Section */
+    .ecosystem {
+        padding: 80px 5% 100px;
+    }
+
+    .ecosystem-title {
+        font-size: 32px;
+    }
+
+    .ecosystem-cards {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+/* ================================================
+   MOBILE LARGE (600px - 767px)
+================================================ */
+@media (max-width: 767px) {
+    /* Hero Section */
+    .home-hero {
+        padding: 80px 5% 60px;
+    }
+
+    .hero-title-primary {
+        font-size: 36px;
+    }
+
+    .hero-title-accent {
+        font-size: 42px;
+    }
+
+    .hero-subtext {
+        font-size: 14px;
+        max-width: 100%;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Sections */
+    .excellence-section,
+    .destinations {
+        padding: 50px 5% 40px;
+    }
+
+    .section-title {
+        font-size: 28px;
+    }
+
+    .excellence h2 {
+        font-size: 28px;
+        margin-bottom: 40px;
+    }
+
+    .section-subtitle {
+        font-size: 14px;
+    }
+
+    /* Excellence Grid - Single Column */
+    .excellence-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0;
+    }
+
+    .excellence-card {
+        min-height: 220px;
+        padding: 32px 24px;
+    }
+
+    /* Destination Grid - Single Column */
+    .destination-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 0;
+    }
+
+    .destination-card {
+        min-height: 500px;
+    }
+
+    .card-image-wrapper {
+        height: 220px;
+    }
+
+    .card-body {
+        padding: 28px 24px;
+    }
+
+    .card-title-row h3 {
+        font-size: 18px;
+    }
+
+    .data-row .value {
+        font-size: 15px;
+    }
+
+    /* Ecosystem */
+    .ecosystem {
+        padding: 60px 5% 80px;
+    }
+
+    .ecosystem-title {
+        font-size: 28px;
+    }
+
+    .ecosystem-subtitle {
+        font-size: 14px;
+    }
+}
+
+/* ================================================
+   MOBILE SMALL (< 600px)
+================================================ */
+@media (max-width: 599px) {
+    /* Hero Section */
+    .home-hero {
+        padding: 60px 5% 50px;
+    }
+
+    .hero-title-primary {
+        font-size: 32px;
+    }
+
+    .hero-title-accent {
+        font-size: 38px;
+    }
+
+    .hero-badge {
+        font-size: 10px;
+    }
+
+    .hero-subtext {
+        font-size: 13px;
+        margin-top: 20px;
+    }
+
+    /* Sections */
+    .excellence-section,
+    .destinations {
+        padding: 40px 5% 35px;
+    }
+
+    .section-title {
+        font-size: 24px;
+    }
+
+    .excellence h2 {
+        font-size: 24px;
+        margin-bottom: 35px;
+    }
+
+    .excellence-tag {
+        font-size: 10px;
+    }
+
+    /* Cards */
+    .excellence-card {
+        min-height: 200px;
+        padding: 28px 20px;
+    }
+
+    .destination-card {
+        min-height: 480px;
+    }
+
+    .card-image-wrapper {
+        height: 200px;
+    }
+
+    .card-body {
+        padding: 24px 20px;
+    }
+
+    .card-title-row h3 {
+        font-size: 16px;
+    }
+
+    .data-row .label {
+        font-size: 10px;
+    }
+
+    .data-row .value {
+        font-size: 14px;
+    }
+
+    /* Ecosystem */
+    .ecosystem {
+        padding: 50px 5% 60px;
+    }
+
+    .ecosystem-title {
+        font-size: 24px;
+    }
+}
+
+/* ================================================
+   EXTRA SMALL MOBILE (< 400px)
+================================================ */
+@media (max-width: 399px) {
+    .hero-title-primary {
+        font-size: 28px;
+    }
+
+    .hero-title-accent {
+        font-size: 34px;
+    }
+
+    .section-title {
+        font-size: 22px;
+    }
+
+    .excellence h2 {
+        font-size: 22px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        font-size: 12px;
+    }
 }

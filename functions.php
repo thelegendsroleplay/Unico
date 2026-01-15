@@ -6,7 +6,7 @@ add_action('wp_enqueue_scripts', function () {
         'unico-header',
         get_template_directory_uri() . '/assets/css/header.css',
         [],
-        '2.1'
+        '3.0'
     );
 
     wp_enqueue_script(
@@ -22,7 +22,7 @@ add_action('wp_enqueue_scripts', function () {
         'unico-home',
         get_template_directory_uri() . '/assets/css/home.css',
         [],
-        '2.1'
+        '3.0'
     );
 
     /* FOOTER */
@@ -30,7 +30,7 @@ add_action('wp_enqueue_scripts', function () {
         'unico-footer',
         get_template_directory_uri() . '/assets/css/footer.css',
         [],
-        '2.1'
+        '3.0'
     );
 
     wp_enqueue_script(
