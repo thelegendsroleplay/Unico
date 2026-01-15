@@ -26,16 +26,19 @@
         <!-- CENTER -->
 <nav class="nav-center">
 
-    <!-- STUDY ABROAD (MEGA MENU)
+    <!-- ABOUT US -->
+    <a href="#">ABOUT US</a>
+
+    <!-- STUDY ABROAD (MEGA MENU) -->
     <div class="nav-item has-mega">
-         <a href="#">
-        STUDY ABROAD
-        <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-    </a>
+        <a href="#">
+            STUDY ABROAD
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </a>
 
         <div class="mega-menu">
             <div class="mega-col">
@@ -60,18 +63,18 @@
                 <a href="#">Cyprus</a>
             </div>
         </div>
-    </div> -->
+    </div>
 
     <!-- EXAMS (WIDE DROPDOWN) -->
     <div class="nav-item has-dropdown">
-    <a href="#">
-        EXAMS
-        <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-    </a>
+        <a href="#">
+            EXAMS
+            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </a>
 
         <div class="dropdown wide">
             <a href="#">IELTS</a>
@@ -86,8 +89,8 @@
         </div>
     </div>
 
-    <!-- LEARNING HUB
-    <a href="#">LEARNING HUB</a> -->
+    <!-- LEARNING HUB -->
+    <a href="#">LEARNING HUB</a>
 
     <!-- BLOGS -->
     <a href="#">BLOGS</a>
