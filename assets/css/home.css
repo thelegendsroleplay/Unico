@@ -274,7 +274,8 @@
 /* --- Excellence Section Wrapper --- */
 .excellence-section {
     background: #ffffff;
-    padding: 80px 40px;
+        width: 500%;
+    padding: 80px 20px;
 }
 
 /* --- Layout & Typography --- */
@@ -535,7 +536,7 @@ body {
 
 .ecosystem {
   background: #f6f9fc; /* Exact match */
-  width: 100%;
+  width: 500%;
   padding: 100px 0 140px; /* Adjusted padding to match visual balance */
   overflow-x: hidden;
 }
