@@ -74,78 +74,206 @@
     </div>
 </section>
 
-<section class="excellence">
-    <span class="excellence-tag">● THE UNICOU STANDARD ●</span>
-    <h2>Operational Excellence</h2>
-
-    <div class="excellence-grid">
-        <div class="excellence-card">
-            <div class="icon orange">⚡</div>
-            <h3>Instant Delivery</h3>
-            <p>Vouchers are retrieved from our secure vault and dispatched the second payment is verified.</p>
-        </div>
-
-        <div class="excellence-card">
-            <div class="icon navy">🔒</div>
-            <h3>Secure Storage</h3>
-            <p>Our vault uses industry-grade encryption to manage thousands of unique test vouchers.</p>
-        </div>
-
-        <div class="excellence-card">
-            <div class="icon orange">🏷️</div>
-            <h3>Bulk Discounts</h3>
-            <p>Our engine calculates automatic discounts for agency partners based on tier level.</p>
-        </div>
-
-        <div class="excellence-card">
-            <div class="icon navy">✔</div>
-            <h3>Global Validity</h3>
-            <p>Every code is directly imported from providers, ensuring 100% authenticity.</p>
-        </div>
+<section class="excellence-section">
+  <div class="excellence-grid">
+    
+    <div class="excellence-card">
+      <div class="card-corner"></div>
+      <div class="icon-box" style="background-color: #e84e33;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"></path>
+        </svg>
+      </div>
+      <h3>Instant Delivery</h3>
+      <p>Vouchers are retrieved from our secure vault and dispatched the second payment is verified.</p>
+      <div class="bottom-line"></div>
     </div>
+
+    <div class="excellence-card">
+      <div class="card-corner"></div>
+      <div class="icon-box" style="background-color: #103e54;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h3>Secure Storage</h3>
+      <p>Our vault uses industry-grade encryption to manage thousands of unique test vouchers.</p>
+      <div class="bottom-line"></div>
+    </div>
+
+    <div class="excellence-card">
+      <div class="card-corner"></div>
+      <div class="icon-box" style="background-color: #e84e33;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+          <path d="M7 11l4-4 4 4 2-2"></path> </svg>
+      </div>
+      <h3>Bulk Discounts</h3>
+      <p>Our engine calculates automatic discounts for agency partners based on tier level.</p>
+      <div class="bottom-line"></div>
+    </div>
+
+    <div class="excellence-card">
+      <div class="card-corner"></div>
+      <div class="icon-box" style="background-color: #103e54;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <h3>Global Validity</h3>
+      <p>Every code is directly imported from providers, ensuring 100% authenticity.</p>
+      <div class="bottom-line"></div>
+    </div>
+
+  </div>
 </section>
-<section class="universities">
-    <span class="section-tag">GLOBAL ECOSYSTEM</span>
-    <h2>APPLY IN WORLD <span>TOP UNIVERSITIES</span></h2>
 
-    <div class="university-ticker">
-        COLUMBIA • AUSTRALIAN NATIONAL UNIVERSITY • UNIVERSITY OF MELBOURNE • OXFORD • CAMBRIDGE
+
+<section class="ecosystem">
+  <div class="ecosystem-inner">
+    
+    <div class="header-center">
+      <span class="ecosystem-label">GLOBAL ECOSYSTEM</span>
+      <h2 class="ecosystem-title">APPLY IN WORLD <span>TOP UNIVERSITIES</span></h2>
     </div>
 
-    <div class="testimonials">
-        <div class="testimonial-card">
-            <p>“UNICOU’s automated voucher dispatch system is the fastest we’ve integrated in a decade.”</p>
+    <div class="university-marquee">
+      <div class="marquee-track">
+        <span>CAMBRIDGE</span>
+        <span>IMPERIAL COLLEGE LONDON</span>
+        <span>UCL</span>
+        <span>LSE</span>
+        <span>HARVARD UNIVERSITY</span>
+        <span>PRINCETON</span>
+        <span>CAMBRIDGE</span>
+        <span>IMPERIAL COLLEGE LONDON</span>
+        <span>UCL</span>
+        <span>LSE</span>
+        <span>HARVARD UNIVERSITY</span>
+        <span>PRINCETON</span>
+      </div>
+      <div class="marquee-fade fade-left"></div>
+      <div class="marquee-fade fade-right"></div>
+    </div>
+
+    <div class="ecosystem-cards">
+      
+      <div class="ecosystem-card">
+        <div class="stars">★★★★★</div>
+        <p>"UNICOU's automated voucher dispatch system is the fastest we've integrated in a decade."</p>
+        <div class="ecosystem-author">
+          <div class="ecosystem-avatar">A</div>
+          <div class="author-info">
             <strong>Apex Training Node</strong>
             <span>Global Partner</span>
+          </div>
         </div>
+      </div>
 
-        <div class="testimonial-card">
-            <p>“Exceptional student matching and verification protocols.”</p>
-            <strong>West Lakes Academy</strong>
+      <div class="ecosystem-card">
+        <div class="stars">★★★★★</div>
+        <p>"Exceptional student matching and verification protocols. A trusted mobility partner."</p>
+        <div class="ecosystem-author">
+          <div class="ecosystem-avatar">W</div>
+          <div class="author-info">
+            <strong>West-Lakes Academy</strong>
             <span>Institution</span>
+          </div>
         </div>
+      </div>
 
-        <div class="testimonial-card">
-            <p>“The CRM leads are high-quality and verified.”</p>
+      <div class="ecosystem-card">
+        <div class="stars">★★★★★</div>
+        <p>"The CRM leads are high-quality and verified. Truly a unified platform for global success."</p>
+        <div class="ecosystem-author">
+          <div class="ecosystem-avatar">F</div>
+          <div class="author-info">
             <strong>Future Horizons</strong>
             <span>Recruiter</span>
+          </div>
         </div>
-    </div>
-</section>
-<section class="destinations">
-    <span class="section-tag"> </span>
-    <h2>STUDY ABROAD <span>DESTINATIONS</span></h2>
-    <p class="subtitle">Authoritative intelligence for the world’s premier academic hubs.</p>
+      </div>
 
-    <div class="destination-grid">
-        <div class="destination-card">
-            <img src="assets/img/destinations/uk.jpg">
-            <h3>THE UNITED KINGDOM</h3>
-            <div class="meta">Living: £10,539 – £13,761</div>
-            <div class="meta">Tuition: £10,000 – £18,000</div>
-            <a href="#">Access Node →</a>
+    </div>
+  </div>
+</section>
+
+
+<section class="destinations">
+  <div class="header-center">
+    <div class="header-line"></div>
+    <h2 class="section-title">STUDY ABROAD <span>DESTINATIONS</span></h2>
+    <p class="section-subtitle">Authoritative intelligence for the world's premier academic hubs.</p>
+  </div>
+
+  <div class="destination-grid">
+    
+    <div class="destination-card">
+      <div class="card-image-wrapper">
+        <img src="path-to-uk-image.jpg" alt="United Kingdom">
+        <div class="country-badge">
+          <b>GB</b> <span>UK</span>
         </div>
-        <!-- repeat cards -->
+      </div>
+      
+      <div class="card-body">
+        <div class="card-title-row">
+          <h3>THE UNITED KINGDOM</h3>
+          <span class="status-dot"></span>
+        </div>
+
+        <div class="data-row">
+          <span class="label">LIVING EXPENSES*</span>
+          <span class="value">£10,539 - £13,761</span>
+        </div>
+
+        <div class="data-row">
+          <span class="label">TUITION FEE*</span>
+          <span class="value">£10,000 - £18,000</span>
+        </div>
+
+        <div class="card-footer">
+          <span class="footer-label">ACCESS NODE</span>
+          <a href="#" class="btn-arrow">→</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="destination-card">
+      <div class="card-image-wrapper">
+        <img src="path-to-aus-image.jpg" alt="Australia">
+        <div class="country-badge">
+          <b>AU</b> <span>AUSTRALIA</span>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="card-title-row">
+          <h3>AUSTRALIA</h3>
+          <span class="status-dot"></span>
+        </div>
+
+        <div class="data-row">
+          <span class="label">LIVING EXPENSES*</span>
+          <span class="value">AUD 21,000</span>
+        </div>
+
+        <div class="data-row">
+          <span class="label">TUITION FEE*</span>
+          <span class="value">AUD 30,000</span>
+        </div>
+
+        <div class="card-footer">
+          <span class="footer-label">ACCESS NODE</span>
+          <a href="#" class="btn-arrow">→</a>
+        </div>
+      </div>
+    </div>
+
     </div>
 </section>
 

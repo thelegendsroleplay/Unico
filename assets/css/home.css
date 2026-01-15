@@ -5,9 +5,8 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 120px 20px 60px;
+    padding: 140px 20px 100px; /* 👈 BIGGER */
 }
-
 /* Badge */
 .hero-badge {
     font-size: 12px;
@@ -25,14 +24,14 @@
 
 .hero-title-primary {
     display: block;
-    font-size: 64px;
+    font-size: 68px;
     font-weight: 800;
     color: #194f68;
 }
 
 .hero-title-accent {
     display: block;
-    font-size: 64px;
+     font-size: 74px;
     font-weight: 800;
     color: #f15a3c;
 }
@@ -58,9 +57,9 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 28px;
+    padding: 16px 34px;
     border-radius: 999px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     text-decoration: none;
     letter-spacing: 0.04em;
@@ -68,7 +67,7 @@
 }
 
 .btn img {
-    width: 14px;
+    width: 15px;
 }
 
 .btn-primary {
@@ -199,21 +198,37 @@
     }
 }
 
+/* --- Layout & Typography --- */
 .excellence {
-    text-align: center;
+    background: #ffffff; /* Image shows white/clean background usually, or very light grey */
     padding: 100px 20px;
+    text-align: center;
+    font-family: sans-serif; /* Ensure you have a font loaded */
 }
 
 .excellence-tag {
     font-size: 11px;
-    letter-spacing: 0.3em;
-    color: #f15a3c;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+    color: #e84e33; /* Brand Orange */
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+/* Optional: The dots around the tag seen in image 1 */
+.excellence-tag::before, .excellence-tag::after {
+    content: '•';
+    color: #e84e33;
+    padding: 0 10px;
 }
 
 .excellence h2 {
-    font-size: 44px;
-    margin: 20px 0 60px;
-    color: #194f68;
+    font-size: 42px;
+    margin: 0 0 60px;
+    color: #103e54; /* Deep Slate Blue */
+    font-weight: 800;
 }
 
 .excellence-grid {
@@ -222,125 +237,729 @@
     gap: 30px;
     max-width: 1200px;
     margin: auto;
-}
-
-.excellence-card {
-    background: #fff;
-    border-radius: 24px;
-    padding: 40px 30px;
     text-align: left;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
 }
 
-.excellence-card h3 {
-    margin-top: 20px;
-    font-size: 16px;
-    color: #194f68;
+/* --- Grid Layout --- */
+.excellence-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: sans-serif; /* Ensure a font is set */
 }
 
-.excellence-card p {
-    font-size: 14px;
-    color: #64748b;
-    line-height: 1.6;
+/* --- Card Style --- */
+.excellence-card {
+    position: relative;
+    background: #ffffff;
+    border-radius: 32px;
+    
+    /* 1. Adjusted Padding: Reduced bottom padding slightly */
+    padding: 40px 32px 36px; 
+    
+    /* 2. Reduced Height: Prevents the "huge gap" on short cards */
+    min-height: 260px; 
+    
+    /* 3. Flex Layout: This ensures content stack correctly */
+    display: flex;
+    flex-direction: column;
+    
+    border: 1.5px solid transparent;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
 }
 
-.icon {
-    width: 44px;
-    height: 44px;
+/* Hover Effect: Lift + Pink Border */
+.excellence-card:hover {
+    transform: translateY(-5px);
+    border-color: #ffdada; 
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Corner Decoration --- */
+.card-corner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 70px;
+    height: 70px;
+    background-color: #f8fafc;
+    border-bottom-left-radius: 40px;
+    transition: background-color 0.3s ease;
+}
+
+/* The Dot inside the corner */
+.card-corner::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 6px;
+    height: 6px;
+    background-color: #e84e33;
+    border-radius: 50%;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.excellence-card:hover .card-corner {
+    background-color: #fff0ed;
+}
+
+.excellence-card:hover .card-corner::after {
+    opacity: 1;
+}
+
+/* --- Icon Box --- */
+.icon-box {
+    width: 50px;
+    height: 50px;
+    /* Background color is set inline in HTML */
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.icon.orange { background: #f15a3c; }
-.icon.navy { background: #194f68; }
-.universities {
-    padding: 120px 20px;
-    background: #f8fafc;
-    text-align: center;
+.excellence-card:hover .icon-box {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
 }
 
-.universities h2 {
-    font-size: 44px;
-    margin: 20px 0 40px;
-}
-
-.universities h2 span {
-    color: #f15a3c;
-}
-
-.university-ticker {
-    background: #fff;
-    padding: 20px;
-    border-radius: 999px;
-    margin: 40px auto 80px;
-    max-width: 900px;
-    font-weight: 600;
-    color: #cbd5e1;
-}
-
-.testimonials {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    max-width: 1200px;
-    margin: auto;
-}
-
-.testimonial-card {
-    background: #fff;
-    padding: 40px;
-    border-radius: 24px;
-    text-align: left;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-}
-.destinations {
-    padding: 120px 20px;
-    text-align: center;
-}
-
-.destinations h2 span {
-    color: #f15a3c;
-}
-
-.destination-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 30px;
-    max-width: 1300px;
-    margin: 80px auto 0;
-}
-
-.destination-card {
-    background: #fff;
-    border-radius: 24px;
-    overflow: hidden;
-    text-align: left;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-}
-
-.destination-card img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-}
-
-.destination-card h3 {
-    padding: 20px;
+/* --- Text --- */
+.excellence-card h3 {
+    color: #103e54;
     font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    margin-top: 0;
 }
 
-.destination-card .meta {
-    padding: 0 20px 10px;
-    font-size: 13px;
+.excellence-card p {
     color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 30px;
 }
 
-.destination-card a {
-    display: block;
-    padding: 20px;
-    font-weight: 600;
-    color: #194f68;
+/* --- Bottom Line --- */
+.bottom-line {
+    width: 60%;
+    height: 3px;
+    background-color: #fae0dc;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    
+    /* 4. This pushes the line to the bottom of the content area */
+    margin-top: auto; 
+}
+
+.excellence-card:hover .bottom-line {
+    background-color: #e84e33;
+    width: 70%;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+    .excellence-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .excellence-grid { grid-template-columns: 1fr; }
+}
+
+/* --- The Decorative Corner (Top Right) --- */
+.corner-shape {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    background-color: #f8fafc; /* Resting: Light Grey */
+    border-bottom-left-radius: 40px; /* The curve */
+    transition: background-color 0.3s ease;
+}
+
+/* The Red Dot inside the corner */
+.corner-shape::after {
+    content: "";
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 6px;
+    height: 6px;
+    background-color: #e84e33; /* The Orange Dot */
+    border-radius: 50%;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+/* Hover: Corner turns pink */
+.excellence-card:hover .corner-shape {
+    background-color: #fee2e2; /* Light Pink */
+}
+
+.excellence-card:hover .corner-shape::after {
+    opacity: 1; /* Dot becomes solid */
+}
+
+/* --- The Bottom Line --- */
+.bottom-line {
+    width: 50%; /* Short line */
+    height: 3px;
+    background-color: #fae0dc; /* Resting: Very pale red */
+    border-radius: 4px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Hover: Line turns orange and grows slightly */
+.excellence-card:hover .bottom-line {
+    background-color: #e84e33; /* Solid Orange */
+    width: 60%; /* Optional: grows slightly */
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+    .excellence-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .excellence-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- excellence Ends --- */
+
+/* ================================
+   GLOBAL ECOSYSTEM SECTION
+================================ */
+/* Import a font that matches the clean geometric style (Optional but recommended) */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap');
+
+body {
+  font-family: 'Manrope', sans-serif; /* Setup font */
+  margin: 0;
+}
+
+.ecosystem {
+  background: #f6f9fc; /* Exact match */
+  width: 100%;
+  padding: 100px 0 140px; /* Adjusted padding to match visual balance */
+  overflow-x: hidden;
+}
+
+.ecosystem-inner {
+  max-width: 1100px; /* Slightly tighter width creates better card proportions */
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- Header Centering ---------- */
+.header-center {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ---------- Label ---------- */
+.ecosystem-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #5f7f95;
+  margin-bottom: 16px;
+}
+
+/* ---------- Title ---------- */
+.ecosystem-title {
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #0a2540; /* Darker navy for higher contrast */
+  margin: 0 0 60px; /* Spacing below title */
+}
+
+.ecosystem-title span {
+  color: #ff5a3c; /* Exact match orange */
+}
+
+/* ================================
+   UNIVERSITY SCROLLING PILL (Fixed)
+================================ */
+.university-marquee {
+  background: #ffffff; /* Added white background */
+  padding: 24px 0;
+  border-radius: 999px;
+  max-width: 900px; /* Restrict width to create the "pill" shape */
+  margin: 0 auto 80px; /* Centered with bottom margin */
+  position: relative;
+  overflow: hidden; /* Vital for the marquee effect */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04); /* Soft shadow */
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 60px; /* Wider gap between text items */
+  width: max-content;
+  animation: university-scroll 30s linear infinite;
+}
+
+.marquee-track span {
+  display: inline-flex;     /* Keeps dot and text aligned */
+  align-items: center;      /* Vertically centers the dot */
+  font-size: 14px;
+  font-weight: 700;
+  color: #a5b7c6;           /* Default Light Grey Text */
+  cursor: pointer;          /* Shows it's interactive */
+  transition: all 0.3s ease; /* Smooth transition for color changes */
+}
+/* The Dot (Created via CSS) */
+.marquee-track span::before {
+  content: "";              /* Creates the element */
+  display: block;
+  width: 6px;               /* Dot size */
+  height: 6px;
+  border-radius: 50%;       /* Makes it round */
+  background-color: #e2e8f0; /* Default Light Grey Dot */
+  margin-right: 12px;       /* Spacing between dot and text */
+  transition: background-color 0.3s ease;
+}
+
+/* --- HOVER EFFECTS --- */
+
+/* 1. Text turns Dark Blue */
+.marquee-track span:hover {
+  color: #0f3e56; 
+}
+
+/* 2. Dot turns Pink */
+.marquee-track span:hover::before {
+  background-color: #ffcec5; /* The soft pink color from your image */
+  transform: scale(1.2);     /* Optional: slightly grows the dot */
+}
+
+/* Optional: Fading Edges for that "Premium" look */
+.marquee-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  z-index: 2;
+  pointer-events: none;
+}
+.fade-left {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, transparent);
+}
+.fade-right {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, transparent);
+}
+
+@keyframes university-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* Requires duplicate content */
+}
+
+/* ================================
+   TESTIMONIAL CARDS (Fixed)
+================================ */
+.ecosystem-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .ecosystem-cards {
+    grid-template-columns: 1fr;
+  }
+  .ecosystem-title {
+    font-size: 36px;
+  }
+}
+
+/* ================================
+   TESTIMONIAL CARDS (Refined)
+================================ */
+
+.ecosystem-card {
+  background: #ffffff;
+  padding: 36px 32px;
+  border-radius: 24px; /* Matches client's rounded corners */
+  
+  /* The Secret to the layout: Transparent border prevents jumping on hover */
+  border: 1px solid transparent; 
+  
+  /* Very soft, diffuse shadow for the resting state */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06); 
+  
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: default;
+}
+
+/* --- THE HOVER "GLOW" EFFECT --- */
+.ecosystem-card:hover {
+  transform: translateY(-8px); /* Lifts up slightly */
+  
+  /* The Client's "Pinkish" Border */
+  border-color: #ffcec5; 
+  
+  /* The Warm Colored Shadow Glow
+  box-shadow: 0 30px 60px rgba(255, 90, 60, 0.12); */
+}
+
+/* Ensure Typography matches exactly */
+.ecosystem-card p {
+  font-size: 15px;
+  line-height: 1.6;
+  font-style: italic; /* Client uses italics */
+  color: #425466;
+  margin: 0 0 32px;
+}
+
+.ecosystem-card .stars {
+  color: #ff5a3c;
+  font-size: 13px;
+  letter-spacing: 3px; /* Wider spacing like the client image */
+  margin-bottom: 24px;
+}
+
+/* Author Section */
+.ecosystem-author {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ecosystem-avatar {
+  min-width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f3f7fa; /* Light blue-grey background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #0a2540;
+  font-size: 16px;
+}
+
+.author-info strong {
+  display: block;
+  font-size: 14px;
+  color: #0a2540;
+  margin-bottom: 2px;
+}
+
+.author-info span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #7a92a5;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 1024px) {
+  .ecosystem-title {
+    font-size: 36px;
+  }
+
+  .ecosystem-cards {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ecosystem {
+    padding: 80px 0 100px;
+  }
+
+  .ecosystem-title {
+    font-size: 30px;
+  }
+
+  .university-marquee {
+    margin-bottom: 72px;
+  }
+}
+/* 1. The Quote Text 
+   - Made darker (#425466) for better readability
+   - Added font-weight: 500 so it doesn't look too thin
+*/
+.ecosystem-card p {
+  font-family: 'Manrope', sans-serif; /* Ensure you have a clean font loaded */
+  font-size: 15px;
+  line-height: 1.6;        /* Breathable line spacing */
+  font-style: italic;      /* Matches client design */
+  font-weight: 500;        /* slightly heavier than normal for clarity */
+  color: #425466;          /* Professional Slate Grey (not generic grey) */
+  margin: 0 0 32px;
+}
+
+/* 2. Author Name (e.g. "Apex Training Node")
+   - Made darker (#0a2540) to stand out
+   - Increased weight to 800 for that bold pop
+*/
+.ecosystem-author strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;        /* Extra Bold */
+  color: #0a2540;          /* Deep Navy (almost black) */
+  margin-bottom: 4px;      /* Slight spacing above the role */
+}
+
+/* 3. Author Role (e.g. "GLOBAL PARTNER")
+   - Uppercase with letter-spacing (tracking)
+   - Lighter cool-grey color
+*/
+.ecosystem-author span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;  /* Spreads the letters out */
+  text-transform: uppercase;
+  color: #8fa6b6;          /* Cool muted blue-grey */
+}
+
+/* 4. The Avatar Box 
+   - Matches the background color of the client image
+   - Centers the letter perfectly
+*/
+.ecosystem-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;     /* Soft square corners */
+  background: #f0f5f9;     /* Very light blue-grey background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Text inside avatar */
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f3e56;          /* Dark Navy text matches the Name */
+  flex-shrink: 0;          /* Prevents shrinking on small screens */
+}
+
+/* --- Testimonials End --- */
+
+/* --- SECTION LAYOUT --- */
+.destinations {
+  padding: 120px 20px;
+  background: #fff;
+  text-align: center;
+}
+
+/* Header Styling */
+.header-line {
+  width: 40px;
+  height: 4px;
+  background: #ff5a3c;
+  margin: 0 auto 20px;
+  border-radius: 2px;
+}
+
+.section-title {
+  font-size: 42px;
+  font-weight: 900; /* Super bold */
+  color: #0a2540;
+  margin: 0 0 16px;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.section-title span {
+  color: #ff5a3c; /* Brand Orange */
+}
+
+.section-subtitle {
+  color: #7a92a5;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 500;
+  margin-bottom: 60px;
+}
+
+/* --- GRID LAYOUT --- */
+.destination-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 Columns */
+  gap: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Responsive: Stack cards on smaller screens */
+@media (max-width: 1200px) {
+  .destination-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .destination-grid { grid-template-columns: 1fr; }
+}
+
+/* --- CARD STYLING --- */
+.destination-card {
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  text-align: left;
+  /* Soft, deep shadow to lift card */
+  box-shadow: 0 20px 45px rgba(0,0,0,0.06); 
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.destination-card:hover {
+  transform: translateY(-8px);
+}
+
+/* Image Wrapper & Badge */
+.card-image-wrapper {
+  position: relative;
+  height: 220px;
+}
+
+.card-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The Country Badge (GB | UK) */
+.country-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #0a2540;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.country-badge b {
+  font-weight: 900;
+  color: #64748b; /* Lighter grey for the code (GB) */
+}
+
+/* --- CARD CONTENT --- */
+.card-body {
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title Row with Red Dot */
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.card-title-row h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0a2540;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: #ff5a3c;
+  border-radius: 50%;
+}
+
+/* Data Rows (Expenses/Tuition) */
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fbfe; /* Very light blue-grey bg */
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.data-row .label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-row .value {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0a2540;
+}
+
+/* Footer Section */
+.card-footer {
+  margin-top: auto; /* Pushes footer to bottom */
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* The Arrow Button */
+.btn-arrow {
+  width: 32px;
+  height: 32px;
+  background: #194f68; /* Dark Navy Button */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  transition: background 0.2s ease;
+}
+
+.btn-arrow:hover {
+  background: #ff5a3c; /* Hover to Orange */
 }
