@@ -29,42 +29,6 @@
     <!-- ABOUT US -->
     <a href="#">ABOUT US</a>
 
-    <!-- STUDY ABROAD (MEGA MENU) -->
-    <div class="nav-item has-mega">
-        <a href="#">
-            STUDY ABROAD
-            <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-        </a>
-
-        <div class="mega-menu">
-            <div class="mega-col">
-                <a href="#">United Kingdom</a>
-                <a href="#">United States</a>
-                <a href="#">Europe Hub</a>
-                <a href="#">Finland</a>
-                <a href="#">Malaysia</a>
-            </div>
-            <div class="mega-col">
-                <a href="#">Australia</a>
-                <a href="#">Germany</a>
-                <a href="#">New Zealand</a>
-                <a href="#">Sweden</a>
-                <a href="#">Turkey</a>
-            </div>
-            <div class="mega-col">
-                <a href="#">Canada</a>
-                <a href="#">Italy</a>
-                <a href="#">Ireland</a>
-                <a href="#">Dubai</a>
-                <a href="#">Cyprus</a>
-            </div>
-        </div>
-    </div>
-
     <!-- EXAMS (WIDE DROPDOWN) -->
     <div class="nav-item has-dropdown">
         <a href="#">
@@ -88,9 +52,6 @@
             <a href="#">Exam Comparison</a>
         </div>
     </div>
-
-    <!-- LEARNING HUB -->
-    <a href="#">LEARNING HUB</a>
 
     <!-- BLOGS -->
     <a href="#">BLOGS</a>
