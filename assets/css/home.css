@@ -925,8 +925,7 @@ body {
   flex-direction: column;
   box-shadow: 0 4px 20px rgba(15, 62, 86, 0.06);
   transition: transform .35s ease, box-shadow .35s ease;
-  /* Ensure card has a minimum height to match aspect ratio */
-  min-height: 480px;
+  min-height: 560px;
 }
 
 .destination-card:hover {
@@ -939,7 +938,7 @@ body {
 ========================= */
 .card-image-wrapper {
   position: relative;
-  height: 220px; /* Slight height increase to match photo */
+  height: 280px;
 }
 
 .card-image-wrapper img {
@@ -974,7 +973,7 @@ body {
    CARD BODY
 ========================= */
 .card-body {
-  padding: 26px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -984,55 +983,54 @@ body {
 .card-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Aligns dot with center of text */
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  position: relative;
 }
 
 .card-title-row h3 {
-  /* UPDATED: Increased from 17px to match the image */
-  font-size: 26px; 
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   text-transform: uppercase;
   color: #0a2540;
-  line-height: 1;
+  line-height: 1.2;
+  flex: 1;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   background: #ff5a3c;
   border-radius: 50%;
-  flex-shrink: 0; /* Prevents dot from squishing */
-  margin-left: 10px;
-  margin-top: -4px; /* Slight visual alignment fix */
+  flex-shrink: 0;
+  margin-left: 12px;
+  margin-top: 6px;
 }
 
 /* =========================
    DATA ROWS
 ========================= */
 .data-row {
-  background: #f8fbfe;
-  border-radius: 10px;
-  padding: 16px 20px; /* More breathing room */
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
 }
 
 .data-row .label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #94a3b8;
 }
 
 .data-row .value {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 800;
   color: #0a2540;
+  letter-spacing: -0.01em;
 }
 
 /* =========================
@@ -1040,7 +1038,7 @@ body {
 ========================= */
 .card-footer {
   margin-top: auto;
-  padding-top: 22px;
+  padding-top: 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1048,8 +1046,8 @@ body {
 
 .footer-label {
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #94a3b8;
 }
