@@ -765,53 +765,36 @@ body {
 
 /* --- Testimonials End --- */
 
-/* --- SECTION LAYOUT --- */
-.destinations {
-  padding: 120px 20px;
-  background: #fff;
-  text-align: center;
+/* =========================
+   SECTION CANVAS
+========================= */
+
+/* =========================
+   RESET & BASICS
+========================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Header Styling */
-.header-line {
-  width: 40px;
-  height: 4px;
-  background: #ff5a3c;
-  margin: 0 auto 20px;
-  border-radius: 2px;
+body {
+  background-color: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 40px;
 }
 
-.section-title {
-  font-size: 42px;
-  font-weight: 900; /* Super bold */
-  color: #0a2540;
-  margin: 0 0 16px;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-}
-
-.section-title span {
-  color: #ff5a3c; /* Brand Orange */
-}
-
-.section-subtitle {
-  color: #7a92a5;
-  font-size: 16px;
-  font-style: italic;
-  font-weight: 500;
-  margin-bottom: 60px;
-}
-
-/* --- GRID LAYOUT --- */
+/* =========================
+   GRID LAYOUT
+========================= */
 .destination-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 Columns */
-  gap: 32px;
-  max-width: 1400px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 34px;
+  max-width: 1380px;
   margin: 0 auto;
 }
 
-/* Responsive: Stack cards on smaller screens */
 @media (max-width: 1200px) {
   .destination-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -819,27 +802,32 @@ body {
   .destination-grid { grid-template-columns: 1fr; }
 }
 
-/* --- CARD STYLING --- */
+/* =========================
+   CARD MAIN
+========================= */
 .destination-card {
-  background: #fff;
-  border-radius: 24px;
+  background: #ffffff;
+  border-radius: 28px;
   overflow: hidden;
-  text-align: left;
-  /* Soft, deep shadow to lift card */
-  box-shadow: 0 20px 45px rgba(0,0,0,0.06); 
-  transition: transform 0.3s ease;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 18px 50px rgba(15, 62, 86, 0.10);
+  transition: transform .35s ease, box-shadow .35s ease;
+  /* Ensure card has a minimum height to match aspect ratio */
+  min-height: 480px; 
 }
 
 .destination-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-10px);
+  box-shadow: 0 32px 70px rgba(15, 62, 86, 0.16);
 }
 
-/* Image Wrapper & Badge */
+/* =========================
+   IMAGE SECTION
+========================= */
 .card-image-wrapper {
   position: relative;
-  height: 220px;
+  height: 220px; /* Slight height increase to match photo */
 }
 
 .card-image-wrapper img {
@@ -848,118 +836,135 @@ body {
   object-fit: cover;
 }
 
-/* The Country Badge (GB | UK) */
+/* =========================
+   BADGE
+========================= */
 .country-badge {
   position: absolute;
   top: 20px;
   left: 20px;
-  background: #fff;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 11px;
-  color: #0a2540;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-transform: uppercase;
+  background: #ffffff;
+  padding: 8px 16px; /* Slightly larger padding */
+  border-radius: 12px; /* Slightly less rounded than 999px to match image shape */
+  font-size: 13px;
+  font-weight: 800;
   letter-spacing: 0.05em;
   display: flex;
   gap: 8px;
   align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-.country-badge b {
-  font-weight: 900;
-  color: #64748b; /* Lighter grey for the code (GB) */
+.badge-code {
+  color: #557b97; /* The Teal color for "GB" */
 }
 
-/* --- CARD CONTENT --- */
+.badge-name {
+  color: #0a2540; /* Dark color for "UK" */
+  text-transform: uppercase;
+}
+
+/* =========================
+   CARD BODY
+========================= */
 .card-body {
-  padding: 24px;
-  flex: 1;
+  padding: 26px;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
-/* Title Row with Red Dot */
+/* Title + Status */
 .card-title-row {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: center; /* Aligns dot with center of text */
   margin-bottom: 24px;
 }
 
 .card-title-row h3 {
-  font-size: 18px;
-  font-weight: 800;
-  color: #0a2540;
-  margin: 0;
+  /* UPDATED: Increased from 17px to match the image */
+  font-size: 26px; 
+  font-weight: 900;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
-  letter-spacing: -0.01em;
+  color: #0a2540;
+  line-height: 1;
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: #ff5a3c;
   border-radius: 50%;
+  flex-shrink: 0; /* Prevents dot from squishing */
+  margin-left: 10px;
+  margin-top: -4px; /* Slight visual alignment fix */
 }
 
-/* Data Rows (Expenses/Tuition) */
+/* =========================
+   DATA ROWS
+========================= */
 .data-row {
+  background: #f8fbfe;
+  border-radius: 10px;
+  padding: 16px 20px; /* More breathing room */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8fbfe; /* Very light blue-grey bg */
-  padding: 14px 16px;
-  border-radius: 8px;
   margin-bottom: 12px;
 }
 
 .data-row .label {
-  font-size: 9px;
-  font-weight: 700;
-  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: #94a3b8;
 }
 
 .data-row .value {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: #0a2540;
 }
 
-/* Footer Section */
+/* =========================
+   FOOTER
+========================= */
 .card-footer {
-  margin-top: auto; /* Pushes footer to bottom */
-  padding-top: 24px;
+  margin-top: auto;
+  padding-top: 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .footer-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  color: #94a3b8;
 }
 
-/* The Arrow Button */
+/* Button */
 .btn-arrow {
-  width: 32px;
-  height: 32px;
-  background: #194f68; /* Dark Navy Button */
+  width: 38px; /* Slightly larger to match image */
+  height: 38px;
   border-radius: 50%;
+  background: #0f3e56;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  text-decoration: none;
   font-size: 16px;
-  transition: background 0.2s ease;
+  transition: background .25s ease, transform .2s ease;
 }
 
-.btn-arrow:hover {
-  background: #ff5a3c; /* Hover to Orange */
+.destination-card:hover .btn-arrow {
+  background: #ff5a3c;
+  transform: rotate(-45deg); /* Optional: Adds a cool effect on hover */
 }

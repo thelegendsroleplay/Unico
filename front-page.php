@@ -207,75 +207,454 @@
   <div class="header-center">
     <div class="header-line"></div>
     <h2 class="section-title">STUDY ABROAD <span>DESTINATIONS</span></h2>
-    <p class="section-subtitle">Authoritative intelligence for the world's premier academic hubs.</p>
+    <p class="section-subtitle">
+      Authoritative intelligence for the world's premier academic hubs.
+    </p>
   </div>
 
   <div class="destination-grid">
-    
-    <div class="destination-card">
-      <div class="card-image-wrapper">
-        <img src="path-to-uk-image.jpg" alt="United Kingdom">
-        <div class="country-badge">
-          <b>GB</b> <span>UK</span>
-        </div>
-      </div>
-      
-      <div class="card-body">
-        <div class="card-title-row">
-          <h3>THE UNITED KINGDOM</h3>
-          <span class="status-dot"></span>
-        </div>
 
-        <div class="data-row">
-          <span class="label">LIVING EXPENSES*</span>
-          <span class="value">£10,539 - £13,761</span>
-        </div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/uk.jpg" alt="United Kingdom">
+    <div class="country-badge"><b>GB</b> UK</div>
+  </div>
 
-        <div class="data-row">
-          <span class="label">TUITION FEE*</span>
-          <span class="value">£10,000 - £18,000</span>
-        </div>
-
-        <div class="card-footer">
-          <span class="footer-label">ACCESS NODE</span>
-          <a href="#" class="btn-arrow">→</a>
-        </div>
-      </div>
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>The United Kingdom</h3>
+      <span class="status-dot"></span>
     </div>
 
-    <div class="destination-card">
-      <div class="card-image-wrapper">
-        <img src="path-to-aus-image.jpg" alt="Australia">
-        <div class="country-badge">
-          <b>AU</b> <span>AUSTRALIA</span>
-        </div>
-      </div>
-      
-      <div class="card-body">
-        <div class="card-title-row">
-          <h3>AUSTRALIA</h3>
-          <span class="status-dot"></span>
-        </div>
-
-        <div class="data-row">
-          <span class="label">LIVING EXPENSES*</span>
-          <span class="value">AUD 21,000</span>
-        </div>
-
-        <div class="data-row">
-          <span class="label">TUITION FEE*</span>
-          <span class="value">AUD 30,000</span>
-        </div>
-
-        <div class="card-footer">
-          <span class="footer-label">ACCESS NODE</span>
-          <a href="#" class="btn-arrow">→</a>
-        </div>
-      </div>
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">£10,539 – £13,761</span>
     </div>
 
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">£10,000 – £18,000</span>
     </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/australia.jpg" alt="Australia">
+    <div class="country-badge"><b>AU</b> AUSTRALIA</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Australia</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">AUD 21,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">AUD 30,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+  <img src="<?php echo get_template_directory_uri(); ?>/assets/img/usa.jpg" alt="USA">
+    <div class="country-badge"><b>US</b> USA</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>USA</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">USD $2,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">USD $25,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+  <img src="<?php echo get_template_directory_uri(); ?>/assets/img/canada.jpg" alt="Canada">
+    <div class="country-badge"><b>CA</b> CANADA</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Canada</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">CAD $1,800</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">CAD $20,635</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/new-zealand.jpg" alt="New Zealand">
+    <div class="country-badge"><b>NZ</b> NEW-ZEALAND</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>New Zealand</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">NZD $1,500</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">NZD $20,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/ireland.jpg" alt="Ireland">
+    <div class="country-badge"><b>IE</b> IRELAND</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Ireland</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">€1,200</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">€12,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/germany.jpg" alt="Germany">
+    <div class="country-badge"><b>DE</b> GERMANY</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Germany</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">€950</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">€11,208</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/sweden.jpg" alt="Sweden">
+    <div class="country-badge"><b>SE</b> SWEDEN</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Sweden</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">SEK 11,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">SEK 100,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/finland.jpg" alt="Finland">
+    <div class="country-badge"><b>FI</b> FINLAND</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Finland</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">€900</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">€10,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/cyprus.png" alt="Cyprus">
+    <div class="country-badge"><b>CY</b> CYPRUS</div>
+  </div>
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Cyprus</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">€800</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">€8,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/dubai.jpg" alt="Dubai">
+    <div class="country-badge"><b>AE</b> DUBAI</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Dubai</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">AED $4,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">AED $30,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/malaysia.webp" alt="Malaysia">
+    <div class="country-badge"><b>MY</b> MALAYSIA</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Malaysia</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">MYR 2,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">MYR 15,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/turkey.jpg" alt="Turkey">
+    <div class="country-badge"><b>TR</b> TURKEY</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Turkey</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">TRY 10,000</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">VARIES</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/europe.jpg" alt="Europe">
+    <div class="country-badge"><b>EU</b> EUROPE</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Europe</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">VARIES</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">VARIES</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+<!-- CARD -->
+<div class="destination-card">
+  <div class="card-image-wrapper">
+<img src="<?php echo get_template_directory_uri(); ?>/assets/img/Italy.webp" alt="Italy">
+    <div class="country-badge"><b>IT</b> ITALY</div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-title-row">
+      <h3>Italy</h3>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Living Expenses*</span>
+      <span class="value">€800</span>
+    </div>
+
+    <div class="data-row">
+      <span class="label">Tuition Fee*</span>
+      <span class="value">€7,000</span>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">Access Node</span>
+      <a class="btn-arrow">→</a>
+    </div>
+  </div>
+</div>
+
+
+    <!-- DUPLICATE CARD FOR OTHER COUNTRIES -->
+
+  </div>
 </section>
+
 
 </main>
 
