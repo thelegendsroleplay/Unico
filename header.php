@@ -79,18 +79,38 @@
 
 
         <!-- RIGHT -->
-        <div class="nav-right">
-            <button class="search-btn" aria-label="Search">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-         stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-</button>
+<div class="nav-right">
+    <button class="search-btn" aria-label="Search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+    </button>
 
-            <a class="signin" href="#">SIGN IN</a>
-            <a class="signup" href="#">SIGN UP</a>
-        </div>
+    <?php if ( is_user_logged_in() ) : ?>
+
+        <a class="signin" href="<?php echo esc_url( home_url('/dashboard') ); ?>">
+            DASHBOARD
+        </a>
+
+        <a class="signup" href="<?php echo esc_url( wp_logout_url( home_url('/') ) ); ?>">
+            LOG OUT
+        </a>
+
+    <?php else : ?>
+
+        <a class="signin" href="<?php echo esc_url( home_url('/login') ); ?>">
+            SIGN IN
+        </a>
+
+        <a class="signup" href="<?php echo esc_url( home_url('/register') ); ?>">
+            SIGN UP
+        </a>
+
+    <?php endif; ?>
+</div>
+
 
     </div>
 </header>

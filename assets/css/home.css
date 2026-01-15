@@ -972,12 +972,37 @@ footer {
 /* =========================
    GRID LAYOUT
 ========================= */
+/* =========================
+   GRID LAYOUT (Updated for Full Width)
+========================= */
 .destination-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 34px;
-  max-width: 1380px;
-  margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 34px;
+    
+    /* CHANGED: Allow grid to take full width */
+    max-width: 100%; 
+    width: 100%;
+    
+    /* CHANGED: Added padding so cards don't touch the browser edges */
+    padding: 0 40px; 
+    
+    margin: 0 auto;
+}
+
+/* Ensure responsiveness keeps working */
+@media (max-width: 1200px) {
+    .destination-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        padding: 0 20px; /* Reduce padding on smaller screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .destination-grid { 
+        grid-template-columns: 1fr; 
+        padding: 0; /* Remove extra grid padding on mobile as parent handles it */
+    }
 }
 
 @media (max-width: 1200px) {
