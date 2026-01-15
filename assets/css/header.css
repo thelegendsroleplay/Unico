@@ -1,81 +1,128 @@
+/* HEADER WRAPPER */
 .site-header {
-    width: 100%;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    font-family: system-ui, sans-serif;
+    position: sticky;
+    top: 20px;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
 }
 
-.header-container {
+/* PILL CONTAINER */
+.nav-pill {
+    width: calc(100% - 80px);
     max-width: 1200px;
-    margin: auto;
-    padding: 14px 20px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    padding: 10px 24px;
+
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border: 1px solid #f1f5f9;
+    border-radius: 1.5rem;
+
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Logo */
+/* LOGO */
 .logo {
     display: flex;
     align-items: center;
     gap: 10px;
     font-weight: 700;
-    font-size: 20px;
 }
 
 .logo-icon {
-    background: #0a2a66;
+    background: #194f68;
     color: #fff;
     padding: 6px 10px;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 .logo-text {
-    color: #0a2a66;
+    color: #194f68;
 }
 
-/* Nav */
-.main-nav ul {
-    list-style: none;
+/* CENTER NAV */
+.nav-center {
     display: flex;
-    gap: 26px;
-    margin: 0;
-    padding: 0;
+    gap: 22px;
 }
 
-.main-nav a {
+.nav-center a {
     text-decoration: none;
-    color: #0a2a66;
-    font-weight: 500;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #194f68;
 }
 
-/* Right Actions */
-.header-actions {
+/* RIGHT */
+.nav-right {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
 }
 
 .search-btn {
     border: none;
-    background: #f5f7fb;
+    background: #f8fafc;
     padding: 8px 10px;
-    border-radius: 50%;
+    border-radius: 999px;
     cursor: pointer;
 }
 
-.sign-in {
-    color: #0a2a66;
+.signin {
+    font-weight: 600;
+    font-size: 13px;
+    color: #194f68;
     text-decoration: none;
-    font-weight: 500;
 }
 
-.sign-up {
+.signup {
     background: #ff5a3c;
     color: #fff;
     padding: 8px 16px;
-    border-radius: 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
     text-decoration: none;
+}
+.nav-center a {
+    text-decoration: none;
+    font-size: 13px;
     font-weight: 600;
+    color: #194f68;
+    transition: color 0.3s ease;
+}
+
+.nav-center a:hover {
+    color: #ff5a3c;
+}
+.signin {
+    font-weight: 600;
+    font-size: 13px;
+    color: #194f68;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.signin:hover {
+    color: #ff5a3c;
+}
+.nav-center a {
+    font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
+    letter-spacing: 0.02em;
+}
+.logo-img {
+    height: 32px;
+    width: auto;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logo a:hover .logo-img {
+    transform: scale(1.03);
 }

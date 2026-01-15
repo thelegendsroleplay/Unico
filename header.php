@@ -5,40 +5,39 @@
     <?php wp_head(); ?>
 </head>
 
-<body <?php body_class(); ?>>
+<body <?php body_class('font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui'); ?>>
 
 <header class="site-header">
-    <div class="header-container">
+    <div class="nav-pill">
 
-        <!-- Logo -->
-        <div class="logo">
-            <span class="logo-icon">≡</span>
-            <span class="logo-text">UNICOU</span>
-        </div>
+        <!-- LEFT -->
+    <div class="logo">
+        <a href="<?php echo esc_url(home_url('/')); ?>">
+            <img 
+            src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.svg"
+            alt="<?php bloginfo('name'); ?>"
+            class="logo-img"
+            >
+        </a>
+    </div>
 
-        <!-- Navigation -->
-        <nav class="main-nav">
-            <ul>
-                <li><a href="#">About Us</a></li>
-                <li class="has-dropdown">
-                    <a href="#">Study Abroad</a>
-                </li>
-                <li class="has-dropdown">
-                    <a href="#">Exams</a>
-                </li>
-                <li><a href="#">Learning Hub</a></li>
-                <li><a href="#">Blogs</a></li>
-                <li class="has-dropdown">
-                    <a href="#">Connect</a>
-                </li>
-            </ul>
+
+
+        <!-- CENTER -->
+        <nav class="nav-center">
+            <a href="#">ABOUT US</a>
+            <a href="#">STUDY ABROAD</a>
+            <a href="#">EXAMS</a>
+            <a href="#">LEARNING HUB</a>
+            <a href="#">BLOGS</a>
+            <a href="#">CONNECT</a>
         </nav>
 
-        <!-- Right Section -->
-        <div class="header-actions">
+        <!-- RIGHT -->
+        <div class="nav-right">
             <button class="search-btn">🔍</button>
-            <a href="#" class="sign-in">Sign In</a>
-            <a href="#" class="sign-up">Sign Up</a>
+            <a class="signin" href="#">SIGN IN</a>
+            <a class="signup" href="#">SIGN UP</a>
         </div>
 
     </div>

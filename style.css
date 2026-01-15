@@ -7,3 +7,6 @@ Description: Ultra lightweight blank starter theme
 Version: 1.0
 Text Domain: unico-blank
 */
+body {
+    font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
+}

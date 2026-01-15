@@ -1,3 +1,3 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("Header JS loaded");
+    console.log("Pill header loaded");
 });
