@@ -41,7 +41,8 @@ class Unico_Init {
             'class-security.php',
             'class-voucher-system.php',
             'class-wallet.php',
-            'class-pricing.php'
+            'class-pricing.php',
+            'class-application-form.php'
         ];
 
         foreach ($classes as $class) {
@@ -80,6 +81,7 @@ class Unico_Init {
         $voucher_system = Unico_Voucher_System::get_instance();
         $wallet = Unico_Wallet::get_instance();
         $pricing = Unico_Pricing::get_instance();
+        $application_form = Unico_Application_Form::get_instance();
 
         // Check if database needs to be created
         $db_version = get_option('unico_db_version');
