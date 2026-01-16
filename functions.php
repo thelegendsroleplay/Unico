@@ -1,7 +1,13 @@
 <?php
 /**
  * Theme Functions
+ * Unico Voucher Booking System
  */
+
+/* --------------------------------------------------
+ * LOAD VOUCHER BOOKING SYSTEM
+ * -------------------------------------------------- */
+require_once get_template_directory() . '/includes/class-init.php';
 
 /* --------------------------------------------------
  * ASSETS
@@ -44,6 +50,16 @@ add_action('wp_enqueue_scripts', function () {
         '1.0',
         true
     );
+
+    // Dashboard styles
+    if (is_page(['customer-dashboard', 'agent-dashboard', 'reseller-dashboard', 'support-dashboard', 'finance-dashboard', 'management-dashboard'])) {
+        wp_enqueue_style(
+            'unico-dashboard',
+            get_template_directory_uri() . '/assets/css/dashboard.css',
+            [],
+            '1.0'
+        );
+    }
 });
 
 
@@ -77,7 +93,9 @@ add_action('init', function () {
         exit;
     }
 
-    wp_redirect(home_url('/dashboard'));
+    // Redirect to role-based dashboard
+    $dashboard_url = Unico_User_Roles::get_dashboard_url($user->ID);
+    wp_redirect($dashboard_url);
     exit;
 });
 
@@ -100,24 +118,47 @@ add_action('init', function () {
     }
 
     $email = sanitize_email($_POST['email']);
+    $full_name = isset($_POST['full_name']) ? sanitize_text_field($_POST['full_name']) : '';
+    $user_type = isset($_POST['user_type']) ? sanitize_text_field($_POST['user_type']) : 'unico_customer';
 
     if ( ! is_email($email) || email_exists($email) ) {
-        wp_redirect(home_url('/register?register=failed'));
+        wp_redirect(home_url('/register?register=failed&error=email_exists'));
         exit;
     }
 
-    $password = wp_generate_password(12, true);
+    // Create user with provided password or generate one
+    $password = !empty($_POST['password']) ? $_POST['password'] : wp_generate_password(12, true);
 
     $user_id = wp_create_user($email, $password, $email);
 
     if (is_wp_error($user_id)) {
-        wp_redirect(home_url('/register?register=failed'));
+        wp_redirect(home_url('/register?register=failed&error=creation_failed'));
         exit;
     }
 
-    wp_new_user_notification($user_id, null, 'both');
+    // Set user meta
+    if (!empty($full_name)) {
+        $name_parts = explode(' ', $full_name, 2);
+        wp_update_user([
+            'ID' => $user_id,
+            'first_name' => $name_parts[0],
+            'last_name' => isset($name_parts[1]) ? $name_parts[1] : '',
+            'display_name' => $full_name
+        ]);
+    }
 
-    wp_redirect(home_url('/login?registered=true'));
+    // Assign role
+    $user = new WP_User($user_id);
+    $user->set_role($user_type);
+
+    // Additional meta for phone if provided
+    if (isset($_POST['phone'])) {
+        update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['phone']));
+    }
+
+    // The Unico_Security class will handle email verification automatically via user_register hook
+
+    wp_redirect(home_url('/login?registered=true&verify_email=1'));
     exit;
 });
 
