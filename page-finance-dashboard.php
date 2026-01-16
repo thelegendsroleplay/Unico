@@ -59,34 +59,27 @@ $total_wallet_balance = $wpdb->get_var("SELECT SUM(balance) FROM $wallets_table"
 get_header();
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Finance Dashboard</title>
-    <?php wp_head(); ?>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8f9fa; }
-        .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-        .dashboard-header { background: linear-gradient(135deg, #28a745 0%, #20893a 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
-        .header-title h1 { font-size: 28px; margin-bottom: 5px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .stat-label { font-size: 14px; color: #6c757d; margin-bottom: 10px; }
-        .stat-value { font-size: 32px; font-weight: 700; color: #28a745; }
-        .section-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
-        .section-header { background: #28a745; color: white; padding: 20px 25px; font-size: 18px; font-weight: 600; }
-        .section-body { padding: 25px; }
-        .date-filter { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .date-filter input { padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; }
-        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
-        .btn-primary { background: #28a745; color: white; }
-        .orders-table { width: 100%; border-collapse: collapse; }
-        .orders-table th { text-align: left; padding: 12px; background: #f8f9fa; font-size: 14px; }
-        .orders-table td { padding: 15px 12px; border-bottom: 1px solid #e9ecef; }
-    </style>
-</head>
-<body>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa !important; }
+    .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+    .dashboard-header { background: linear-gradient(135deg, #28a745 0%, #20893a 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+    .header-title h1 { font-size: 28px; margin-bottom: 5px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .stat-label { font-size: 14px; color: #6c757d; margin-bottom: 10px; }
+    .stat-value { font-size: 32px; font-weight: 700; color: #28a745; }
+    .section-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+    .section-header { background: #28a745; color: white; padding: 20px 25px; font-size: 18px; font-weight: 600; }
+    .section-body { padding: 25px; }
+    .date-filter { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .date-filter input { padding: 10px; border: 2px solid #e9ecef; border-radius: 8px; }
+    .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+    .btn-primary { background: #28a745; color: white; }
+    .orders-table { width: 100%; border-collapse: collapse; }
+    .orders-table th { text-align: left; padding: 12px; background: #f8f9fa; font-size: 14px; }
+    .orders-table td { padding: 15px 12px; border-bottom: 1px solid #e9ecef; }
+</style>
 
 <div class="dashboard-container">
     <div class="dashboard-header">
@@ -166,6 +159,4 @@ get_header();
     </div>
 </div>
 
-<?php wp_footer(); ?>
-</body>
-</html>
+<?php get_footer(); ?>
