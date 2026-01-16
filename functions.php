@@ -93,9 +93,13 @@ add_action('init', function () {
         exit;
     }
 
-    // Redirect to role-based dashboard
-    $dashboard_url = Unico_User_Roles::get_dashboard_url($user->ID);
-    wp_redirect($dashboard_url);
+    // Administrators go to wp-admin, others to role-based dashboards
+    if (in_array('administrator', $user->roles)) {
+        wp_redirect(admin_url());
+    } else {
+        $dashboard_url = Unico_User_Roles::get_dashboard_url($user->ID);
+        wp_redirect($dashboard_url);
+    }
     exit;
 });
 
@@ -166,9 +170,33 @@ add_action('init', function () {
 /* --------------------------------------------------
  * FORCE CUSTOM LOGIN PAGE (NO LOOPS)
  * -------------------------------------------------- */
-// Tell WordPress to use custom login page
+// Tell WordPress to use custom login page (but allow wp-login.php for admins)
 add_filter('login_url', function ($login_url, $redirect, $force_reauth) {
+    // If redirect is to admin area, keep default wp-login.php
+    if ($redirect && strpos($redirect, 'wp-admin') !== false) {
+        return $login_url;
+    }
+    // Otherwise use custom login page
     return home_url('/login');
+}, 10, 3);
+
+
+/* --------------------------------------------------
+ * LOGIN REDIRECT (for wp-login.php)
+ * -------------------------------------------------- */
+add_filter('login_redirect', function ($redirect_to, $requested_redirect_to, $user) {
+    // If there's an error or no user, return default
+    if (!isset($user->ID) || is_wp_error($user)) {
+        return $redirect_to;
+    }
+
+    // Administrators go to wp-admin
+    if (in_array('administrator', $user->roles)) {
+        return admin_url();
+    }
+
+    // Other users go to their role-based dashboard
+    return Unico_User_Roles::get_dashboard_url($user->ID);
 }, 10, 3);
 
 
