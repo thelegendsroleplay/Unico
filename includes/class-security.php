@@ -23,6 +23,7 @@ class Unico_Security {
         add_action('user_register', [$this, 'on_user_register'], 10, 1);
         add_action('wp_login', [$this, 'on_user_login'], 10, 2);
         add_action('wp_login_failed', [$this, 'on_wp_login_failed'], 10, 1);
+        add_filter('wp_authenticate_user', [$this, 'enforce_soft_lock'], 5, 2);
     }
 
     /**
@@ -383,6 +384,7 @@ class Unico_Security {
         ]);
 
         delete_user_meta($user->ID, 'failed_login_attempts');
+        delete_user_meta($user->ID, 'unico_soft_lock_until');
     }
 
     public function on_wp_login_failed($username) {
@@ -393,9 +395,23 @@ class Unico_Security {
         }
         if ($user) {
             $attempts = (int) get_user_meta($user->ID, 'failed_login_attempts', true);
-            update_user_meta($user->ID, 'failed_login_attempts', $attempts + 1);
+            $attempts++;
+            update_user_meta($user->ID, 'failed_login_attempts', $attempts);
+            if (defined('UNICO_SOFT_LOCK_ENABLED') && UNICO_SOFT_LOCK_ENABLED) {
+                $threshold = defined('UNICO_SOFT_LOCK_THRESHOLD') ? (int) UNICO_SOFT_LOCK_THRESHOLD : 5;
+                $duration = defined('UNICO_SOFT_LOCK_MINUTES') ? (int) UNICO_SOFT_LOCK_MINUTES : 15;
+                if ($attempts >= $threshold && !$this->is_soft_locked($user->ID)) {
+                    $until = current_time('timestamp') + ($duration * 60);
+                    update_user_meta($user->ID, 'unico_soft_lock_until', $until);
+                    $this->log_activity($user->ID, 'login_soft_locked', 'User soft locked after failed logins', [
+                        'attempts' => $attempts,
+                        'lock_until' => $until
+                    ]);
+                }
+            }
             $this->log_activity($user->ID, 'login_failed', 'Failed login attempt', [
-                'username' => $username
+                'username' => $username,
+                'attempts' => $attempts
             ]);
         } else {
             $this->log_activity(0, 'login_failed', 'Failed login attempt', [
@@ -404,9 +420,33 @@ class Unico_Security {
         }
     }
 
-    /**
-     * Block high-risk orders
-     */
+    public function is_soft_locked($user_id) {
+        $until = (int) get_user_meta($user_id, 'unico_soft_lock_until', true);
+        if (!$until) {
+            return false;
+        }
+        $now = current_time('timestamp');
+        if ($until <= $now) {
+            delete_user_meta($user_id, 'unico_soft_lock_until');
+            return false;
+        }
+        return true;
+    }
+
+    public function enforce_soft_lock($user, $password) {
+        if (!$user instanceof WP_User) {
+            return $user;
+        }
+        if (defined('UNICO_SOFT_LOCK_ENABLED') && !UNICO_SOFT_LOCK_ENABLED) {
+            return $user;
+        }
+        if ($this->is_soft_locked($user->ID)) {
+            $message = 'Your account is temporarily locked due to multiple failed login attempts. Please contact support.';
+            return new WP_Error('unico_soft_locked', $message);
+        }
+        return $user;
+    }
+
     public function should_block_order($user_id) {
         $risk_data = $this->calculate_risk_score($user_id);
 

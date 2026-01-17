@@ -24,6 +24,16 @@ if (!defined('UNICO_DEV_MODE')) {
     }
 }
 
+if (!defined('UNICO_SOFT_LOCK_ENABLED')) {
+    define('UNICO_SOFT_LOCK_ENABLED', true);
+}
+if (!defined('UNICO_SOFT_LOCK_THRESHOLD')) {
+    define('UNICO_SOFT_LOCK_THRESHOLD', 5);
+}
+if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
+    define('UNICO_SOFT_LOCK_MINUTES', 15);
+}
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
@@ -1110,7 +1120,12 @@ add_action('init', function () {
     $user = wp_signon($creds, false);
 
     if (is_wp_error($user)) {
-        wp_redirect(home_url('/login?login=failed'));
+        $code = $user->get_error_code();
+        if ($code === 'unico_soft_locked') {
+            wp_redirect(home_url('/support?login=locked'));
+        } else {
+            wp_redirect(home_url('/login?login=failed'));
+        }
         exit;
     }
 
