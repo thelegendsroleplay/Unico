@@ -7,6 +7,17 @@ Description: Ultra lightweight blank starter theme
 Version: 1.0
 Text Domain: unico-blank
 */
+
+:root {
+    --unicou-dark-azure: #194f68;
+    --unicou-vivid-red: #e95134;
+    --unicou-charcoal: #4a4a4a;
+    --unicou-background: #ffffff;
+    --unicou-grey: #9ca3af;
+}
+
 body {
     font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
+    color: var(--unicou-charcoal);
+    background-color: var(--unicou-background);
 }

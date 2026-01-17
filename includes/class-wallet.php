@@ -67,6 +67,11 @@ class Unico_Wallet {
             return new WP_Error('invalid_amount', 'Amount must be greater than zero.');
         }
 
+        $user = get_userdata($user_id);
+        if ($user && in_array('unico_reseller', (array) $user->roles, true)) {
+            return new WP_Error('reseller_prepaid_only', 'Resellers are prepaid-only and cannot receive wallet credits.');
+        }
+
         $wallet = $this->get_wallet($user_id);
         $balance_before = floatval($wallet->balance);
         $balance_after = $balance_before + floatval($amount);
@@ -115,6 +120,11 @@ class Unico_Wallet {
 
         if ($amount <= 0) {
             return new WP_Error('invalid_amount', 'Amount must be greater than zero.');
+        }
+
+        $user = get_userdata($user_id);
+        if ($user && in_array('unico_reseller', (array) $user->roles, true)) {
+            return new WP_Error('reseller_prepaid_only', 'Resellers are prepaid-only and cannot use wallet payments.');
         }
 
         $wallet = $this->get_wallet($user_id);
@@ -203,6 +213,9 @@ class Unico_Wallet {
         );
 
         if (is_wp_error($result)) {
+            if ($result->get_error_code() === 'reseller_prepaid_only') {
+                $order->add_order_note('Refund not applied to wallet (Reseller prepaid-only). Please process refund via original payment gateway.');
+            }
             return $result;
         }
 

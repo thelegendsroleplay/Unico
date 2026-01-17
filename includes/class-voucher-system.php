@@ -20,9 +20,36 @@ class Unico_Voucher_System {
     }
 
     public function __construct() {
-        // Hook into WooCommerce order completion
-        add_action('woocommerce_order_status_completed', [$this, 'auto_deliver_vouchers'], 10, 1);
-        add_action('woocommerce_payment_complete', [$this, 'auto_deliver_vouchers'], 10, 1);
+        add_action('woocommerce_check_cart_items', [$this, 'enforce_sales_lock']);
+    }
+
+    public static function get_system_flags() {
+        $flags = get_option('unico_system_flags', []);
+        if (!is_array($flags)) {
+            $flags = [];
+        }
+        return $flags;
+    }
+
+    public static function is_sales_locked() {
+        $flags = self::get_system_flags();
+        return !empty($flags['sales_locked']);
+    }
+
+    public static function set_sales_lock($locked, $user_id, $reason = '') {
+        $flags = self::get_system_flags();
+        $locked = $locked ? 1 : 0;
+        $flags['sales_locked'] = $locked;
+        $flags['sales_locked_by'] = $user_id;
+        $flags['sales_locked_at'] = current_time('mysql');
+        $flags['sales_locked_reason'] = $reason;
+        update_option('unico_system_flags', $flags);
+        if (class_exists('Unico_Security')) {
+            $security = Unico_Security::get_instance();
+            $type = $locked ? 'sales_locked' : 'sales_unlocked';
+            $description = $locked ? 'Voucher sales locked' : 'Voucher sales unlocked';
+            $security->log_activity($user_id, $type, $description, ['reason' => $reason]);
+        }
     }
 
     /**
@@ -51,19 +78,28 @@ class Unico_Voucher_System {
             return new WP_Error('missing_data', 'Voucher code and exam name are required.');
         }
 
-        // Check for duplicate voucher code
+        $security = Unico_Security::get_instance();
+        
+        // Hash for duplicate checking
+        $code_hash = hash('sha256', $data['voucher_code']);
+
+        // Check for duplicate voucher code using hash
         $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM $table WHERE voucher_code = %s",
-            $data['voucher_code']
+            "SELECT id FROM $table WHERE voucher_code_hash = %s",
+            $code_hash
         ));
 
         if ($exists) {
             return new WP_Error('duplicate_voucher', 'This voucher code already exists.');
         }
 
+        // Encrypt code for storage
+        $encrypted_code = $security->encrypt_data($data['voucher_code']);
+
         // Insert voucher
         $inserted = $wpdb->insert($table, [
-            'voucher_code' => sanitize_text_field($data['voucher_code']),
+            'voucher_code' => $encrypted_code,
+            'voucher_code_hash' => $code_hash,
             'voucher_type' => sanitize_text_field($data['voucher_type']),
             'exam_name' => sanitize_text_field($data['exam_name']),
             'voucher_status' => 'available',
@@ -78,8 +114,7 @@ class Unico_Voucher_System {
             $voucher_id = $wpdb->insert_id;
 
             // Log activity
-            $security = Unico_Security::get_instance();
-            $security->log_activity(get_current_user_id(), 'voucher_added', "Voucher added: {$data['voucher_code']}", [
+            $security->log_activity(get_current_user_id(), 'voucher_added', "Voucher added (Encrypted ID: $voucher_id)", [
                 'voucher_id' => $voucher_id,
                 'exam_name' => $data['exam_name']
             ]);
@@ -94,6 +129,9 @@ class Unico_Voucher_System {
      * Bulk import vouchers
      */
     public function bulk_import_vouchers($vouchers_array, $exam_name) {
+        if (!current_user_can('manage_voucher_inventory')) {
+            return new WP_Error('permission_denied', 'You do not have permission to bulk import vouchers.');
+        }
         $imported = 0;
         $failed = 0;
         $errors = [];
@@ -256,7 +294,7 @@ class Unico_Voucher_System {
             <meta charset="UTF-8">
             <title>Your Voucher</title>
         </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; padding: 20px;">
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #4a4a4a; background-color: #f5f5f5; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
 
                 <!-- Header -->
@@ -272,7 +310,7 @@ class Unico_Voucher_System {
                     <p>Thank you for your purchase! Your <?php echo esc_html($voucher->exam_name); ?> voucher is ready.</p>
 
                     <!-- Voucher Card -->
-                    <div style="background: linear-gradient(135deg, #e84e33 0%, #103e54 100%); border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; color: white;">
+                    <div style="background: linear-gradient(135deg, #e95134 0%, #103e54 100%); border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; color: white;">
                         <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
                             <?php echo esc_html($voucher->exam_name); ?> Voucher
                         </div>
@@ -285,7 +323,7 @@ class Unico_Voucher_System {
                     </div>
 
                     <!-- Details -->
-                    <div style="background-color: #f8f9fa; border-left: 4px solid #e84e33; padding: 20px; margin: 20px 0;">
+                    <div style="background-color: #f8f9fa; border-left: 4px solid #e95134; padding: 20px; margin: 20px 0;">
                         <h3 style="margin-top: 0; color: #103e54; font-size: 16px;">Voucher Details</h3>
                         <table style="width: 100%; font-size: 14px;">
                             <tr>
@@ -318,13 +356,13 @@ class Unico_Voucher_System {
                     <div style="background-color: #fff3e0; border-radius: 8px; padding: 20px; margin: 30px 0;">
                         <p style="margin: 0; font-size: 14px;">
                             <strong>Need help?</strong> Our support team is available 24/7 to assist you.
-                            <br><a href="<?php echo home_url('/support'); ?>" style="color: #e84e33;">Contact Support</a>
+                                <br><a href="<?php echo home_url('/support'); ?>" style="color: #e95134;">Contact Support</a>
                         </p>
                     </div>
 
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="<?php echo $order->get_view_order_url(); ?>" style="background-color: #e84e33; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                        <a href="<?php echo $order->get_view_order_url(); ?>" style="background-color: #e95134; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                             View Order Details
                         </a>
                     </div>
@@ -423,9 +461,46 @@ class Unico_Voucher_System {
      * Check if product is a voucher
      */
     private function is_voucher_product($product) {
-        // Check product category or meta field
         $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
         return in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes';
+    }
+
+    public function enforce_sales_lock() {
+        if (!self::is_sales_locked()) {
+            return;
+        }
+        if (!function_exists('WC')) {
+            return;
+        }
+        $cart = WC()->cart;
+        if (!$cart || $cart->is_empty()) {
+            return;
+        }
+        $block = false;
+        foreach ($cart->get_cart() as $cart_item) {
+            if (!isset($cart_item['data'])) {
+                continue;
+            }
+            $product = $cart_item['data'];
+            if (!$product) {
+                continue;
+            }
+            $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
+            if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
+                $block = true;
+                break;
+            }
+        }
+        if ($block) {
+            wc_add_notice('Voucher sales are temporarily paused. Please contact support.', 'error');
+            if (class_exists('Unico_Security')) {
+                $user_id = get_current_user_id();
+                if ($user_id) {
+                    $security = Unico_Security::get_instance();
+                    $security->log_activity($user_id, 'order_blocked_sales_locked', 'Checkout blocked due to sales lock');
+                }
+            }
+        }
     }
 
     /**

@@ -71,18 +71,25 @@
     gap: 6px;
 
     font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px; /* Slightly smaller for cleaner look */
+    font-weight: 800; /* Bolder */
     line-height: 1;
     letter-spacing: 0.02em;
 
-    color: #194f68;
+    color: #1a4d6e; /* Match About Us title color */
     text-decoration: none;
-    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 8px 16px; /* Add padding for pill shape */
+    border-radius: 999px;
 }
 
 .nav-center a:hover {
-    color: #ff5a3c;
+    color: #e95134;
+}
+
+.nav-center a.active {
+    background-color: #194f68;
+    color: #ffffff;
 }
 
 /* =====================
@@ -102,13 +109,13 @@
     align-items: center;
     justify-content: center;
 
-    background: #f8fafc;
+    background: transparent; /* Remove background */
     border: none;
     border-radius: 9999px;
     padding: 0;
 
     cursor: pointer;
-    transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-btn:hover {
@@ -116,25 +123,32 @@
 }
 
 .signin {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 800;
     color: #194f68;
     text-decoration: none;
     transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
 }
 
 .signin:hover {
-    color: #ff5a3c;
+    color: #e95134;
 }
 
 .signup {
-    background: #ff5a3c;
+    background: #e95134;
     color: #fff;
-    padding: 8px 16px;
+    padding: 10px 24px;
     border-radius: 999px;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 800;
     text-decoration: none;
+    text-transform: uppercase;
+    transition: background 0.2s ease;
+}
+
+.signup:hover {
+    background: #c43d2a;
 }
 
 /* =====================
@@ -185,7 +199,7 @@
 
 .dropdown a:hover,
 .mega-menu a:hover {
-    color: #ff5a3c;
+    color: #e95134;
 }
 
 /* Sizes */

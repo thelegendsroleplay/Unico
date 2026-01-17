@@ -125,10 +125,28 @@ class Unico_Pricing {
         $user_id = get_current_user_id();
         $quantity = 1;
 
+        $product_id = $product->get_id();
+
+        $roles = (array) wp_get_current_user()->roles;
+        $is_agent = in_array('unico_agent', $roles, true) || in_array('unico_reseller', $roles, true);
+
+        $voucher_terms = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
+        $is_voucher_product = in_array('vouchers', $voucher_terms, true) || $product->get_meta('is_voucher') === 'yes';
+
+        if ($is_agent && $is_voucher_product) {
+            $agent_price_meta = get_post_meta($product_id, '_voucher_agent_price', true);
+            if ($agent_price_meta !== '') {
+                $agent_price = (float) $agent_price_meta;
+                if ($agent_price >= 0) {
+                    return $agent_price;
+                }
+            }
+        }
+
         // If in cart, get actual quantity
         if (WC()->cart) {
             foreach (WC()->cart->get_cart() as $cart_item) {
-                if ($cart_item['product_id'] === $product->get_id()) {
+                if ($cart_item['product_id'] === $product_id) {
                     $quantity = $cart_item['quantity'];
                     break;
                 }
@@ -172,7 +190,7 @@ class Unico_Pricing {
                 ? $rule->discount_value . '% off'
                 : wc_price($rule->discount_value) . ' off';
 
-            $price_html .= '<br><small style="color: #e84e33;">(' . $discount_text . ' applied)</small>';
+            $price_html .= '<br><small style="color: #e95134;">(' . $discount_text . ' applied)</small>';
         }
 
         return $price_html;

@@ -27,7 +27,7 @@
 <nav class="nav-center">
 
     <!-- ABOUT US -->
-    <a href="#">ABOUT US</a>
+    <a href="<?php echo esc_url(home_url('/about-us')); ?>" class="<?php echo is_page('about-us') ? 'active' : ''; ?>">ABOUT US</a>
 
     <!-- EXAMS (WIDE DROPDOWN) -->
     <div class="nav-item has-dropdown">
@@ -58,7 +58,6 @@
 
     <!-- CONNECT (SMALL DROPDOWN) -->
     <div class="nav-item has-dropdown">
-
         <a href="#">
              CONNECT
         <svg class="nav-arrow" viewBox="0 0 24 24" fill="none"

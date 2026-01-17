@@ -20,9 +20,39 @@ class Unico_Security {
     }
 
     public function __construct() {
-        // Hook into user registration
         add_action('user_register', [$this, 'on_user_register'], 10, 1);
         add_action('wp_login', [$this, 'on_user_login'], 10, 2);
+        add_action('wp_login_failed', [$this, 'on_wp_login_failed'], 10, 1);
+    }
+
+    /**
+     * Encrypt data
+     */
+    public function encrypt_data($data) {
+        $method = "AES-256-CBC";
+        $key = substr(hash('sha256', wp_salt()), 0, 32);
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($method));
+        
+        $encrypted = openssl_encrypt($data, $method, $key, 0, $iv);
+        return base64_encode($encrypted . '::' . $iv);
+    }
+
+    /**
+     * Decrypt data
+     */
+    public function decrypt_data($data) {
+        $method = "AES-256-CBC";
+        $key = substr(hash('sha256', wp_salt()), 0, 32);
+        
+        $parts = explode('::', base64_decode($data), 2);
+        if (count($parts) !== 2) {
+            return false;
+        }
+        
+        $encrypted_data = $parts[0];
+        $iv = $parts[1];
+        
+        return openssl_decrypt($encrypted_data, $method, $key, 0, $iv);
     }
 
     /**
@@ -71,12 +101,12 @@ class Unico_Security {
         $subject = 'Verify Your Email - ' . get_bloginfo('name');
         $message = "
         <html>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #4a4a4a;'>
             <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
                 <h2 style='color: #103e54;'>Welcome to " . get_bloginfo('name') . "!</h2>
                 <p>Thank you for registering. Please verify your email address to activate your account.</p>
                 <p style='margin: 30px 0;'>
-                    <a href='{$verification_url}' style='background-color: #e84e33; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                    <a href='{$verification_url}' style='background-color: #e95134; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
                         Verify Email Address
                     </a>
                 </p>
@@ -347,14 +377,31 @@ class Unico_Security {
      * On user login handler
      */
     public function on_user_login($user_login, $user) {
-        // Log login
         $this->log_activity($user->ID, 'user_login', 'User logged in', [
             'ip' => $this->get_user_ip(),
             'country' => $this->get_country_from_ip()
         ]);
 
-        // Reset failed login attempts
         delete_user_meta($user->ID, 'failed_login_attempts');
+    }
+
+    public function on_wp_login_failed($username) {
+        $username = sanitize_text_field($username);
+        $user = get_user_by('login', $username);
+        if (!$user && is_email($username)) {
+            $user = get_user_by('email', $username);
+        }
+        if ($user) {
+            $attempts = (int) get_user_meta($user->ID, 'failed_login_attempts', true);
+            update_user_meta($user->ID, 'failed_login_attempts', $attempts + 1);
+            $this->log_activity($user->ID, 'login_failed', 'Failed login attempt', [
+                'username' => $username
+            ]);
+        } else {
+            $this->log_activity(0, 'login_failed', 'Failed login attempt', [
+                'username' => $username
+            ]);
+        }
     }
 
     /**

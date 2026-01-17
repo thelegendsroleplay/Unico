@@ -11,15 +11,13 @@ if (!is_user_logged_in()) {
 $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
-// Check if user has reseller role
-if (!in_array('unico_reseller', $current_user->roles) && !current_user_can('administrator')) {
+// Check if user can access reseller dashboard
+if (!Unico_User_Roles::user_can('access_reseller_dashboard') && !current_user_can('administrator')) {
     wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
     exit;
 }
 
 // Get instances
-$wallet = Unico_Wallet::get_instance();
-$balance = $wallet->get_balance($user_id);
 $pricing = Unico_Pricing::get_instance();
 $voucher_system = Unico_Voucher_System::get_instance();
 
@@ -49,7 +47,7 @@ $reseller_pricing_rules = $pricing->get_rules_by_role('unico_reseller');
 // Get vouchers purchased
 $vouchers_table = $wpdb->prefix . 'unico_vouchers';
 $my_vouchers = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM $vouchers_table WHERE assigned_to = %d ORDER BY delivered_at DESC",
+    "SELECT * FROM $vouchers_table WHERE assigned_to = %d AND voucher_status = 'delivered' ORDER BY delivered_at DESC",
     $user_id
 ));
 
@@ -86,7 +84,7 @@ get_header();
     <?php wp_head(); ?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #333; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #4a4a4a; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
         .dashboard-header { background: linear-gradient(135deg, #103e54 0%, #1a5a7a 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(16, 62, 84, 0.3); }
         .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
@@ -108,15 +106,15 @@ get_header();
         .stock-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .stock-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #103e54; padding: 20px; border-radius: 8px; }
         .stock-exam-name { font-size: 18px; font-weight: 700; color: #103e54; margin-bottom: 10px; }
-        .stock-count { font-size: 32px; font-weight: 700; color: #e84e33; }
+        .stock-count { font-size: 32px; font-weight: 700; color: #e95134; }
         .stock-label { font-size: 12px; color: #6c757d; text-transform: uppercase; margin-top: 5px; }
         .pricing-rules { display: grid; gap: 15px; }
-        .pricing-rule { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #e84e33; padding: 20px; border-radius: 8px; }
-        .rule-title { font-size: 18px; font-weight: 700; color: #103e54; margin-bottom: 10px; }
+        .pricing-rule { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #e95134; padding: 20px; border-radius: 8px; }
+        .rule-detail-value { font-size: 20px; font-weight: 700; color: #e95134; margin-top: 5px; }
         .rule-details { display: flex; gap: 30px; flex-wrap: wrap; }
         .rule-detail { display: flex; flex-direction: column; }
         .rule-detail-label { font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 1px; }
-        .rule-detail-value { font-size: 20px; font-weight: 700; color: #e84e33; margin-top: 5px; }
+        .rule-detail-value { font-size: 20px; font-weight: 700; color: #e95134; margin-top: 5px; }
         .orders-table { width: 100%; border-collapse: collapse; }
         .orders-table th { text-align: left; padding: 12px; background: #f8f9fa; font-weight: 600; font-size: 14px; color: #6c757d; text-transform: uppercase; }
         .orders-table td { padding: 15px 12px; border-bottom: 1px solid #e9ecef; }
@@ -128,10 +126,10 @@ get_header();
         .status-delivered { background: #cfe2ff; color: #084298; }
         .voucher-code { font-family: 'Courier New', monospace; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: inline-block; }
         .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-primary { background: #e84e33; color: white; }
-        .btn-primary:hover { background: #d43f2a; }
-        .btn-outline { background: transparent; color: #103e54; border: 2px solid #103e54; }
-        .btn-outline:hover { background: #103e54; color: white; }
+        .btn-primary { background: #e95134; color: white; }
+        .btn-primary:hover { background: #c43d2a; }
+        .btn-outline { background: transparent; color: #194f68; border: 2px solid #194f68; }
+        .btn-outline:hover { background: #194f68; color: white; }
         .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
         .empty-state-icon { font-size: 64px; opacity: 0.3; margin-bottom: 20px; }
         .info-banner { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px 20px; margin-bottom: 20px; border-radius: 8px; }
@@ -158,10 +156,6 @@ get_header();
                 <p>Reseller Dashboard - Premium bulk rates and stock management</p>
             </div>
             <div class="header-stats">
-                <div class="header-stat">
-                    <div class="header-stat-label">Wallet Balance</div>
-                    <div class="header-stat-value"><?php echo wc_price($balance); ?></div>
-                </div>
                 <div class="header-stat">
                     <div class="header-stat-label">Total Commission</div>
                     <div class="header-stat-value"><?php echo wc_price($total_commission ?: 0); ?></div>
@@ -316,7 +310,7 @@ get_header();
                             </span>
                         </td>
                         <td>
-                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e84e33; font-weight: 600; text-decoration: none;">View</a>
+                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -356,7 +350,7 @@ get_header();
                     <?php foreach (array_slice($my_vouchers, 0, 20) as $voucher): ?>
                     <tr>
                         <td><strong><?php echo esc_html($voucher->exam_name); ?></strong></td>
-                        <td><span class="voucher-code"><?php echo esc_html($voucher->voucher_code); ?></span></td>
+                        <td><span class="voucher-code"><?php echo esc_html($security->decrypt_data($voucher->voucher_code)); ?></span></td>
                         <td>
                             <span class="status-badge status-<?php echo esc_attr($voucher->voucher_status); ?>">
                                 <?php echo esc_html(ucfirst($voucher->voucher_status)); ?>

@@ -118,7 +118,7 @@
 ========================= */
 
 .contact-email a {
-  color: #ff5a3c;
+  color: #e95134;
   font-size: 15px;
   font-weight: 600;
   text-decoration: none;
@@ -126,7 +126,7 @@
 }
 
 .contact-email a:hover {
-  color: #ff7a5c;
+  color: #c43d2a;
 }
 
 .contact-phone {
@@ -205,7 +205,7 @@
 }
 
 .float-btn.chat {
-  background: #ff5a3c;
+  background: #e95134;
   color: #fff;
 }
 

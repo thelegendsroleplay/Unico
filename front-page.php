@@ -31,7 +31,7 @@
     </a>
 
     <!-- 2) BUY DISCOUNTED VOUCHER -->
-    <a href="https://vouchers.unicou.uk" class="btn btn-primary">
+    <a href="<?php echo esc_url( home_url('/vouchers') ); ?>" class="btn btn-primary">
         BUY DISCOUNTED VOUCHER
         <img src="<?php echo get_template_directory_uri(); ?>/assets/img/lock.svg" alt="">
     </a>
@@ -93,7 +93,7 @@
     
     <div class="excellence-card">
       <div class="card-corner"></div>
-      <div class="icon-box" style="background-color: #e84e33;">
+      <div class="icon-box" style="background-color: #e95134;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"></path>
         </svg>
@@ -118,7 +118,7 @@
 
     <div class="excellence-card">
       <div class="card-corner"></div>
-      <div class="icon-box" style="background-color: #e84e33;">
+      <div class="icon-box" style="background-color: #e95134;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
@@ -253,7 +253,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('uk')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -282,7 +282,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('australia')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -311,7 +311,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('usa')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -340,7 +340,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('canada')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -369,7 +369,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('new-zealand')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -398,7 +398,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('ireland')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -427,7 +427,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('germany')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -456,7 +456,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('sweden')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -485,7 +485,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('finland')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -513,7 +513,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('cyprus')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -542,7 +542,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('dubai')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -571,7 +571,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('malaysia')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -600,7 +600,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('turkey')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -629,7 +629,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('europe')); ?>">→</a>
     </div>
   </div>
 </div>
@@ -658,7 +658,7 @@
 
     <div class="card-footer">
       <span class="footer-label">Access Node</span>
-      <a class="btn-arrow">→</a>
+      <a class="btn-arrow" href="<?php echo esc_url(unico_get_destination_page_url('italy')); ?>">→</a>
     </div>
   </div>
 </div>

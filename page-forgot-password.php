@@ -107,10 +107,10 @@ if (isset($_POST['reset_password_submit']) && wp_verify_nonce($_POST['forgot_pas
     $message = "
     <html>
     <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-        <h2 style='color: #103e54;'>Password Reset Request</h2>
+        <h2 style='color: #194f68;'>Password Reset Request</h2>
         <p>You requested to reset your password. Click the button below to set a new password:</p>
         <p style='margin: 30px 0;'>
-            <a href='{$reset_url}' style='background-color: #e84e33; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+            <a href='{$reset_url}' style='background-color: #e95134; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
                 Reset Password
             </a>
         </p>

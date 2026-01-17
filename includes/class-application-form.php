@@ -219,9 +219,9 @@ class Unico_Application_Form {
         $message = "
         <html>
         <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <h2 style='color: #103e54;'>Application Received!</h2>
+            <h2 style='color: #194f68;'>Application Received!</h2>
             <p>Thank you for submitting your study abroad application.</p>
-            <p><strong>Your Application Number:</strong> <span style='font-size: 18px; color: #e84e33;'>{$submission_number}</span></p>
+            <p><strong>Your Application Number:</strong> <span style='font-size: 18px; color: #e95134;'>{$submission_number}</span></p>
             <p>Our counselling team will review your application and contact you within 24-48 hours.</p>
             <p style='margin-top: 30px; color: #666;'>Best regards,<br>" . get_bloginfo('name') . " Team</p>
         </body>

@@ -44,7 +44,7 @@ get_header();
 
                 <?php if (is_user_logged_in()): ?>
                     <div class="footer-nav">
-                        <a href="<?php echo Unico_User_Roles::get_dashboard_url(get_current_user_id()); ?>">Go to Dashboard</a>
+                        <a href="<?php echo home_url('/'); ?>">Go to Homepage</a>
                     </div>
                 <?php else: ?>
                     <div class="footer-nav">

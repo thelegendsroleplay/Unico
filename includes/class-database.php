@@ -32,7 +32,8 @@ class Unico_Database {
         $table_vouchers = $wpdb->prefix . 'unico_vouchers';
         $sql_vouchers = "CREATE TABLE $table_vouchers (
             id bigint(20) NOT NULL AUTO_INCREMENT,
-            voucher_code varchar(255) NOT NULL,
+            voucher_code text NOT NULL,
+            voucher_code_hash varchar(64) NOT NULL,
             voucher_type varchar(100) NOT NULL,
             exam_name varchar(100) NOT NULL,
             voucher_status varchar(50) NOT NULL DEFAULT 'available',
@@ -47,7 +48,7 @@ class Unico_Database {
             updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             created_by bigint(20) NOT NULL,
             PRIMARY KEY (id),
-            UNIQUE KEY voucher_code (voucher_code),
+            UNIQUE KEY voucher_code_hash (voucher_code_hash),
             KEY voucher_status (voucher_status),
             KEY exam_name (exam_name),
             KEY assigned_to (assigned_to),
@@ -230,8 +231,70 @@ class Unico_Database {
         ) $charset_collate;";
         dbDelta($sql_pricing);
 
-        // Update version option
-        update_option('unico_db_version', '1.0.0');
+        $table_approvals = $wpdb->prefix . 'unico_user_approvals';
+        $sql_approvals = "CREATE TABLE $table_approvals (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            requested_role varchar(100) NOT NULL,
+            status varchar(50) NOT NULL DEFAULT 'pending',
+            reviewed_by bigint(20) DEFAULT NULL,
+            reviewed_at datetime DEFAULT NULL,
+            remarks text DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY status (status),
+            KEY requested_role (requested_role)
+        ) $charset_collate;";
+        dbDelta($sql_approvals);
+
+        $table_documents = $wpdb->prefix . 'unico_documents';
+        $sql_documents = "CREATE TABLE $table_documents (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            owner_user_id bigint(20) DEFAULT NULL,
+            related_user_id bigint(20) DEFAULT NULL,
+            document_type varchar(100) NOT NULL,
+            file_path text NOT NULL,
+            original_filename varchar(255) DEFAULT NULL,
+            mime_type varchar(100) DEFAULT NULL,
+            uploaded_by bigint(20) DEFAULT NULL,
+            uploaded_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            metadata longtext DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY owner_user_id (owner_user_id),
+            KEY related_user_id (related_user_id),
+            KEY document_type (document_type)
+        ) $charset_collate;";
+        dbDelta($sql_documents);
+
+        $table_bank_payments = $wpdb->prefix . 'unico_bank_payments';
+        $sql_bank_payments = "CREATE TABLE $table_bank_payments (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            order_id bigint(20) NOT NULL,
+            payer_user_id bigint(20) NOT NULL,
+            bank_name varchar(255) DEFAULT NULL,
+            account_last4 varchar(10) DEFAULT NULL,
+            payment_reference varchar(100) DEFAULT NULL,
+            amount decimal(10,2) NOT NULL,
+            currency varchar(10) NOT NULL DEFAULT 'USD',
+            payment_date datetime DEFAULT NULL,
+            status varchar(50) NOT NULL DEFAULT 'pending_verification',
+            verified_by bigint(20) DEFAULT NULL,
+            verified_at datetime DEFAULT NULL,
+            rejection_reason text DEFAULT NULL,
+            proof_document_id bigint(20) DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY order_id (order_id),
+            KEY payer_user_id (payer_user_id),
+            KEY status (status),
+            KEY payment_date (payment_date)
+        ) $charset_collate;";
+        dbDelta($sql_bank_payments);
+
+        update_option('unico_db_version', '1.2.0');
 
         return true;
     }
@@ -252,7 +315,10 @@ class Unico_Database {
             'unico_commissions',
             'unico_support_tickets',
             'unico_ticket_replies',
-            'unico_pricing_rules'
+            'unico_pricing_rules',
+            'unico_user_approvals',
+            'unico_documents',
+            'unico_bank_payments'
         ];
 
         foreach ($tables as $table) {

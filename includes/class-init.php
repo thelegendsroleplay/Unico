@@ -83,12 +83,12 @@ class Unico_Init {
         $pricing = Unico_Pricing::get_instance();
         $application_form = Unico_Application_Form::get_instance();
 
-        // Check if database needs to be created
         $db_version = get_option('unico_db_version');
-        if (!$db_version) {
+        if (!$db_version || version_compare($db_version, '1.2.0', '<')) {
             $database->create_tables();
             $user_roles->create_roles();
             $pricing->create_default_rules();
+            update_option('unico_db_version', '1.2.0');
         }
 
         // Register custom post types

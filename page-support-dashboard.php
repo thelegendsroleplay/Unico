@@ -11,8 +11,8 @@ if (!is_user_logged_in()) {
 $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
-// Check if user has support role
-if (!in_array('unico_support', $current_user->roles) && !current_user_can('administrator')) {
+// Check if user can access support dashboard
+if (!Unico_User_Roles::user_can('access_support_dashboard') && !current_user_can('administrator')) {
     wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
     exit;
 }
@@ -102,7 +102,7 @@ get_header();
     <?php wp_head(); ?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #333; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #4a4a4a; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
         .dashboard-header { background: linear-gradient(135deg, #6f42c1 0%, #563d7c 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(111, 66, 193, 0.3); }
         .header-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }

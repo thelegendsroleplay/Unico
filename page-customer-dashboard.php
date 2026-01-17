@@ -12,15 +12,11 @@ if (!is_user_logged_in()) {
 $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
-// Check if user has customer role
-if (!in_array('unico_customer', $current_user->roles) && !current_user_can('administrator')) {
+// Check if user can access customer dashboard
+if (!Unico_User_Roles::user_can('access_customer_dashboard') && !current_user_can('administrator')) {
     wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
     exit;
 }
-
-// Get wallet instance
-$wallet = Unico_Wallet::get_instance();
-$balance = $wallet->get_balance($user_id);
 
 // Get security instance
 $security = Unico_Security::get_instance();
@@ -38,7 +34,7 @@ $customer_orders = wc_get_orders([
 global $wpdb;
 $vouchers_table = $wpdb->prefix . 'unico_vouchers';
 $my_vouchers = $wpdb->get_results($wpdb->prepare(
-    "SELECT * FROM $vouchers_table WHERE assigned_to = %d ORDER BY delivered_at DESC LIMIT 10",
+    "SELECT * FROM $vouchers_table WHERE assigned_to = %d AND voucher_status = 'delivered' ORDER BY delivered_at DESC LIMIT 10",
     $user_id
 ));
 
@@ -61,7 +57,7 @@ get_header();
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #f8f9fa;
-            color: #333;
+            color: #4a4a4a;
         }
         .dashboard-container {
             max-width: 1400px;
@@ -91,24 +87,6 @@ get_header();
         .header-title p {
             opacity: 0.9;
             font-size: 14px;
-        }
-        .wallet-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: right;
-        }
-        .wallet-label {
-            font-size: 12px;
-            opacity: 0.8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .wallet-balance {
-            font-size: 32px;
-            font-weight: 700;
-            margin-top: 5px;
         }
         .verification-banner {
             background: #fff3cd;
@@ -182,11 +160,11 @@ get_header();
             cursor: pointer;
         }
         .btn-primary {
-            background: #e84e33;
+            background: #e95134;
             color: white;
         }
         .btn-primary:hover {
-            background: #d43f2a;
+            background: #c43d2a;
         }
         .btn-outline {
             background: transparent;
@@ -268,9 +246,8 @@ get_header();
                 <h1>Welcome, <?php echo esc_html($current_user->display_name); ?></h1>
                 <p>Customer Dashboard</p>
             </div>
-            <div class="wallet-card">
-                <div class="wallet-label">Wallet Balance</div>
-                <div class="wallet-balance"><?php echo wc_price($balance); ?></div>
+            <div>
+                <a href="<?php echo home_url('/study-abroad'); ?>" class="btn btn-outline" style="color: white; border-color: white;">Book Counselling</a>
             </div>
         </div>
     </div>
@@ -314,7 +291,6 @@ get_header();
     <!-- Quick Actions -->
     <div style="margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
         <a href="<?php echo home_url('/shop'); ?>" class="btn btn-primary">Browse Vouchers</a>
-        <a href="<?php echo home_url('/my-account'); ?>" class="btn btn-outline">My Account</a>
         <a href="<?php echo home_url('/support'); ?>" class="btn btn-outline">Contact Support</a>
     </div>
 
@@ -345,7 +321,7 @@ get_header();
                             </span>
                         </td>
                         <td>
-                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e84e33; font-weight: 600; text-decoration: none;">View</a>
+                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -381,7 +357,7 @@ get_header();
                     <?php foreach ($my_vouchers as $voucher): ?>
                     <tr>
                         <td><strong><?php echo esc_html($voucher->exam_name); ?></strong></td>
-                        <td><span class="voucher-code"><?php echo esc_html($voucher->voucher_code); ?></span></td>
+                        <td><span class="voucher-code"><?php echo esc_html($security->decrypt_data($voucher->voucher_code)); ?></span></td>
                         <td>
                             <span class="status-badge status-<?php echo esc_attr($voucher->voucher_status); ?>">
                                 <?php echo esc_html(ucfirst($voucher->voucher_status)); ?>

@@ -1,0 +1,445 @@
+/* =====================================================
+   UNICO – CHECKOUT PAGE FIXED LAYOUT (MOBILE FIRST)
+   ===================================================== */
+
+/* ---------------------------------
+   CHECKOUT PAGE HEADER FIX (ONLY)
+   --------------------------------- */
+
+.woocommerce-checkout header,
+.woocommerce-checkout .site-header {
+  padding: 12px 0 !important;
+  margin-bottom: 16px;
+}
+
+.woocommerce-checkout .site-header .container,
+.woocommerce-checkout header .container {
+  padding: 12px 24px !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+/* Logo scaling */
+.woocommerce-checkout .site-header img,
+.woocommerce-checkout header img {
+  max-height: 44px;
+}
+
+/* Navigation spacing */
+.woocommerce-checkout nav ul {
+  gap: 18px;
+}
+
+/* ---------------------------------
+   PAGE WRAPPER
+   --------------------------------- */
+
+.unico-checkout-page-wrapper {
+  max-width: 100%;
+  margin: 0 auto 60px;
+  padding: 0 14px;
+}
+
+/* ---------------------------------
+   CHECKOUT NODE
+   --------------------------------- */
+
+.unico-checkout-node {
+  max-width: 100%;
+  margin: 12px auto 40px;
+}
+
+/* ---------------------------------
+   CHECKOUT CARD
+   --------------------------------- */
+
+.unico-checkout-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 22px 20px 26px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+/* ---------------------------------
+   HEADER
+   --------------------------------- */
+
+.unico-checkout-header {
+  margin-bottom: 20px;
+}
+
+.unico-checkout-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.unico-checkout-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.unico-checkout-title {
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #103e54;
+}
+
+.unico-checkout-qty {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ---------------------------------
+   FORM ROWS
+   --------------------------------- */
+
+.unico-checkout-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.unico-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.unico-field label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.unico-field input[type="text"],
+.unico-field input[type="email"] {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 12px 18px;
+  font-size: 14px;
+  outline: none;
+}
+
+.unico-field input:focus {
+  border-color: #103e54;
+}
+
+/* ---------------------------------
+   PAYMENT METHODS
+   --------------------------------- */
+
+.unico-checkout-methods {
+  margin-top: 6px;
+}
+
+.unico-method-button {
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f3b52;
+}
+
+.unico-method-button.is-active {
+  background: #0f3b52;
+  border-color: #0f3b52;
+  color: #ffffff;
+}
+
+.unico-method-note {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* ---------------------------------
+   UPLOAD FIELD
+   --------------------------------- */
+
+.unico-upload-field {
+  margin-bottom: 16px;
+}
+
+.unico-upload-shell {
+  position: relative;
+  border-radius: 18px;
+  border: 1px dashed #d1d5db;
+  background: #f9fafb;
+  padding: 14px;
+  text-align: center;
+}
+
+.unico-upload-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.unico-upload-placeholder {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+}
+
+.unico-upload-error {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ef4444;
+}
+
+.unico-qty-row {
+  margin-top: 4px;
+}
+
+.unico-qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unico-qty-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.unico-qty-input {
+  width: 64px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+/* ---------------------------------
+   CONFIRM CHECKBOX
+   --------------------------------- */
+
+.unico-confirm-row {
+  margin: 12px 0 16px;
+  font-size: 12px;
+  color: #0f3b52;
+}
+
+.unico-confirm-row input {
+  margin-right: 8px;
+}
+.unico-non-refundable {
+  color: #ef4444;          /* clean red */
+  font-weight: 800;
+}
+
+.unico-method-error {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ef4444;
+}
+
+.woocommerce-checkout .woocommerce-error,
+.woocommerce-checkout .woocommerce-message,
+.woocommerce-checkout .woocommerce-info {
+  max-width: 600px;
+  margin: 16px auto 0;
+  padding: 12px 16px 12px 44px;
+  border-radius: 999px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  list-style: none;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.woocommerce-checkout .woocommerce-error li,
+.woocommerce-checkout .woocommerce-message li,
+.woocommerce-checkout .woocommerce-info li {
+  list-style: none;
+}
+
+.woocommerce-checkout .woocommerce-error a,
+.woocommerce-checkout .woocommerce-message a,
+.woocommerce-checkout .woocommerce-info a {
+  color: #0f3b52;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.woocommerce-checkout .woocommerce-error:before,
+.woocommerce-checkout .woocommerce-message:before,
+.woocommerce-checkout .woocommerce-info:before {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  line-height: 20px;
+  text-align: center;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .woocommerce-checkout .woocommerce-error,
+  .woocommerce-checkout .woocommerce-message,
+  .woocommerce-checkout .woocommerce-info {
+    max-width: 100%;
+    margin: 12px 10px 0;
+    padding: 10px 12px 10px 40px;
+    border-radius: 18px;
+    font-size: 12px;
+  }
+
+  .woocommerce-checkout .woocommerce-error:before,
+  .woocommerce-checkout .woocommerce-message:before,
+  .woocommerce-checkout .woocommerce-info:before {
+    left: 12px;
+  }
+}
+
+/* ---------------------------------
+   FOOTER
+   --------------------------------- */
+
+.unico-checkout-footer {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: #0f3b52;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Total */
+
+.unico-total-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d1d5db;
+}
+
+.unico-total-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.unico-total-symbol {
+  font-size: 16px;
+  margin-right: 4px;
+}
+
+.unico-total-currency {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+/* ---------------------------------
+   CONFIRM BUTTON
+   --------------------------------- */
+
+.unico-confirm-button {
+  width: 100%;
+  border: none;
+  border-radius: 9999px;
+  padding: 14px;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+}
+
+.unico-confirm-button:hover {
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------
+   DESKTOP ENHANCEMENTS
+   --------------------------------- */
+
+@media (min-width: 768px) {
+
+  .unico-checkout-node {
+    max-width: 480px;
+    margin: 20px auto 48px;
+  }
+
+  .unico-checkout-card {
+    border-radius: 36px;
+    padding: 28px 28px 30px;
+  }
+
+  .unico-checkout-title-row {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .unico-checkout-row {
+    flex-direction: row;
+    gap: 16px;
+  }
+
+  .unico-checkout-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 999px;
+    padding: 16px 20px;
+  }
+
+  .unico-confirm-button {
+    width: auto;
+    padding: 12px 28px;
+  }
+}
+
+/* ---------------------------------
+   WOOCOMMERCE CLEANUP
+   --------------------------------- */
+
+.woocommerce-checkout .woocommerce-billing-fields,
+.woocommerce-checkout .woocommerce-additional-fields,
+.woocommerce-checkout #order_review_heading,
+.woocommerce-checkout .woocommerce-checkout-review-order,
+.woocommerce-checkout .woocommerce-form-coupon-toggle,
+.woocommerce-checkout .woocommerce-form-login-toggle,
+.woocommerce-checkout .woocommerce-form-login,
+.woocommerce-checkout .woocommerce-form-coupon,
+.woocommerce-checkout #place_order {
+  display: none !important;
+}

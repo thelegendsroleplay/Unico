@@ -32,7 +32,8 @@ class Unico_User_Roles {
             'create_support_tickets' => true,
             'view_own_tickets' => true,
             'make_purchases' => true,
-            'view_own_wallet' => true
+            'view_own_wallet' => true,
+            'access_customer_dashboard' => true
         ]);
 
         // Role 2: Agent (training center representative)
@@ -205,6 +206,47 @@ class Unico_User_Roles {
         // Remove default subscriber role if exists
         if (in_array('subscriber', $user->roles)) {
             $user->remove_role('subscriber');
+        }
+    }
+
+    public static function create_user_approval($user_id, $requested_role) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_user_approvals';
+        $requested_role = sanitize_text_field($requested_role);
+        $wpdb->insert($table, [
+            'user_id' => $user_id,
+            'requested_role' => $requested_role,
+            'status' => 'pending',
+            'created_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql')
+        ]);
+        if (class_exists('Unico_Security')) {
+            $security = Unico_Security::get_instance();
+            $security->log_activity($user_id, 'user_approval_created', 'User approval request created', [
+                'requested_role' => $requested_role
+            ]);
+        }
+    }
+
+    public static function set_user_approval_status($approval_id, $status, $reviewed_by, $remarks = '') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_user_approvals';
+        $status = sanitize_text_field($status);
+        $remarks = sanitize_textarea_field($remarks);
+        $wpdb->update($table, [
+            'status' => $status,
+            'reviewed_by' => $reviewed_by,
+            'reviewed_at' => current_time('mysql'),
+            'remarks' => $remarks
+        ], [
+            'id' => $approval_id
+        ]);
+        if (class_exists('Unico_Security')) {
+            $security = Unico_Security::get_instance();
+            $security->log_activity($reviewed_by, 'user_approval_updated', 'User approval status updated', [
+                'approval_id' => $approval_id,
+                'status' => $status
+            ]);
         }
     }
 

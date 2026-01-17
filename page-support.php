@@ -39,10 +39,10 @@ if (isset($_POST['submit_ticket']) && wp_verify_nonce($_POST['ticket_nonce'], 's
         $email_message = "
         <html>
         <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <h2 style='color: #103e54;'>Support Ticket Received</h2>
+            <h2 style='color: #194f68;'>Support Ticket Received</h2>
             <p>Dear {$name},</p>
             <p>Your support ticket has been created successfully.</p>
-            <p><strong>Ticket Number:</strong> <span style='font-size: 18px; color: #e84e33;'>{$ticket_number}</span></p>
+            <p><strong>Ticket Number:</strong> <span style='font-size: 18px; color: #e95134;'>{$ticket_number}</span></p>
             <p><strong>Subject:</strong> {$subject}</p>
             <p>Our support team will review your request and respond within 24 hours.</p>
             <p style='margin-top: 30px;'>Best regards,<br>" . get_bloginfo('name') . " Support Team</p>
@@ -74,7 +74,7 @@ get_header();
     <?php wp_head(); ?>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #333; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #4a4a4a; }
         .support-container { max-width: 900px; margin: 40px auto; padding: 20px; }
         .support-header { background: linear-gradient(135deg, #6f42c1 0%, #563d7c 100%); color: white; padding: 40px; border-radius: 12px 12px 0 0; text-align: center; }
         .support-header h1 { font-size: 32px; margin-bottom: 10px; }
@@ -85,7 +85,7 @@ get_header();
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
         .form-group { margin-bottom: 20px; }
         .form-group.full-width { grid-column: 1 / -1; }
-        .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+        .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #4a4a4a; }
         .form-label .required { color: #dc3545; }
         .form-input, .form-select, .form-textarea { width: 100%; padding: 12px 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 15px; font-family: inherit; transition: border-color 0.2s; }
         .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #6f42c1; }
