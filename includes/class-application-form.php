@@ -98,10 +98,26 @@ class Unico_Application_Form {
             UNIQUE KEY user_notification (user_id, notification_type)
         ) $charset_collate;";
 
+        // Table for email verification
+        $table_verification = $wpdb->prefix . 'unico_email_verification';
+        $sql_verification = "CREATE TABLE IF NOT EXISTS $table_verification (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            email varchar(255) NOT NULL,
+            token varchar(255) NOT NULL,
+            expires_at datetime NOT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            verified_at datetime DEFAULT NULL,
+            PRIMARY KEY (id),
+            KEY email (email),
+            KEY token (token),
+            KEY verified_at (verified_at)
+        ) $charset_collate;";
+
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_fields);
         dbDelta($sql_submissions);
         dbDelta($sql_notifications);
+        dbDelta($sql_verification);
 
         // Manually check and add form_type column if dbDelta failed
         $row = $wpdb->get_results("SHOW COLUMNS FROM $table_fields LIKE 'form_type'");
