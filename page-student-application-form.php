@@ -36,16 +36,16 @@ get_header();
                 <div class="application-alert application-alert-success">
                     <div class="application-alert-icon">✓</div>
                     <div class="application-alert-body">
-                        <h2>Application submitted</h2>
+                        <h2>Application submitted successfully</h2>
                         <p>
-                            Application number
+                            Application number: 
                             <span class="application-number">
                                 <?php echo esc_html($_GET['submission_number']); ?>
                             </span>
                         </p>
                         <p>
-                            A confirmation email has been sent. Your profile is now queued for
-                            counsellor review. Expect an update within 24–48 hours.
+                            Your application is submitted successfully and is under review. 
+                            You will shortly receive an update on mail about your application.
                         </p>
                     </div>
                 </div>

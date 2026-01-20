@@ -34,6 +34,9 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
     define('UNICO_SOFT_LOCK_MINUTES', 15);
 }
 
+// Include Mail Settings
+require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }

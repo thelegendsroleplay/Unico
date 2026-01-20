@@ -6,6 +6,93 @@
 
 if (!defined('ABSPATH')) {
     exit;
+    /**
+     * Generate consistent HTML email template
+     */
+    private function get_email_template($heading, $content) {
+        $site_name = get_bloginfo('name');
+        $year = date('Y');
+        
+        // Get Logo if available
+        $logo_url = '';
+        if (has_custom_logo()) {
+            $custom_logo_id = get_theme_mod('custom_logo');
+            $logo_data = wp_get_attachment_image_src($custom_logo_id, 'full');
+            if ($logo_data) {
+                $logo_url = $logo_data[0];
+            }
+        }
+
+        $header_element = $logo_url 
+            ? "<img src='{$logo_url}' alt='{$site_name}' style='max-width: 150px; height: auto;'>"
+            : "<span style='font-size: 24px; font-weight: 800; color: #194f68; text-transform: uppercase; letter-spacing: 1px;'>{$site_name}</span>";
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>{$heading}</title>
+        </head>
+        <body style='margin: 0; padding: 0; background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #4a4a4a;'>
+            <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: #f6f9fc;'>
+                <tr>
+                    <td align='center' style='padding: 40px 20px;'>
+                        <!-- Header / Brand -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; margin-bottom: 30px;'>
+                            <tr>
+                                <td align='center'>
+                                    {$header_element}
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Main Card -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden;'>
+                            <!-- Top Accent Bar -->
+                            <tr>
+                                <td height='6' style='background: linear-gradient(90deg, #194f68 0%, #103e54 100%);'></td>
+                            </tr>
+                            
+                            <!-- Content -->
+                            <tr>
+                                <td style='padding: 48px 40px;'>
+                                    <h1 style='margin: 0 0 24px; color: #194f68; font-size: 24px; font-weight: 700; text-align: center;'>{$heading}</h1>
+                                    <div style='font-size: 16px; line-height: 1.6; color: #4a4a4a;'>
+                                        {$content}
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Bottom Brand Strip -->
+                            <tr>
+                                <td style='background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                                    <p style='margin: 0; font-size: 13px; color: #64748b; font-style: italic;'>
+                                        Empowering your educational journey
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Footer -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%;'>
+                            <tr>
+                                <td align='center' style='padding-top: 24px; color: #9ca3af; font-size: 12px;'>
+                                    <p style='margin-bottom: 10px;'>&copy; {$year} {$site_name}. All rights reserved.</p>
+                                    <p style='margin: 0;'>
+                                        <a href='" . home_url() . "' style='color: #194f68; text-decoration: none; font-weight: 600;'>Visit Website</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        ";
+    }
+
 }
 
 class Unico_Application_Form {
@@ -438,14 +525,20 @@ class Unico_Application_Form {
             $notification_type
         ));
 
+        $emails = [];
+
         // If no specific recipients, send to all management and admin users
         if (empty($recipients)) {
             $admin_users = get_users(['role__in' => ['administrator', 'management']]);
-            $emails = array_map(function($user) {
-                return $user->user_email;
-            }, $admin_users);
+            foreach ($admin_users as $user) {
+                $emails[] = $user->user_email;
+            }
+            
+            // Always ensure the main admin email is included if no other emails are found
+            if (empty($emails)) {
+                $emails[] = get_option('admin_email');
+            }
         } else {
-            $emails = [];
             foreach ($recipients as $recipient) {
                 $user = get_userdata($recipient->user_id);
                 if ($user) {
@@ -453,6 +546,9 @@ class Unico_Application_Form {
                 }
             }
         }
+        
+        // Remove duplicates
+        $emails = array_unique($emails);
 
         if (empty($emails)) {
             return;
@@ -475,44 +571,48 @@ class Unico_Application_Form {
 
         $dashboard_url = home_url('/management-dashboard');
 
-        $message = "
-        <html>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
-                <h2 style='color: #fff; margin: 0;'>New Application Received</h2>
+        $content = "
+            <p>A new <strong>{$application_type}</strong> application has been submitted and is awaiting review.</p>
+
+            <div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin: 24px 0;'>
+                <h3 style='margin: 0 0 16px; color: #194f68; font-size: 16px;'>Application Summary</h3>
+                <table border='0' cellpadding='0' cellspacing='0' width='100%'>
+                    <tr>
+                        <td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Application ID:</td>
+                        <td style='padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;'>{$submission_number}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Name:</td>
+                        <td style='padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;'>{$applicant_name}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Email:</td>
+                        <td style='padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;'>{$applicant_email}</td>
+                    </tr>
+                    <tr>
+                        <td style='padding: 8px 0; color: #64748b; font-size: 14px;'>Phone:</td>
+                        <td style='padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;'>{$applicant_phone}</td>
+                    </tr>
+                </table>
             </div>
-            <div style='background: #f9f9f9; padding: 30px;'>
-                <p>A new {$application_type} application has been submitted and is awaiting review.</p>
 
-                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
-                    <h3 style='color: #194f68; margin-top: 0;'>Application Details</h3>
-                    <p><strong>Application Number:</strong> <span style='font-size: 16px; color: #e95134;'>{$submission_number}</span></p>
-                    <p><strong>Applicant Name:</strong> {$applicant_name}</p>
-                    <p><strong>Email:</strong> {$applicant_email}</p>
-                    <p><strong>Phone:</strong> {$applicant_phone}</p>
-                </div>
-
-                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
-                    <h3 style='color: #194f68; margin-top: 0;'>Complete Application Data</h3>
-                    <table style='width: 100%; border-collapse: collapse;'>
-                        {$details_html}
-                    </table>
-                </div>
-
-                <div style='text-align: center; margin-top: 30px;'>
-                    <a href='{$dashboard_url}' style='background: #e95134; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
-                        Review Application
-                    </a>
-                </div>
-
-                <p style='margin-top: 30px; color: #666; font-size: 14px;'>
-                    This is an automated notification from " . get_bloginfo('name') . ".
-                    You can manage your notification preferences in the Management Dashboard.
-                </p>
+            <div style='margin-bottom: 30px;'>
+                <h3 style='margin: 0 0 16px; color: #194f68; font-size: 16px;'>Submission Details</h3>
+                <table style='width: 100%; border-collapse: collapse;'>
+                    {$details_html}
+                </table>
             </div>
-        </body>
-        </html>
+
+            <div style='text-align: center; margin-top: 30px;'>
+                <a href='{$dashboard_url}' style='background-color: #e95134; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 700; display: inline-block;'>Review Application</a>
+            </div>
+            
+            <p style='margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;'>
+                You can manage your notification preferences in the Management Dashboard.
+            </p>
         ";
+
+        $message = $this->get_email_template('New Application Received', $content);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
 
@@ -524,25 +624,26 @@ class Unico_Application_Form {
     private function send_confirmation_email($email, $submission_number, $application_type = 'student', $form_data = []) {
         if ($application_type === 'agent') {
             $subject = 'Agent Application Received - ' . get_bloginfo('name');
-            $intro_line = 'Thank you for submitting your agent application.';
-            $body_line = 'Our partnerships team will review your details and contact you within 24-48 hours.';
+            $intro_line = 'Your application is received and under review.';
+            $body_line = 'You will shortly receive an update on mail about your application.';
         } else {
             $subject = 'Application Received - ' . get_bloginfo('name');
-            $intro_line = 'Thank you for submitting your study abroad application.';
-            $body_line = 'Our counselling team will review your application and contact you within 24-48 hours.';
+            $intro_line = 'Your application is received and under review.';
+            $body_line = 'You will shortly receive an update on mail about your application.';
         }
 
-        $message = "
-        <html>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <h2 style='color: #194f68;'>Application Received!</h2>
-            <p>{$intro_line}</p>
-            <p><strong>Your Application Number:</strong> <span style='font-size: 18px; color: #e95134;'>{$submission_number}</span></p>
-            <p>{$body_line}</p>
-            <p style='margin-top: 30px; color: #666;'>Best regards,<br>" . get_bloginfo('name') . " Team</p>
-        </body>
-        </html>
+        $content = "
+            <p style='margin-bottom: 24px;'>{$intro_line}</p>
+            
+            <div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; margin-bottom: 24px;'>
+                <p style='margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;'>Application Number</p>
+                <p style='margin: 0; font-size: 24px; font-weight: 700; color: #194f68;'>{$submission_number}</p>
+            </div>
+            
+            <p style='margin-bottom: 24px;'>{$body_line}</p>
         ";
+
+        $message = $this->get_email_template('Application Received!', $content);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
         wp_mail($email, $subject, $message, $headers);
@@ -950,42 +1051,28 @@ class Unico_Application_Form {
 
         $subject = 'Verify Your Email - ' . get_bloginfo('name');
 
-        $message = "
-        <html>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
-                <h2 style='color: #fff; margin: 0;'>Email Verification Required</h2>
+        $content = "
+            <p style='margin-bottom: 24px;'>Thank you for starting your application with <strong>" . get_bloginfo('name') . "</strong>.</p>
+            
+            <p style='margin-bottom: 24px;'>To proceed with your application submission, please verify your email address by clicking the button below:</p>
+            
+            <div style='text-align: center; margin: 32px 0;'>
+                <a href='{$verification_url}' style='background-color: #e95134; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: 700; display: inline-block; box-shadow: 0 4px 6px rgba(233, 81, 52, 0.2);'>Verify Email Address</a>
             </div>
-            <div style='background: #f9f9f9; padding: 30px;'>
-                <p>Thank you for starting your application with " . get_bloginfo('name') . ".</p>
-
-                <p>To proceed with your application submission, please verify your email address by clicking the button below:</p>
-
-                <div style='text-align: center; margin: 30px 0;'>
-                    <a href='{$verification_url}' style='background: #e95134; color: #fff; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;'>
-                        Verify Email Address
-                    </a>
-                </div>
-
-                <p style='color: #666; font-size: 14px;'>
-                    Or copy and paste this link into your browser:<br>
-                    <a href='{$verification_url}' style='color: #194f68; word-break: break-all;'>{$verification_url}</a>
-                </p>
-
-                <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
-                    <p style='margin: 0; font-size: 14px;'>
-                        <strong>Important:</strong> This verification link will expire in 24 hours.
-                    </p>
-                </div>
-
-                <p style='margin-top: 30px; color: #666;'>
-                    Best regards,<br>
-                    " . get_bloginfo('name') . " Team
+            
+            <p style='margin-bottom: 24px; font-size: 14px; color: #64748b;'>
+                Or copy and paste this link into your browser:<br>
+                <a href='{$verification_url}' style='color: #194f68; word-break: break-all; text-decoration: underline;'>{$verification_url}</a>
+            </p>
+            
+            <div style='background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;'>
+                <p style='margin: 0; font-size: 14px; color: #92400e;'>
+                    <strong>Important:</strong> This verification link will expire in 24 hours.
                 </p>
             </div>
-        </body>
-        </html>
         ";
+
+        $message = $this->get_email_template('Verify Your Email', $content);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
         return wp_mail($email, $subject, $message, $headers);
@@ -1074,39 +1161,28 @@ class Unico_Application_Form {
         // Send OTP email
         $subject = 'Your Verification Code - ' . get_bloginfo('name');
 
-        $message = "
-        <html>
-        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
-                <h2 style='color: #fff; margin: 0;'>Email Verification</h2>
+        $content = "
+            <p style='margin-bottom: 24px;'>Thank you for starting your application with <strong>" . get_bloginfo('name') . "</strong>.</p>
+
+            <p style='margin-bottom: 16px;'>To verify your email address, please use the following One-Time Password (OTP):</p>
+
+            <div style='text-align: center; margin: 32px 0;'>
+                <div style='background: #eff6ff; border: 1px solid #dbeafe; padding: 24px 32px; border-radius: 12px; display: inline-block;'>
+                    <span style='font-size: 36px; font-weight: 800; color: #194f68; letter-spacing: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; display: block;'>{$otp}</span>
+                    <span style='display: block; font-size: 12px; color: #64748b; margin-top: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;'>Verification Code</span>
+                </div>
             </div>
-            <div style='background: #f9f9f9; padding: 30px;'>
-                <p>Thank you for starting your application with " . get_bloginfo('name') . ".</p>
 
-                <p>Your verification code is:</p>
+            <p style='margin-bottom: 24px;'>Please enter this code in the verification popup to continue your application.</p>
 
-                <div style='text-align: center; margin: 30px 0;'>
-                    <div style='background: #fff; border: 2px solid #194f68; padding: 20px; border-radius: 8px; display: inline-block;'>
-                        <span style='font-size: 32px; font-weight: bold; color: #194f68; letter-spacing: 8px; font-family: monospace;'>{$otp}</span>
-                    </div>
-                </div>
-
-                <p>Enter this code in the verification popup to continue with your application.</p>
-
-                <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
-                    <p style='margin: 0; font-size: 14px;'>
-                        <strong>Important:</strong> This verification code will expire in 15 minutes.
-                    </p>
-                </div>
-
-                <p style='margin-top: 30px; color: #666;'>
-                    Best regards,<br>
-                    " . get_bloginfo('name') . " Team
+            <div style='background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 24px;'>
+                <p style='margin: 0; font-size: 14px; color: #92400e;'>
+                    <strong>Note:</strong> This code is valid for 15 minutes. If you didn't request this, you can safely ignore this email.
                 </p>
             </div>
-        </body>
-        </html>
         ";
+
+        $message = $this->get_email_template('Verify Your Email', $content);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
         
