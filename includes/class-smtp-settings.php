@@ -144,6 +144,7 @@ class Unico_SMTP_Settings {
             $phpmailer->Username = $user;
             $phpmailer->Password = $pass;
             $phpmailer->SMTPSecure = get_option('unico_smtp_encryption', 'ssl');
+            $phpmailer->SMTPAutoTLS = false; // Disable AutoTLS to prevent conflicts
             
             // From Email
             $from_email = get_option('unico_smtp_from_email');
@@ -151,6 +152,7 @@ class Unico_SMTP_Settings {
             
             if (!empty($from_email)) {
                 $phpmailer->From = $from_email;
+                $phpmailer->Sender = $from_email; // Return-Path
             }
             if (!empty($from_name)) {
                 $phpmailer->FromName = $from_name;
@@ -170,14 +172,36 @@ class Unico_SMTP_Settings {
         $message = 'This is a test email from Unico Theme to verify SMTP settings.';
         $headers = ['Content-Type: text/html; charset=UTF-8'];
 
+        // Capture error
+        global $ts_mail_errors;
+        $ts_mail_errors = [];
+        $action = function($error) {
+            global $ts_mail_errors;
+            $ts_mail_errors[] = $error;
+        };
+        add_action('wp_mail_failed', $action);
+
         $sent = wp_mail($to, $subject, $message, $headers);
+
+        remove_action('wp_mail_failed', $action);
 
         if ($sent) {
             wp_redirect(admin_url('admin.php?page=unico-smtp-settings&status=success'));
         } else {
-            // Capture error if possible (requires global $phpmailer or similar trick, but usually tough in standard wp_mail return)
-            // But since we hooked into phpmailer_init, usually errors are logged or retrievable if we add an action on failure
-            wp_redirect(admin_url('admin.php?page=unico-smtp-settings&status=error'));
+            $error_msg = 'Unknown error';
+            if (!empty($ts_mail_errors)) {
+                foreach ($ts_mail_errors as $err) {
+                    if (is_wp_error($err)) {
+                        $error_msg = $err->get_error_message();
+                        // Append additional data if available
+                        $data = $err->get_error_data();
+                        if (!empty($data)) {
+                            $error_msg .= ' - Details: ' . print_r($data, true);
+                        }
+                    }
+                }
+            }
+            wp_redirect(admin_url('admin.php?page=unico-smtp-settings&status=error&message=' . urlencode($error_msg)));
         }
         exit;
     }
