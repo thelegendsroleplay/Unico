@@ -621,141 +621,67 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
     $application_id = intval($_POST['application_id']);
     $new_status = sanitize_text_field($_POST['new_status']);
     $notes = isset($_POST['status_notes']) ? sanitize_textarea_field($_POST['status_notes']) : '';
+
     if ($application_id > 0 && $new_status) {
-        $application_form->update_status($application_id, $new_status, $notes);
-        
-        // Get submission data for emails
-        $submission = $application_form->get_submission($application_id);
-        if ($submission && !empty($submission->form_data)) {
-            $data = json_decode($submission->form_data, true) ?: [];
-            $email = isset($data['email']) ? sanitize_email($data['email']) : '';
-            $full_name = isset($data['full_name']) ? sanitize_text_field($data['full_name']) : '';
-            $application_type = isset($data['application_type']) ? $data['application_type'] : 'student';
-            
-            if ($email && is_email($email)) {
-                if ($new_status === 'approved') {
-                    $phone = isset($data['phone']) ? sanitize_text_field($data['phone']) : '';
-                    
-                    $existing_user = get_user_by('email', $email);
-                    $role = $application_type === 'agent' ? 'unico_agent' : 'unico_customer';
-                    $final_user_id = 0;
-
-                    if ($existing_user) {
-                        $existing_user->set_role($role);
-                        if ($phone) {
-                            update_user_meta($existing_user->ID, 'billing_phone', $phone);
-                        }
-                        $final_user_id = $existing_user->ID;
-
-                        $login_url = home_url('/login');
-                        $subject = 'Your application has been approved';
-                        $message = "
-                        <html>
-                        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-                            <h2 style='color:#194f68;'>Application Approved</h2>
-                            <p>Your application has been approved. You can now log in using your existing password.</p>
-                            <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
-                            <p><strong>Username:</strong> {$email}</p>
-                            <p><strong>Status:</strong> Approved</p>
-                        </body>
-                        </html>
-                        ";
-                        $headers = ['Content-Type: text/html; charset=UTF-8'];
-                        wp_mail($email, $subject, $message, $headers);
-                    } else {
-                        $password = wp_generate_password(12, true);
-                        $user_id_created = wp_create_user($email, $password, $email);
-                        if (!is_wp_error($user_id_created)) {
-                            $final_user_id = $user_id_created;
-                            if ($full_name) {
-                                $name_parts = explode(' ', $full_name, 2);
-                                wp_update_user([
-                                    'ID' => $user_id_created,
-                                    'first_name' => $name_parts[0],
-                                    'last_name' => isset($name_parts[1]) ? $name_parts[1] : '',
-                                    'display_name' => $full_name
-                                ]);
-                            }
-                            if ($phone) {
-                                update_user_meta($user_id_created, 'billing_phone', $phone);
-                            }
-                            $user_obj = new WP_User($user_id_created);
-                            $user_obj->set_role($role);
-                            $login_url = home_url('/login');
-                            $subject = 'Your account has been created and approved';
-                            $message = "
-                            <html>
-                            <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-                                <h2 style='color:#194f68;'>Account Approved</h2>
-                                <p>Your application has been approved and your account is now active.</p>
-                                <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
-                                <p><strong>Username:</strong> {$email}</p>
-                                <p><strong>Password:</strong> {$password}</p>
-                                <p style='margin-top:24px;color:#666;'>For security, please change this password after your first login.</p>
-                            </body>
-                            </html>
-                            ";
-                            $headers = ['Content-Type: text/html; charset=UTF-8'];
-                            wp_mail($email, $subject, $message, $headers);
-                        }
-                    }
-
-                    // Link user to submission if user exists
-                    if ($final_user_id > 0) {
-                        global $wpdb;
-                        $wpdb->update(
-                            $wpdb->prefix . 'unico_form_submissions', 
-                            ['user_id' => $final_user_id], 
-                            ['id' => $application_id]
-                        );
-                    }
-
-                } elseif ($new_status === 'rejected') {
-                    $subject = 'Update on your application';
-                    $message = "
-                    <html>
-                    <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-                        <h2 style='color:#194f68;'>Application Status Update</h2>
-                        <p>We have reviewed your application.</p>
-                        <p><strong>Status:</strong> <span style='color:red;'>Rejected</span></p>
-                        " . ($notes ? "<p><strong>Reason/Notes:</strong> " . nl2br(esc_html($notes)) . "</p>" : "") . "
-                        <p>If you have any questions, please contact our support team.</p>
-                    </body>
-                    </html>
-                    ";
-                    $headers = ['Content-Type: text/html; charset=UTF-8'];
-                    wp_mail($email, $subject, $message, $headers);
-
-                } elseif ($new_status === 'in_review') {
-                    $subject = 'Your application is under review';
-                    $message = "
-                    <html>
-                    <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
-                        <h2 style='color:#194f68;'>Application Under Review</h2>
-                        <p>We are currently reviewing your application.</p>
-                        <p><strong>Status:</strong> <span style='color:orange;'>In Review</span></p>
-                        <p>We will notify you once a final decision has been made.</p>
-                    </body>
-                    </html>
-                    ";
-                    $headers = ['Content-Type: text/html; charset=UTF-8'];
-                    wp_mail($email, $subject, $message, $headers);
-                }
-                
+        if ($new_status === 'approved') {
+            // Use the approve_application method which creates user and sends credentials
+            $result = $application_form->approve_application($application_id);
+            if ($result['success']) {
                 $mgmt_notices[] = [
                     'type' => 'success',
-                    'message' => 'Application status updated to ' . ucfirst(str_replace('_', ' ', $new_status)) . ' and notification email sent.'
+                    'message' => $result['message']
                 ];
             } else {
                 $mgmt_notices[] = [
-                    'type' => 'warning',
-                    'message' => 'Status updated, but could not send email (invalid email address).'
+                    'type' => 'error',
+                    'message' => $result['message']
+                ];
+            }
+        } elseif ($new_status === 'rejected') {
+            // Use the reject_application method which sends rejection email and deletes data
+            $result = $application_form->reject_application($application_id, $notes);
+            if ($result['success']) {
+                $mgmt_notices[] = [
+                    'type' => 'success',
+                    'message' => $result['message']
+                ];
+            } else {
+                $mgmt_notices[] = [
+                    'type' => 'error',
+                    'message' => $result['message']
                 ];
             }
         } else {
+            // For other statuses (submitted, in_review), just update the status
+            $application_form->update_status($application_id, $new_status, $notes);
             $mgmt_notices[] = [
                 'type' => 'success',
-                'message' => 'Application status updated.'
+                'message' => 'Application status updated to ' . ucfirst(str_replace('_', ' ', $new_status)) . '.'
+            ];
+        }
+    }
+}
+
+// Handle notification preferences
+if (isset($_POST['update_notification_prefs']) && isset($_POST['notification_prefs_nonce']) && wp_verify_nonce($_POST['notification_prefs_nonce'], 'update_notification_prefs')) {
+    $receive_notifications = isset($_POST['receive_new_application_notifications']) ? true : false;
+
+    if ($receive_notifications) {
+        // Add user to notification recipients
+        if (!$application_form->is_notification_recipient($user_id, 'new_application')) {
+            $application_form->add_notification_recipient($user_id, 'new_application');
+            $mgmt_notices[] = [
+                'type' => 'success',
+                'message' => 'You will now receive email notifications for new applications.'
+            ];
+        }
+    } else {
+        // Remove user from notification recipients
+        if ($application_form->is_notification_recipient($user_id, 'new_application')) {
+            $application_form->remove_notification_recipient($user_id, 'new_application');
+            $mgmt_notices[] = [
+                'type' => 'success',
+                'message' => 'You will no longer receive email notifications for new applications.'
             ];
         }
     }
@@ -1131,6 +1057,69 @@ get_header();
                 <?php else: ?>
                     <p class="mgmt-muted-text">No applications found yet.</p>
                 <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="mgmt-section-card">
+            <div class="mgmt-section-header">
+                <span>Email Notification Preferences</span>
+                <span>Manage which notifications you receive</span>
+            </div>
+            <div class="mgmt-section-body">
+                <form method="post" style="max-width: 600px;">
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input
+                                type="checkbox"
+                                name="receive_new_application_notifications"
+                                value="1"
+                                <?php echo $application_form->is_notification_recipient($user_id, 'new_application') ? 'checked' : ''; ?>
+                                style="width: 20px; height: 20px; cursor: pointer;"
+                            >
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">New Application Notifications</strong>
+                                <span style="color: #666; font-size: 14px;">
+                                    Receive an email when a new student or agent application is submitted
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div style="background: #e7f3ff; padding: 15px; border-left: 4px solid #194f68; border-radius: 4px; margin-bottom: 20px;">
+                        <p style="margin: 0; font-size: 14px;">
+                            <strong>Note:</strong> If no management users are subscribed to notifications,
+                            all administrators and management users will automatically receive new application emails.
+                        </p>
+                    </div>
+
+                    <?php
+                    // Show list of all users receiving notifications
+                    $recipients = $application_form->get_notification_recipients('new_application');
+                    if (!empty($recipients)):
+                    ?>
+                        <div style="margin-top: 20px;">
+                            <h4 style="margin-bottom: 10px; color: #194f68;">Currently Receiving Notifications:</h4>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                <?php foreach ($recipients as $recipient): ?>
+                                    <?php $recipient_user = get_userdata($recipient->user_id); ?>
+                                    <?php if ($recipient_user): ?>
+                                        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                            <span style="font-weight: 500;"><?php echo esc_html($recipient_user->display_name); ?></span>
+                                            <span style="color: #666; margin-left: 8px;">(<?php echo esc_html($recipient_user->user_email); ?>)</span>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="mgmt-form-actions">
+                        <?php wp_nonce_field('update_notification_prefs', 'notification_prefs_nonce'); ?>
+                        <button type="submit" name="update_notification_prefs" class="mgmt-btn mgmt-btn-primary">
+                            Save Preferences
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

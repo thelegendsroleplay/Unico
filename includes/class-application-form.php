@@ -75,9 +75,25 @@ class Unico_Application_Form {
             KEY assigned_to (assigned_to)
         ) $charset_collate;";
 
+        // Table for management notification preferences
+        $table_notifications = $wpdb->prefix . 'unico_notification_recipients';
+        $sql_notifications = "CREATE TABLE IF NOT EXISTS $table_notifications (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            notification_type varchar(100) NOT NULL,
+            is_active tinyint(1) NOT NULL DEFAULT 1,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY notification_type (notification_type),
+            KEY is_active (is_active),
+            UNIQUE KEY user_notification (user_id, notification_type)
+        ) $charset_collate;";
+
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_fields);
         dbDelta($sql_submissions);
+        dbDelta($sql_notifications);
 
         // Manually check and add form_type column if dbDelta failed
         $row = $wpdb->get_results("SHOW COLUMNS FROM $table_fields LIKE 'form_type'");
@@ -224,6 +240,23 @@ class Unico_Application_Form {
 
         $form_data['application_type'] = $application_type;
 
+        // Check for existing user by email and phone
+        $email = isset($form_data['email']) ? $form_data['email'] : '';
+        $phone = isset($form_data['phone']) ? $form_data['phone'] : '';
+
+        $validation_result = $this->validate_user_existence($email, $phone);
+
+        if ($validation_result['exists']) {
+            $redirect_base = $application_type === 'agent'
+                ? home_url('/agent-application-form')
+                : home_url('/student-application-form');
+            wp_redirect(add_query_arg([
+                'submission_error' => '1',
+                'error_message' => urlencode($validation_result['message'])
+            ], $redirect_base));
+            exit;
+        }
+
         // Generate submission number
         $submission_number = 'APP-' . date('Ymd') . '-' . strtoupper(wp_generate_password(6, false));
 
@@ -245,9 +278,13 @@ class Unico_Application_Form {
         ]);
 
         if ($inserted) {
+            // Send confirmation email to applicant
             if (isset($form_data['email'])) {
-                $this->send_confirmation_email($form_data['email'], $submission_number, $application_type);
+                $this->send_confirmation_email($form_data['email'], $submission_number, $application_type, $form_data);
             }
+
+            // Send notification to management
+            $this->send_management_notification($submission_number, $application_type, $form_data);
 
             $redirect_base = $application_type === 'agent'
                 ? home_url('/agent-application-form')
@@ -272,7 +309,158 @@ class Unico_Application_Form {
         }
     }
 
-    private function send_confirmation_email($email, $submission_number, $application_type = 'student') {
+    /**
+     * Validate if user already exists by email or phone
+     */
+    private function validate_user_existence($email, $phone) {
+        global $wpdb;
+
+        $result = [
+            'exists' => false,
+            'message' => ''
+        ];
+
+        // Check if user exists in WordPress users table
+        if (!empty($email)) {
+            $user = get_user_by('email', $email);
+            if ($user) {
+                $result['exists'] = true;
+                $result['message'] = 'A user with this email address already exists. Please login or use a different email.';
+                return $result;
+            }
+        }
+
+        // Check if email or phone exists in previous submissions
+        $table = $wpdb->prefix . 'unico_form_submissions';
+
+        if (!empty($email)) {
+            $existing = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE form_data LIKE %s AND status != 'rejected'",
+                '%"email":"' . $wpdb->esc_like($email) . '"%'
+            ));
+
+            if ($existing) {
+                $result['exists'] = true;
+                $result['message'] = 'An application with this email address already exists. If your application was rejected, the data should have been deleted and you can reapply.';
+                return $result;
+            }
+        }
+
+        if (!empty($phone)) {
+            $existing = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE form_data LIKE %s AND status != 'rejected'",
+                '%"phone":"' . $wpdb->esc_like($phone) . '"%'
+            ));
+
+            if ($existing) {
+                $result['exists'] = true;
+                $result['message'] = 'An application with this phone number already exists. If your application was rejected, the data should have been deleted and you can reapply.';
+                return $result;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Send notification to management about new application
+     */
+    private function send_management_notification($submission_number, $application_type, $form_data) {
+        global $wpdb;
+
+        // Get all management users who opted in for new application notifications
+        $table = $wpdb->prefix . 'unico_notification_recipients';
+        $notification_type = 'new_application';
+
+        $recipients = $wpdb->get_results($wpdb->prepare(
+            "SELECT user_id FROM $table WHERE notification_type = %s AND is_active = 1",
+            $notification_type
+        ));
+
+        // If no specific recipients, send to all management and admin users
+        if (empty($recipients)) {
+            $admin_users = get_users(['role__in' => ['administrator', 'management']]);
+            $emails = array_map(function($user) {
+                return $user->user_email;
+            }, $admin_users);
+        } else {
+            $emails = [];
+            foreach ($recipients as $recipient) {
+                $user = get_userdata($recipient->user_id);
+                if ($user) {
+                    $emails[] = $user->user_email;
+                }
+            }
+        }
+
+        if (empty($emails)) {
+            return;
+        }
+
+        $subject = 'New ' . ucfirst($application_type) . ' Application Submitted - ' . get_bloginfo('name');
+
+        $applicant_name = isset($form_data['full_name']) ? $form_data['full_name'] : 'Unknown';
+        $applicant_email = isset($form_data['email']) ? $form_data['email'] : 'Not provided';
+        $applicant_phone = isset($form_data['phone']) ? $form_data['phone'] : 'Not provided';
+
+        // Build application details
+        $details_html = '';
+        foreach ($form_data as $key => $value) {
+            if ($key !== 'application_type') {
+                $label = ucwords(str_replace('_', ' ', $key));
+                $details_html .= "<tr><td style='padding: 8px; border-bottom: 1px solid #eee;'><strong>{$label}:</strong></td><td style='padding: 8px; border-bottom: 1px solid #eee;'>{$value}</td></tr>";
+            }
+        }
+
+        $dashboard_url = home_url('/management-dashboard');
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>New Application Received</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>A new {$application_type} application has been submitted and is awaiting review.</p>
+
+                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                    <h3 style='color: #194f68; margin-top: 0;'>Application Details</h3>
+                    <p><strong>Application Number:</strong> <span style='font-size: 16px; color: #e95134;'>{$submission_number}</span></p>
+                    <p><strong>Applicant Name:</strong> {$applicant_name}</p>
+                    <p><strong>Email:</strong> {$applicant_email}</p>
+                    <p><strong>Phone:</strong> {$applicant_phone}</p>
+                </div>
+
+                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                    <h3 style='color: #194f68; margin-top: 0;'>Complete Application Data</h3>
+                    <table style='width: 100%; border-collapse: collapse;'>
+                        {$details_html}
+                    </table>
+                </div>
+
+                <div style='text-align: center; margin-top: 30px;'>
+                    <a href='{$dashboard_url}' style='background: #e95134; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        Review Application
+                    </a>
+                </div>
+
+                <p style='margin-top: 30px; color: #666; font-size: 14px;'>
+                    This is an automated notification from " . get_bloginfo('name') . ".
+                    You can manage your notification preferences in the Management Dashboard.
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+
+        foreach ($emails as $email) {
+            wp_mail($email, $subject, $message, $headers);
+        }
+    }
+
+    private function send_confirmation_email($email, $submission_number, $application_type = 'student', $form_data = []) {
         if ($application_type === 'agent') {
             $subject = 'Agent Application Received - ' . get_bloginfo('name');
             $intro_line = 'Thank you for submitting your agent application.';
@@ -337,5 +525,271 @@ class Unico_Application_Form {
         }
 
         return $wpdb->update($table, $data, ['id' => $id]);
+    }
+
+    /**
+     * Approve application - create user account and send credentials
+     */
+    public function approve_application($submission_id) {
+        $submission = $this->get_submission($submission_id);
+        if (!$submission) {
+            return ['success' => false, 'message' => 'Application not found'];
+        }
+
+        $form_data = json_decode($submission->form_data, true);
+        $email = isset($form_data['email']) ? $form_data['email'] : '';
+        $full_name = isset($form_data['full_name']) ? $form_data['full_name'] : '';
+
+        if (empty($email)) {
+            return ['success' => false, 'message' => 'Email not found in application'];
+        }
+
+        // Check if user already exists
+        if (get_user_by('email', $email)) {
+            return ['success' => false, 'message' => 'User account already exists with this email'];
+        }
+
+        // Generate username from email
+        $username = sanitize_user(current(explode('@', $email)));
+        $base_username = $username;
+        $counter = 1;
+
+        // Ensure unique username
+        while (username_exists($username)) {
+            $username = $base_username . $counter;
+            $counter++;
+        }
+
+        // Generate random password
+        $password = wp_generate_password(12, true, false);
+
+        // Create user account
+        $user_id = wp_create_user($username, $password, $email);
+
+        if (is_wp_error($user_id)) {
+            return ['success' => false, 'message' => 'Failed to create user: ' . $user_id->get_error_message()];
+        }
+
+        // Set user role based on application type
+        $user = new WP_User($user_id);
+        $role = $submission->form_type === 'agent' ? 'agent' : 'student';
+        $user->set_role($role);
+
+        // Update user meta
+        if (!empty($full_name)) {
+            $name_parts = explode(' ', $full_name, 2);
+            update_user_meta($user_id, 'first_name', $name_parts[0]);
+            if (isset($name_parts[1])) {
+                update_user_meta($user_id, 'last_name', $name_parts[1]);
+            }
+        }
+
+        // Update submission status
+        $this->update_status($submission_id, 'approved', 'Application approved and user account created');
+
+        // Link submission to user
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_form_submissions';
+        $wpdb->update($table, ['user_id' => $user_id], ['id' => $submission_id]);
+
+        // Send approval email with credentials
+        $this->send_approval_email($email, $username, $password, $role, $submission->submission_number);
+
+        return ['success' => true, 'message' => 'Application approved and user account created', 'user_id' => $user_id];
+    }
+
+    /**
+     * Reject application - send rejection email and delete data
+     */
+    public function reject_application($submission_id, $rejection_reason = '') {
+        $submission = $this->get_submission($submission_id);
+        if (!$submission) {
+            return ['success' => false, 'message' => 'Application not found'];
+        }
+
+        $form_data = json_decode($submission->form_data, true);
+        $email = isset($form_data['email']) ? $form_data['email'] : '';
+
+        // Send rejection email
+        if (!empty($email)) {
+            $this->send_rejection_email($email, $submission->submission_number, $submission->form_type, $rejection_reason);
+        }
+
+        // Delete the submission
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_form_submissions';
+        $deleted = $wpdb->delete($table, ['id' => $submission_id]);
+
+        if ($deleted) {
+            return ['success' => true, 'message' => 'Application rejected and data deleted'];
+        } else {
+            return ['success' => false, 'message' => 'Failed to delete application data'];
+        }
+    }
+
+    /**
+     * Send approval email with login credentials
+     */
+    private function send_approval_email($email, $username, $password, $role, $submission_number) {
+        $subject = 'Application Approved - Welcome to ' . get_bloginfo('name');
+
+        $role_name = ucfirst($role);
+        $dashboard_url = $role === 'agent' ? home_url('/agent-dashboard') : home_url('/student-dashboard');
+        $login_url = home_url('/login');
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>🎉 Application Approved!</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>Congratulations! Your application has been approved.</p>
+
+                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                    <h3 style='color: #194f68; margin-top: 0;'>Your Account Details</h3>
+                    <p><strong>Application Number:</strong> <span style='color: #e95134;'>{$submission_number}</span></p>
+                    <p><strong>Username:</strong> <span style='font-family: monospace; background: #f5f5f5; padding: 5px 10px; border-radius: 3px;'>{$username}</span></p>
+                    <p><strong>Password:</strong> <span style='font-family: monospace; background: #f5f5f5; padding: 5px 10px; border-radius: 3px;'>{$password}</span></p>
+                    <p><strong>Account Type:</strong> {$role_name}</p>
+                </div>
+
+                <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
+                    <p style='margin: 0;'><strong>Security Notice:</strong> Please change your password after first login for security.</p>
+                </div>
+
+                <div style='text-align: center; margin-top: 30px;'>
+                    <a href='{$login_url}' style='background: #e95134; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;'>
+                        Login Now
+                    </a>
+                    <a href='{$dashboard_url}' style='background: #194f68; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        Visit Dashboard
+                    </a>
+                </div>
+
+                <p style='margin-top: 30px; color: #666;'>
+                    Best regards,<br>
+                    " . get_bloginfo('name') . " Team
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        wp_mail($email, $subject, $message, $headers);
+    }
+
+    /**
+     * Send rejection email
+     */
+    private function send_rejection_email($email, $submission_number, $application_type, $rejection_reason = '') {
+        $subject = 'Application Update - ' . get_bloginfo('name');
+
+        $type_label = $application_type === 'agent' ? 'agent' : 'student';
+        $reapply_url = $application_type === 'agent' ? home_url('/agent-application-form') : home_url('/student-application-form');
+
+        $reason_html = '';
+        if (!empty($rejection_reason)) {
+            $reason_html = "
+            <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                <h3 style='color: #194f68; margin-top: 0;'>Reason</h3>
+                <p>{$rejection_reason}</p>
+            </div>
+            ";
+        }
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>Application Status Update</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>Thank you for your interest in " . get_bloginfo('name') . ".</p>
+
+                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                    <h3 style='color: #194f68; margin-top: 0;'>Application Details</h3>
+                    <p><strong>Application Number:</strong> <span style='color: #e95134;'>{$submission_number}</span></p>
+                    <p><strong>Status:</strong> Not Approved</p>
+                </div>
+
+                {$reason_html}
+
+                <p>Your application data has been removed from our system, which means you are welcome to submit a new application with updated information if you wish.</p>
+
+                <div style='text-align: center; margin-top: 30px;'>
+                    <a href='{$reapply_url}' style='background: #194f68; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        Submit New Application
+                    </a>
+                </div>
+
+                <p style='margin-top: 30px; color: #666;'>
+                    Best regards,<br>
+                    " . get_bloginfo('name') . " Team
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        wp_mail($email, $subject, $message, $headers);
+    }
+
+    /**
+     * Add user to notification recipients
+     */
+    public function add_notification_recipient($user_id, $notification_type = 'new_application') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_notification_recipients';
+
+        return $wpdb->insert($table, [
+            'user_id' => $user_id,
+            'notification_type' => $notification_type,
+            'is_active' => 1
+        ]);
+    }
+
+    /**
+     * Remove user from notification recipients
+     */
+    public function remove_notification_recipient($user_id, $notification_type = 'new_application') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_notification_recipients';
+
+        return $wpdb->delete($table, [
+            'user_id' => $user_id,
+            'notification_type' => $notification_type
+        ]);
+    }
+
+    /**
+     * Check if user is subscribed to notifications
+     */
+    public function is_notification_recipient($user_id, $notification_type = 'new_application') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_notification_recipients';
+
+        $result = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE user_id = %d AND notification_type = %s AND is_active = 1",
+            $user_id,
+            $notification_type
+        ));
+
+        return $result > 0;
+    }
+
+    /**
+     * Get all notification recipients
+     */
+    public function get_notification_recipients($notification_type = 'new_application') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_notification_recipients';
+
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table WHERE notification_type = %s AND is_active = 1",
+            $notification_type
+        ));
     }
 }

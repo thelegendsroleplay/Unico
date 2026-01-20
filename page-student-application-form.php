@@ -56,7 +56,15 @@ get_header();
                         <div class="application-alert-icon">!</div>
                         <div class="application-alert-body">
                             <h2>Submission failed</h2>
-                            <p>There was a problem submitting your application. Please try again.</p>
+                            <p>
+                                <?php
+                                if (isset($_GET['error_message'])) {
+                                    echo esc_html(urldecode($_GET['error_message']));
+                                } else {
+                                    echo 'There was a problem submitting your application. Please try again.';
+                                }
+                                ?>
+                            </p>
                         </div>
                     </div>
                 <?php endif; ?>
