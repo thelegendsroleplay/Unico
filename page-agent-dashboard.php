@@ -118,7 +118,7 @@ get_header();
             </div>
         </div>
         <div class="header-actions">
-            <a href="<?php echo esc_url(wc_get_page_permalink('vouchers')); ?>" class="action-btn btn-primary">
+            <a href="<?php echo esc_url(home_url('/vouchers')); ?>" class="action-btn btn-primary">
                 <span class="dashicons dashicons-cart"></span> Purchase Vouchers
             </a>
             <a href="<?php echo esc_url(wc_get_account_endpoint_url('edit-account')); ?>" class="action-btn btn-secondary">
@@ -228,7 +228,7 @@ get_header();
                     <?php else : ?>
                         <div class="empty-state">
                             <p>No vouchers found. Purchase some to get started!</p>
-                            <a href="<?php echo esc_url(wc_get_page_permalink('shop')); ?>" class="btn-text">Go to Shop &rarr;</a>
+                            <a href="<?php echo esc_url(home_url('/vouchers')); ?>" class="btn-text">Go to Shop &rarr;</a>
                         </div>
                     <?php endif; ?>
                 </div>
