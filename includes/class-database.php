@@ -139,15 +139,17 @@ class Unico_Database {
         $table_email_verify = $wpdb->prefix . 'unico_email_verification';
         $sql_email_verify = "CREATE TABLE $table_email_verify (
             id bigint(20) NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) NOT NULL,
+            user_id bigint(20) DEFAULT NULL,
+            email varchar(255) DEFAULT NULL,
             token varchar(255) NOT NULL,
             expires_at datetime NOT NULL,
             verified_at datetime DEFAULT NULL,
             ip_address varchar(45) DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
-            UNIQUE KEY token (token),
+            KEY token (token),
             KEY user_id (user_id),
+            KEY email (email),
             KEY expires_at (expires_at)
         ) $charset_collate;";
         dbDelta($sql_email_verify);
