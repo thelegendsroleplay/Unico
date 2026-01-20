@@ -146,6 +146,17 @@ get_header();
                                                 <?php echo $field->field_required ? 'required' : ''; ?>
                                             >
                                         <?php endif; ?>
+
+                                        <?php if ($field->field_name === 'email'): ?>
+                                            <div style="margin-top: 8px;">
+                                                <a href="#" id="verify-email-link" style="color: #194f68; text-decoration: none; font-weight: 600; font-size: 14px;" onclick="openVerificationPopup(event)">
+                                                    Click here to verify
+                                                </a>
+                                                <span id="email-verified-badge" style="display: none; color: #28a745; font-weight: 600; font-size: 14px;">
+                                                    ✓ Verified
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -156,57 +167,12 @@ get_header();
 
                     <?php wp_nonce_field('submit_application', 'application_nonce'); ?>
 
-                    <!-- Email Verification Section -->
-                    <div class="application-section" style="background: #f0f8ff; border: 2px solid #194f68; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                        <h3 style="color: #194f68; margin-top: 0;">📧 Email Verification Required</h3>
-                        <p style="margin-bottom: 15px;">Before submitting your application, you must verify your email address.</p>
-
-                        <div id="email-verification-form" style="display: block;">
-                            <label for="verify-email" style="display: block; margin-bottom: 8px; font-weight: 600;">Enter your email to verify:</label>
-                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                                <input
-                                    type="email"
-                                    id="verify-email"
-                                    class="application-control"
-                                    placeholder="your@email.com"
-                                    value="<?php echo isset($_GET['email']) ? esc_attr(urldecode($_GET['email'])) : ''; ?>"
-                                    required
-                                    style="flex: 1; min-width: 250px;"
-                                >
-                                <button
-                                    type="button"
-                                    id="send-verification-btn"
-                                    class="application-submit"
-                                    style="background: #194f68; flex-shrink: 0;"
-                                    onclick="sendVerificationEmail()"
-                                >
-                                    Send Verification Email
-                                </button>
-                            </div>
-                            <p style="font-size: 14px; color: #666; margin-top: 10px;">
-                                <strong>Important:</strong> Make sure the email address you enter here matches the email in your application form above.
-                            </p>
-                        </div>
-
-                        <div id="verification-pending" style="display: none; color: #856404; background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                            <strong>⏳ Verification Pending</strong>
-                            <p style="margin: 5px 0 0 0;">Check your email and click the verification link to proceed.</p>
-                        </div>
-
-                        <div id="verification-success" style="display: none; color: #155724; background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
-                            <strong>✅ Email Verified!</strong>
-                            <p style="margin: 5px 0 0 0;">You can now submit your application.</p>
-                        </div>
-                    </div>
-
-                    <div class="application-actions">
+                    <div class="application-actions" id="submit-section" style="display: none;">
                         <button
                             type="submit"
                             name="submit_application"
                             class="application-submit"
                             id="submit-application-btn"
-                            <?php if (!isset($_GET['email_verified'])): ?>disabled<?php endif; ?>
-                            style="<?php if (!isset($_GET['email_verified'])): ?>opacity: 0.5; cursor: not-allowed;<?php endif; ?>"
                         >
                             Submit Application
                         </button>
@@ -217,57 +183,170 @@ get_header();
                     </div>
                 </form>
 
-                <form method="post" id="verify-email-form" style="display: none;">
-                    <input type="hidden" name="email" id="verify-email-hidden">
-                    <input type="hidden" name="application_type" value="agent">
-                    <?php wp_nonce_field('verify_application_email', 'verify_email_nonce'); ?>
-                    <button type="submit" name="verify_application_email" id="verify-email-submit"></button>
-                </form>
+                <!-- Verification Popup Modal -->
+                <div id="verification-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 9999; align-items: center; justify-content: center;">
+                    <div style="background: #fff; border-radius: 10px; max-width: 500px; width: 90%; padding: 30px; position: relative;">
+                        <h3 style="color: #194f68; margin-top: 0;">Email Verification</h3>
+
+                        <div id="verification-step-1">
+                            <p style="margin-bottom: 20px;">Click "Send Code" to receive a 6-digit verification code at your email address.</p>
+                            <div id="verification-error" style="display: none; background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #f5c6cb;"></div>
+                            <button type="button" onclick="sendVerificationOTP()" style="background: #194f68; color: #fff; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">
+                                Send Verification Code
+                            </button>
+                        </div>
+
+                        <div id="verification-step-2" style="display: none;">
+                            <p style="margin-bottom: 20px;">A 6-digit verification code has been sent to your email. Please enter it below:</p>
+                            <div id="otp-error" style="display: none; background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #f5c6cb;"></div>
+                            <input type="text" id="otp-input" maxlength="6" placeholder="Enter 6-digit code" style="width: 100%; padding: 12px; border: 2px solid #194f68; border-radius: 5px; font-size: 18px; text-align: center; letter-spacing: 5px; margin-bottom: 15px;" />
+                            <button type="button" onclick="verifyOTP()" style="background: #e95134; color: #fff; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">
+                                Verify Code
+                            </button>
+                            <button type="button" onclick="backToSendOTP()" style="background: #6c757d; color: #fff; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px;">
+                                Resend Code
+                            </button>
+                        </div>
+
+                        <button type="button" onclick="closeVerificationPopup()" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                    </div>
+                </div>
 
                 <script>
-                function sendVerificationEmail() {
-                    const emailInput = document.getElementById('verify-email');
-                    const email = emailInput.value.trim();
+                let isEmailVerified = false;
+                const ajaxUrl = '<?php echo admin_url('admin-ajax.php'); ?>';
+                const verifyNonce = '<?php echo wp_create_nonce('verify_application_email'); ?>';
 
-                    if (!email || !email.includes('@')) {
-                        alert('Please enter a valid email address');
+                function openVerificationPopup(event) {
+                    event.preventDefault();
+                    const emailField = document.getElementById('email');
+                    const phoneField = document.getElementById('phone');
+
+                    if (!emailField.value || !emailField.value.includes('@')) {
+                        alert('Please enter a valid email address first');
+                        emailField.focus();
                         return;
                     }
 
-                    // Update hidden form
-                    document.getElementById('verify-email-hidden').value = email;
-
-                    // Show pending state
-                    document.getElementById('email-verification-form').style.display = 'none';
-                    document.getElementById('verification-pending').style.display = 'block';
-
-                    // Submit the verification form
-                    document.getElementById('verify-email-submit').click();
-                }
-
-                // Check if email was just verified
-                if (window.location.search.includes('email_verified=1')) {
-                    document.getElementById('email-verification-form').style.display = 'none';
-                    document.getElementById('verification-success').style.display = 'block';
-                    document.getElementById('submit-application-btn').disabled = false;
-                    document.getElementById('submit-application-btn').style.opacity = '1';
-                    document.getElementById('submit-application-btn').style.cursor = 'pointer';
-
-                    // Auto-fill email in form if provided
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const verifiedEmail = urlParams.get('email');
-                    if (verifiedEmail) {
-                        const emailField = document.getElementById('email');
-                        if (emailField) {
-                            emailField.value = decodeURIComponent(verifiedEmail);
-                        }
+                    if (!phoneField.value) {
+                        alert('Please enter your phone number first');
+                        phoneField.focus();
+                        return;
                     }
+
+                    // Reset modal to step 1
+                    document.getElementById('verification-step-1').style.display = 'block';
+                    document.getElementById('verification-step-2').style.display = 'none';
+                    document.getElementById('verification-error').style.display = 'none';
+                    document.getElementById('otp-error').style.display = 'none';
+                    document.getElementById('otp-input').value = '';
+
+                    // Show modal
+                    document.getElementById('verification-modal').style.display = 'flex';
                 }
 
-                // Check if verification was just sent
-                if (window.location.search.includes('verification_sent=1')) {
-                    document.getElementById('email-verification-form').style.display = 'none';
-                    document.getElementById('verification-pending').style.display = 'block';
+                function closeVerificationPopup() {
+                    document.getElementById('verification-modal').style.display = 'none';
+                }
+
+                function sendVerificationOTP() {
+                    const emailField = document.getElementById('email');
+                    const phoneField = document.getElementById('phone');
+                    const email = emailField.value.trim();
+                    const phone = phoneField.value.trim();
+                    const errorDiv = document.getElementById('verification-error');
+
+                    if (!email || !email.includes('@')) {
+                        errorDiv.textContent = 'Please enter a valid email address';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    // Send AJAX request to send OTP
+                    const formData = new FormData();
+                    formData.append('action', 'send_verification_otp');
+                    formData.append('nonce', verifyNonce);
+                    formData.append('email', email);
+                    formData.append('phone', phone);
+
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Move to step 2
+                            document.getElementById('verification-step-1').style.display = 'none';
+                            document.getElementById('verification-step-2').style.display = 'block';
+                            document.getElementById('verification-error').style.display = 'none';
+                        } else {
+                            errorDiv.textContent = data.data.message || 'Failed to send verification code';
+                            errorDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        errorDiv.textContent = 'Network error. Please try again.';
+                        errorDiv.style.display = 'block';
+                    });
+                }
+
+                function backToSendOTP() {
+                    document.getElementById('verification-step-2').style.display = 'none';
+                    document.getElementById('verification-step-1').style.display = 'block';
+                    document.getElementById('otp-input').value = '';
+                    document.getElementById('otp-error').style.display = 'none';
+                }
+
+                function verifyOTP() {
+                    const emailField = document.getElementById('email');
+                    const email = emailField.value.trim();
+                    const otp = document.getElementById('otp-input').value.trim();
+                    const errorDiv = document.getElementById('otp-error');
+
+                    if (!otp || otp.length !== 6) {
+                        errorDiv.textContent = 'Please enter the 6-digit verification code';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+
+                    // Send AJAX request to verify OTP
+                    const formData = new FormData();
+                    formData.append('action', 'verify_otp');
+                    formData.append('nonce', verifyNonce);
+                    formData.append('email', email);
+                    formData.append('otp', otp);
+
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Email verified successfully
+                            isEmailVerified = true;
+                            closeVerificationPopup();
+
+                            // Update UI
+                            document.getElementById('verify-email-link').style.display = 'none';
+                            document.getElementById('email-verified-badge').style.display = 'inline';
+
+                            // Show submit button
+                            document.getElementById('submit-section').style.display = 'block';
+
+                            // Disable email field
+                            emailField.setAttribute('readonly', 'readonly');
+                            emailField.style.backgroundColor = '#f5f5f5';
+                        } else {
+                            errorDiv.textContent = data.data.message || 'Invalid verification code';
+                            errorDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        errorDiv.textContent = 'Network error. Please try again.';
+                        errorDiv.style.display = 'block';
+                    });
                 }
                 </script>
             <?php endif; ?>

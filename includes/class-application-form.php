@@ -22,6 +22,13 @@ class Unico_Application_Form {
     public function __construct() {
         add_action('init', [$this, 'handle_submission'], 5);
         add_action('init', [$this, 'handle_email_verification'], 5);
+
+        // AJAX handlers for email verification
+        add_action('wp_ajax_nopriv_send_verification_otp', [$this, 'ajax_send_verification_otp']);
+        add_action('wp_ajax_send_verification_otp', [$this, 'ajax_send_verification_otp']);
+        add_action('wp_ajax_nopriv_verify_otp', [$this, 'ajax_verify_otp']);
+        add_action('wp_ajax_verify_otp', [$this, 'ajax_verify_otp']);
+
         $this->create_tables();
     }
 
@@ -821,55 +828,55 @@ class Unico_Application_Form {
      * Handle email verification for application forms
      */
     public function handle_email_verification() {
-        // Handle verification request (send email)
-        if (isset($_POST['verify_application_email']) && isset($_POST['verify_email_nonce']) && wp_verify_nonce($_POST['verify_email_nonce'], 'verify_application_email')) {
+        // Handle OTP send request (AJAX)
+        if (isset($_POST['action']) && $_POST['action'] === 'send_verification_otp' && isset($_POST['verify_email_nonce']) && wp_verify_nonce($_POST['verify_email_nonce'], 'verify_application_email')) {
             $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
-            $application_type = isset($_POST['application_type']) ? sanitize_text_field($_POST['application_type']) : 'student';
 
             if (!empty($email) && is_email($email)) {
-                $sent = $this->send_application_verification_email($email);
+                // Check if email already exists
+                if (get_user_by('email', $email)) {
+                    wp_send_json_error(['message' => 'This email is already registered. Please login or use a different email.']);
+                    exit;
+                }
 
-                $redirect_base = $application_type === 'agent'
-                    ? home_url('/agent-application-form')
-                    : home_url('/student-application-form');
+                // Check in submissions
+                global $wpdb;
+                $table = $wpdb->prefix . 'unico_form_submissions';
+                $existing = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM $table WHERE form_data LIKE %s AND status != 'rejected'",
+                    '%"email":"' . $wpdb->esc_like($email) . '"%'
+                ));
+
+                if ($existing) {
+                    wp_send_json_error(['message' => 'An application with this email already exists.']);
+                    exit;
+                }
+
+                // Send OTP
+                $sent = $this->send_application_verification_otp($email);
 
                 if ($sent) {
-                    wp_redirect(add_query_arg([
-                        'verification_sent' => '1',
-                        'email' => urlencode($email)
-                    ], $redirect_base));
+                    wp_send_json_success(['message' => 'OTP sent to your email. Please check your inbox.']);
                 } else {
-                    wp_redirect(add_query_arg([
-                        'submission_error' => '1',
-                        'error_message' => urlencode('Failed to send verification email. Please try again.')
-                    ], $redirect_base));
+                    wp_send_json_error(['message' => 'Failed to send OTP. Please try again.']);
                 }
-                exit;
+            } else {
+                wp_send_json_error(['message' => 'Please enter a valid email address.']);
             }
+            exit;
         }
 
-        // Handle verification link click
-        if (isset($_GET['action']) && $_GET['action'] === 'verify_application_email' && isset($_GET['token']) && isset($_GET['email'])) {
-            $token = sanitize_text_field($_GET['token']);
-            $email = sanitize_email($_GET['email']);
-            $form_type = isset($_GET['form_type']) ? sanitize_text_field($_GET['form_type']) : 'student';
+        // Handle OTP verification (AJAX)
+        if (isset($_POST['action']) && $_POST['action'] === 'verify_otp' && isset($_POST['verify_email_nonce']) && wp_verify_nonce($_POST['verify_email_nonce'], 'verify_application_email')) {
+            $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+            $otp = isset($_POST['otp']) ? sanitize_text_field($_POST['otp']) : '';
 
-            $verified = $this->verify_application_email($email, $token);
-
-            $redirect_base = $form_type === 'agent'
-                ? home_url('/agent-application-form')
-                : home_url('/student-application-form');
+            $verified = $this->verify_application_otp($email, $otp);
 
             if ($verified) {
-                wp_redirect(add_query_arg([
-                    'email_verified' => '1',
-                    'email' => urlencode($email)
-                ], $redirect_base));
+                wp_send_json_success(['message' => 'Email verified successfully!']);
             } else {
-                wp_redirect(add_query_arg([
-                    'submission_error' => '1',
-                    'error_message' => urlencode('Invalid or expired verification link.')
-                ], $redirect_base));
+                wp_send_json_error(['message' => 'Invalid or expired OTP. Please try again.']);
             }
             exit;
         }
@@ -1003,5 +1010,160 @@ class Unico_Application_Form {
         ));
 
         return $verified > 0;
+    }
+
+    /**
+     * Send OTP for email verification
+     */
+    private function send_application_verification_otp($email) {
+        global $wpdb;
+
+        // Generate 6-digit OTP
+        $otp = sprintf('%06d', mt_rand(0, 999999));
+        $expires_at = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+        // Store in email_verification table
+        $table = $wpdb->prefix . 'unico_email_verification';
+
+        // Delete any existing unverified tokens for this email
+        $wpdb->delete($table, ['email' => $email, 'verified_at' => null]);
+
+        // Insert new OTP
+        $inserted = $wpdb->insert($table, [
+            'email' => $email,
+            'token' => $otp,
+            'expires_at' => $expires_at,
+            'created_at' => current_time('mysql')
+        ]);
+
+        if (!$inserted) {
+            return false;
+        }
+
+        // Send OTP email
+        $subject = 'Your Verification Code - ' . get_bloginfo('name');
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>Email Verification</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>Thank you for starting your application with " . get_bloginfo('name') . ".</p>
+
+                <p>Your verification code is:</p>
+
+                <div style='text-align: center; margin: 30px 0;'>
+                    <div style='background: #fff; border: 2px solid #194f68; padding: 20px; border-radius: 8px; display: inline-block;'>
+                        <span style='font-size: 32px; font-weight: bold; color: #194f68; letter-spacing: 8px; font-family: monospace;'>{$otp}</span>
+                    </div>
+                </div>
+
+                <p>Enter this code in the verification popup to continue with your application.</p>
+
+                <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
+                    <p style='margin: 0; font-size: 14px;'>
+                        <strong>Important:</strong> This verification code will expire in 15 minutes.
+                    </p>
+                </div>
+
+                <p style='margin-top: 30px; color: #666;'>
+                    Best regards,<br>
+                    " . get_bloginfo('name') . " Team
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        return wp_mail($email, $subject, $message, $headers);
+    }
+
+    /**
+     * Verify OTP for email verification
+     */
+    private function verify_application_otp($email, $otp) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_email_verification';
+
+        $record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE email = %s AND token = %s AND verified_at IS NULL",
+            $email,
+            $otp
+        ));
+
+        if (!$record) {
+            return false;
+        }
+
+        // Check if expired
+        if (strtotime($record->expires_at) < time()) {
+            return false;
+        }
+
+        // Mark as verified
+        $updated = $wpdb->update(
+            $table,
+            ['verified_at' => current_time('mysql')],
+            ['id' => $record->id]
+        );
+
+        return $updated !== false;
+    }
+
+    /**
+     * AJAX handler for sending verification OTP
+     */
+    public function ajax_send_verification_otp() {
+        check_ajax_referer('verify_application_email', 'nonce');
+
+        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
+
+        if (!empty($email) && is_email($email)) {
+            // Validate email and phone don't already exist
+            $validation_result = $this->validate_user_existence($email, $phone);
+
+            if ($validation_result['exists']) {
+                wp_send_json_error(['message' => $validation_result['message']]);
+                return;
+            }
+
+            // Send OTP
+            $sent = $this->send_application_verification_otp($email);
+
+            if ($sent) {
+                wp_send_json_success(['message' => 'Verification code sent to your email. Please check your inbox.']);
+            } else {
+                wp_send_json_error(['message' => 'Failed to send verification code. Please try again.']);
+            }
+        } else {
+            wp_send_json_error(['message' => 'Please enter a valid email address.']);
+        }
+    }
+
+    /**
+     * AJAX handler for verifying OTP
+     */
+    public function ajax_verify_otp() {
+        check_ajax_referer('verify_application_email', 'nonce');
+
+        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $otp = isset($_POST['otp']) ? sanitize_text_field($_POST['otp']) : '';
+
+        if (empty($email) || empty($otp)) {
+            wp_send_json_error(['message' => 'Email and verification code are required.']);
+            return;
+        }
+
+        $verified = $this->verify_application_otp($email, $otp);
+
+        if ($verified) {
+            wp_send_json_success(['message' => 'Email verified successfully!']);
+        } else {
+            wp_send_json_error(['message' => 'Invalid or expired verification code. Please try again.']);
+        }
     }
 }
