@@ -1053,7 +1053,8 @@ class Unico_Application_Form {
         ]);
 
         if (!$inserted) {
-            return false;
+            error_log('OTP Insert Failed: ' . $wpdb->last_error);
+            return ['error' => 'db_insert_failed', 'db_error' => $wpdb->last_error];
         }
 
         // Send OTP email
@@ -1096,10 +1097,15 @@ class Unico_Application_Form {
         $headers = ['Content-Type: text/html; charset=UTF-8'];
         $mail_sent = wp_mail($email, $subject, $message, $headers);
 
+        if (!$mail_sent) {
+            error_log('OTP Email Failed to: ' . $email);
+        }
+
         // Return array with status and OTP
         return [
             'otp' => $otp,
-            'mail_sent' => $mail_sent
+            'mail_sent' => $mail_sent,
+            'db_error' => $inserted ? '' : $wpdb->last_error
         ];
     }
 
@@ -1133,11 +1139,13 @@ class Unico_Application_Form {
                 return 0;
             }
             
+            error_log("OTP Verify Failed: Record not found for Email: $email, OTP: $otp");
             return 1; // Not found
         }
 
         // Check if expired
         if (strtotime($record->expires_at) < time()) {
+            error_log("OTP Verify Failed: Expired for Email: $email");
             return 2; // Expired
         }
 
@@ -1147,6 +1155,10 @@ class Unico_Application_Form {
             ['verified_at' => current_time('mysql')],
             ['id' => $record->id]
         );
+
+        if ($updated === false) {
+             error_log("OTP Verify Failed: Database update failed for Email: $email. DB Error: " . $wpdb->last_error);
+        }
 
         return $updated !== false ? 0 : 3; // 3: Update failed
     }
@@ -1176,11 +1188,15 @@ class Unico_Application_Form {
                 $msg = 'Verification code sent to your email. Please check your inbox.';
                 if (!$result['mail_sent']) {
                     // For development/debugging when mail fails
-                    $msg = 'Verification code generated: ' . $result['otp'] . ' (Mail failed to send on localhost)';
+                    $msg = 'Verification code generated: ' . $result['otp'] . ' (Mail failed to send. Check server logs.)';
                 }
                 wp_send_json_success(['message' => $msg]);
             } else {
-                wp_send_json_error(['message' => 'Failed to generate verification code. Please try again.']);
+                $error_msg = 'Failed to generate verification code.';
+                if (isset($result['error']) && $result['error'] === 'db_insert_failed') {
+                     $error_msg .= ' Database Error: ' . $result['db_error'];
+                }
+                wp_send_json_error(['message' => $error_msg]);
             }
         } else {
             wp_send_json_error(['message' => 'Please enter a valid email address.']);
