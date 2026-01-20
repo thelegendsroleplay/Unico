@@ -20,7 +20,8 @@ class Unico_Application_Form {
     }
 
     public function __construct() {
-        add_action('init', [$this, 'handle_submission']);
+        add_action('init', [$this, 'handle_submission'], 5);
+        add_action('init', [$this, 'handle_email_verification'], 5);
         $this->create_tables();
     }
 
@@ -241,8 +242,31 @@ class Unico_Application_Form {
         $form_data['application_type'] = $application_type;
 
         // Check for existing user by email and phone
-        $email = isset($form_data['email']) ? $form_data['email'] : '';
+        $email = isset($form_data['email']) ? sanitize_email($form_data['email']) : '';
         $phone = isset($form_data['phone']) ? $form_data['phone'] : '';
+
+        if (empty($email) || !is_email($email)) {
+            $redirect_base = $application_type === 'agent'
+                ? home_url('/agent-application-form')
+                : home_url('/student-application-form');
+            wp_redirect(add_query_arg([
+                'submission_error' => '1',
+                'error_message' => urlencode('Please provide a valid email address.')
+            ], $redirect_base));
+            exit;
+        }
+
+        // Check if email is verified
+        if (!$this->is_email_verified_for_application($email)) {
+            $redirect_base = $application_type === 'agent'
+                ? home_url('/agent-application-form')
+                : home_url('/student-application-form');
+            wp_redirect(add_query_arg([
+                'submission_error' => '1',
+                'error_message' => urlencode('Please verify your email address before submitting the application.')
+            ], $redirect_base));
+            exit;
+        }
 
         $validation_result = $this->validate_user_existence($email, $phone);
 
@@ -791,5 +815,193 @@ class Unico_Application_Form {
             "SELECT * FROM $table WHERE notification_type = %s AND is_active = 1",
             $notification_type
         ));
+    }
+
+    /**
+     * Handle email verification for application forms
+     */
+    public function handle_email_verification() {
+        // Handle verification request (send email)
+        if (isset($_POST['verify_application_email']) && isset($_POST['verify_email_nonce']) && wp_verify_nonce($_POST['verify_email_nonce'], 'verify_application_email')) {
+            $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+            $application_type = isset($_POST['application_type']) ? sanitize_text_field($_POST['application_type']) : 'student';
+
+            if (!empty($email) && is_email($email)) {
+                $sent = $this->send_application_verification_email($email);
+
+                $redirect_base = $application_type === 'agent'
+                    ? home_url('/agent-application-form')
+                    : home_url('/student-application-form');
+
+                if ($sent) {
+                    wp_redirect(add_query_arg([
+                        'verification_sent' => '1',
+                        'email' => urlencode($email)
+                    ], $redirect_base));
+                } else {
+                    wp_redirect(add_query_arg([
+                        'submission_error' => '1',
+                        'error_message' => urlencode('Failed to send verification email. Please try again.')
+                    ], $redirect_base));
+                }
+                exit;
+            }
+        }
+
+        // Handle verification link click
+        if (isset($_GET['action']) && $_GET['action'] === 'verify_application_email' && isset($_GET['token']) && isset($_GET['email'])) {
+            $token = sanitize_text_field($_GET['token']);
+            $email = sanitize_email($_GET['email']);
+            $form_type = isset($_GET['form_type']) ? sanitize_text_field($_GET['form_type']) : 'student';
+
+            $verified = $this->verify_application_email($email, $token);
+
+            $redirect_base = $form_type === 'agent'
+                ? home_url('/agent-application-form')
+                : home_url('/student-application-form');
+
+            if ($verified) {
+                wp_redirect(add_query_arg([
+                    'email_verified' => '1',
+                    'email' => urlencode($email)
+                ], $redirect_base));
+            } else {
+                wp_redirect(add_query_arg([
+                    'submission_error' => '1',
+                    'error_message' => urlencode('Invalid or expired verification link.')
+                ], $redirect_base));
+            }
+            exit;
+        }
+    }
+
+    /**
+     * Send verification email for application
+     */
+    private function send_application_verification_email($email) {
+        global $wpdb;
+
+        // Generate verification token
+        $token = wp_generate_password(32, false);
+        $expires_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        // Store in email_verification table (reuse existing table)
+        $table = $wpdb->prefix . 'unico_email_verification';
+
+        // Delete any existing tokens for this email
+        $wpdb->delete($table, ['email' => $email, 'verified_at' => null]);
+
+        // Insert new token
+        $inserted = $wpdb->insert($table, [
+            'email' => $email,
+            'token' => $token,
+            'expires_at' => $expires_at,
+            'created_at' => current_time('mysql')
+        ]);
+
+        if (!$inserted) {
+            return false;
+        }
+
+        // Send verification email
+        $verification_url = add_query_arg([
+            'action' => 'verify_application_email',
+            'token' => $token,
+            'email' => urlencode($email),
+            'form_type' => 'student'
+        ], home_url('/student-application-form'));
+
+        $subject = 'Verify Your Email - ' . get_bloginfo('name');
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>Email Verification Required</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>Thank you for starting your application with " . get_bloginfo('name') . ".</p>
+
+                <p>To proceed with your application submission, please verify your email address by clicking the button below:</p>
+
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='{$verification_url}' style='background: #e95134; color: #fff; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;'>
+                        Verify Email Address
+                    </a>
+                </div>
+
+                <p style='color: #666; font-size: 14px;'>
+                    Or copy and paste this link into your browser:<br>
+                    <a href='{$verification_url}' style='color: #194f68; word-break: break-all;'>{$verification_url}</a>
+                </p>
+
+                <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
+                    <p style='margin: 0; font-size: 14px;'>
+                        <strong>Important:</strong> This verification link will expire in 24 hours.
+                    </p>
+                </div>
+
+                <p style='margin-top: 30px; color: #666;'>
+                    Best regards,<br>
+                    " . get_bloginfo('name') . " Team
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        return wp_mail($email, $subject, $message, $headers);
+    }
+
+    /**
+     * Verify application email with token
+     */
+    private function verify_application_email($email, $token) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_email_verification';
+
+        $record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE email = %s AND token = %s AND verified_at IS NULL",
+            $email,
+            $token
+        ));
+
+        if (!$record) {
+            return false;
+        }
+
+        // Check if expired
+        if (strtotime($record->expires_at) < time()) {
+            return false;
+        }
+
+        // Mark as verified
+        $updated = $wpdb->update(
+            $table,
+            ['verified_at' => current_time('mysql')],
+            ['id' => $record->id]
+        );
+
+        return $updated !== false;
+    }
+
+    /**
+     * Check if email is verified for application
+     */
+    private function is_email_verified_for_application($email) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_email_verification';
+
+        // Check if email has been verified within last 24 hours
+        $verified = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table
+            WHERE email = %s
+            AND verified_at IS NOT NULL
+            AND verified_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)",
+            $email
+        ));
+
+        return $verified > 0;
     }
 }
