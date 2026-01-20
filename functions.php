@@ -877,6 +877,7 @@ add_action('init', 'unico_dev_sync_required_pages');
  * LOAD VOUCHER BOOKING SYSTEM
  * -------------------------------------------------- */
 require_once get_template_directory() . '/includes/class-init.php';
+require_once get_template_directory() . '/includes/class-smtp-settings.php'; // Load SMTP Settings
 
 function unico_template_override($template) {
     if (is_page()) {
