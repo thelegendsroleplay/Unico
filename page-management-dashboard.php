@@ -741,7 +741,22 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
                     $headers = ['Content-Type: text/html; charset=UTF-8'];
                     wp_mail($email, $subject, $message, $headers);
                 }
+                
+                $mgmt_notices[] = [
+                    'type' => 'success',
+                    'message' => 'Application status updated to ' . ucfirst(str_replace('_', ' ', $new_status)) . ' and notification email sent.'
+                ];
+            } else {
+                $mgmt_notices[] = [
+                    'type' => 'warning',
+                    'message' => 'Status updated, but could not send email (invalid email address).'
+                ];
             }
+        } else {
+            $mgmt_notices[] = [
+                'type' => 'success',
+                'message' => 'Application status updated.'
+            ];
         }
     }
 }

@@ -183,6 +183,66 @@ get_header();
         
         <!-- Left Column: Operational Data -->
         <div class="main-column">
+
+            <!-- My Applications Panel (Added) -->
+            <?php
+            // Fetch my applications
+            global $wpdb;
+            $submissions_table = $wpdb->prefix . 'unico_form_submissions';
+            $user_email_search = '%' . $wpdb->esc_like($current_user->user_email) . '%';
+            
+            $my_applications = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM $submissions_table WHERE user_id = %d OR form_data LIKE %s ORDER BY created_at DESC LIMIT 5",
+                $user_id,
+                $user_email_search
+            ));
+            ?>
+            <div class="content-panel">
+                <div class="panel-header">
+                    <h2><span class="dashicons dashicons-clipboard"></span> My Applications</h2>
+                    <a href="<?php echo esc_url(home_url('/agent-application-form')); ?>" class="view-all-link">New Application</a>
+                </div>
+                <div class="panel-body">
+                    <?php if (!empty($my_applications)) : ?>
+                        <div class="table-responsive">
+                            <table class="unico-table">
+                                <thead>
+                                    <tr>
+                                        <th>App #</th>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($my_applications as $app) : 
+                                        $status_class = 'status-pending';
+                                        if ($app->status === 'approved') $status_class = 'status-completed';
+                                        elseif ($app->status === 'rejected') $status_class = 'status-cancelled';
+                                        elseif ($app->status === 'submitted') $status_class = 'status-processing';
+                                    ?>
+                                        <tr>
+                                            <td><strong><?php echo esc_html($app->submission_number); ?></strong></td>
+                                            <td><?php echo date_i18n(get_option('date_format'), strtotime($app->created_at)); ?></td>
+                                            <td><?php echo esc_html(ucfirst($app->form_type)); ?></td>
+                                            <td>
+                                                <span class="status-pill <?php echo esc_attr($status_class); ?>">
+                                                    <?php echo esc_html(ucfirst(str_replace('_', ' ', $app->status))); ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else : ?>
+                        <div class="empty-state">
+                            <p>No applications found.</p>
+                            <a href="<?php echo esc_url(home_url('/agent-application-form')); ?>" class="btn-text">Submit Application &rarr;</a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
             
             <!-- Recent Vouchers Panel -->
             <div class="content-panel">
