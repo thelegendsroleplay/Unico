@@ -12,8 +12,11 @@ $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
 if (!Unico_User_Roles::user_can('access_management_dashboard') && !current_user_can('administrator')) {
-    wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
-    exit;
+    wp_die(
+        '<h1>Access Denied</h1><p>You do not have permission to access the Management Dashboard.</p><p><a href="' . home_url() . '">Return to Home</a></p>',
+        'Access Denied',
+        array('response' => 403)
+    );
 }
 
 // Get overview data
@@ -314,6 +317,26 @@ if (isset($_POST['unico_user_approval_action']) && isset($_POST['user_approval_n
                     if (empty($roles) || isset($roles[$approval->requested_role])) {
                         $user_to_update->set_role($approval->requested_role);
                     }
+                    if (!empty($user_to_update->user_email)) {
+                        $new_password = wp_generate_password(12, true);
+                        wp_set_password($new_password, $user_to_update->ID);
+                        $login_url = home_url('/login');
+                        $subject = 'Your account has been approved';
+                        $message = "
+                        <html>
+                        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+                            <h2 style='color:#194f68;'>Account Approved</h2>
+                            <p>Your account request has been approved. You can now log in using the details below:</p>
+                            <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
+                            <p><strong>Username:</strong> {$user_to_update->user_email}</p>
+                            <p><strong>Password:</strong> {$new_password}</p>
+                            <p style='margin-top:24px;color:#666;'>For security, please change this password after your first login.</p>
+                        </body>
+                        </html>
+                        ";
+                        $headers = ['Content-Type: text/html; charset=UTF-8'];
+                        wp_mail($user_to_update->user_email, $subject, $message, $headers);
+                    }
                 }
                 if (class_exists('Unico_User_Roles') && method_exists('Unico_User_Roles', 'set_user_approval_status')) {
                     Unico_User_Roles::set_user_approval_status($approval_id, 'approved', $user_id, $remarks);
@@ -600,6 +623,75 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
     $notes = isset($_POST['status_notes']) ? sanitize_textarea_field($_POST['status_notes']) : '';
     if ($application_id > 0 && $new_status) {
         $application_form->update_status($application_id, $new_status, $notes);
+        if ($new_status === 'approved') {
+            $submission = $application_form->get_submission($application_id);
+            if ($submission && !empty($submission->form_data)) {
+                $data = json_decode($submission->form_data, true) ?: [];
+                $email = isset($data['email']) ? sanitize_email($data['email']) : '';
+                $full_name = isset($data['full_name']) ? sanitize_text_field($data['full_name']) : '';
+                $phone = isset($data['phone']) ? sanitize_text_field($data['phone']) : '';
+                $application_type = isset($data['application_type']) ? $data['application_type'] : 'student';
+                if ($email && is_email($email)) {
+                    $existing_user = get_user_by('email', $email);
+                    $role = $application_type === 'agent' ? 'unico_agent' : 'unico_customer';
+                    if ($existing_user) {
+                        $existing_user->set_role($role);
+                        if ($phone) {
+                            update_user_meta($existing_user->ID, 'billing_phone', $phone);
+                        }
+                        $login_url = home_url('/login');
+                        $subject = 'Your application has been approved';
+                        $message = "
+                        <html>
+                        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+                            <h2 style='color:#194f68;'>Application Approved</h2>
+                            <p>Your application has been approved. You can now log in using your existing password.</p>
+                            <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
+                            <p><strong>Username:</strong> {$email}</p>
+                        </body>
+                        </html>
+                        ";
+                        $headers = ['Content-Type: text/html; charset=UTF-8'];
+                        wp_mail($email, $subject, $message, $headers);
+                    } else {
+                        $password = wp_generate_password(12, true);
+                        $user_id_created = wp_create_user($email, $password, $email);
+                        if (!is_wp_error($user_id_created)) {
+                            if ($full_name) {
+                                $name_parts = explode(' ', $full_name, 2);
+                                wp_update_user([
+                                    'ID' => $user_id_created,
+                                    'first_name' => $name_parts[0],
+                                    'last_name' => isset($name_parts[1]) ? $name_parts[1] : '',
+                                    'display_name' => $full_name
+                                ]);
+                            }
+                            if ($phone) {
+                                update_user_meta($user_id_created, 'billing_phone', $phone);
+                            }
+                            $user_obj = new WP_User($user_id_created);
+                            $user_obj->set_role($role);
+                            $login_url = home_url('/login');
+                            $subject = 'Your account has been created and approved';
+                            $message = "
+                            <html>
+                            <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+                                <h2 style='color:#194f68;'>Account Approved</h2>
+                                <p>Your application has been approved and your account is now active.</p>
+                                <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
+                                <p><strong>Username:</strong> {$email}</p>
+                                <p><strong>Password:</strong> {$password}</p>
+                                <p style='margin-top:24px;color:#666;'>For security, please change this password after your first login.</p>
+                            </body>
+                            </html>
+                            ";
+                            $headers = ['Content-Type: text/html; charset=UTF-8'];
+                            wp_mail($email, $subject, $message, $headers);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
  
@@ -899,7 +991,7 @@ get_header();
 
         <div class="mgmt-section-card">
             <div class="mgmt-section-header">
-                <span>Recent Student Applications</span>
+                <span>Recent Applications</span>
                 <span><?php echo $recent_applications ? count($recent_applications) : 0; ?> latest</span>
             </div>
             <div class="mgmt-section-body">
@@ -911,6 +1003,7 @@ get_header();
                                     <th>ID</th>
                                     <th>Application</th>
                                     <th>Submitted</th>
+                                    <th>Type</th>
                                     <th>Status</th>
                                     <th>Update</th>
                                 </tr>
@@ -921,6 +1014,8 @@ get_header();
                                     $data = json_decode($application->form_data, true) ?: [];
                                     $applicant_name = isset($data['full_name']) ? $data['full_name'] : '';
                                     $applicant_email = isset($data['email']) ? $data['email'] : '';
+                                    $application_type = isset($data['application_type']) ? $data['application_type'] : 'student';
+                                    $application_type_label = $application_type === 'agent' ? 'Agent' : 'Student';
                                     $status_class = str_replace('-', '_', $application->status);
                                     ?>
                                     <tr>
@@ -933,12 +1028,23 @@ get_header();
                                         </td>
                                         <td><?php echo esc_html(date_i18n('M j, Y H:i', strtotime($application->created_at))); ?></td>
                                         <td>
+                                            <span class="mgmt-status-pill <?php echo $application_type === 'agent' ? 'agent' : 'student'; ?>">
+                                                <?php echo esc_html($application_type_label); ?>
+                                            </span>
+                                        </td>
+                                        <td>
                                             <span class="mgmt-status-pill <?php echo esc_attr($status_class); ?>">
                                                 <?php echo esc_html(ucwords(str_replace('_', ' ', $application->status))); ?>
                                             </span>
                                         </td>
                                         <td>
                                             <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px;">
+                                                <button type="button" class="mgmt-btn mgmt-btn-secondary view-application-btn" 
+                                                    data-application='<?php echo esc_attr($application->form_data); ?>'
+                                                    data-id="<?php echo esc_attr($application->submission_number); ?>"
+                                                    data-type="<?php echo esc_attr($application_type_label); ?>">
+                                                    View
+                                                </button>
                                                 <select name="new_status">
                                                     <option value="submitted" <?php selected($application->status, 'submitted'); ?>>Submitted</option>
                                                     <option value="in_review" <?php selected($application->status, 'in_review'); ?>>In Review</option>
@@ -957,7 +1063,7 @@ get_header();
                         </table>
                     </div>
                 <?php else: ?>
-                    <p class="mgmt-muted-text">No student applications found yet.</p>
+                    <p class="mgmt-muted-text">No applications found yet.</p>
                 <?php endif; ?>
             </div>
         </div>
@@ -1539,8 +1645,156 @@ get_header();
     </div>
 </div>
 
+<!-- Application View Modal -->
+<div id="application-modal" class="mgmt-modal">
+    <div class="mgmt-modal-content">
+        <span class="mgmt-modal-close">&times;</span>
+        <h2>Application Details</h2>
+        <div id="modal-application-content"></div>
+    </div>
+</div>
+
+<style>
+/* Modal Styles */
+.mgmt-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.4); 
+}
+.mgmt-modal-content {
+    background-color: #fefefe;
+    margin: 10% auto; 
+    padding: 24px;
+    border: 1px solid #888;
+    width: 90%; 
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    position: relative;
+}
+.mgmt-modal-close {
+    color: #aaa;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+.mgmt-modal-close:hover,
+.mgmt-modal-close:focus {
+    color: #333;
+    text-decoration: none;
+    cursor: pointer;
+}
+.mgmt-detail-row {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+.mgmt-detail-row:last-child {
+    border-bottom: none;
+}
+.mgmt-detail-label {
+    font-weight: 600;
+    color: #555;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.mgmt-detail-value {
+    color: #111;
+    font-size: 1.05em;
+    word-break: break-word;
+}
+</style>
+
 <script>
-document.addEventListener('DOMContentLoaded',function(){var t=document.querySelectorAll('.mgmt-tab');var c=document.querySelectorAll('.mgmt-tab-content');function s(target){t.forEach(function(tab){tab.classList.toggle('active',tab.getAttribute('data-tab')===target)});c.forEach(function(block){block.classList.toggle('active',block.getAttribute('data-tab')===target)})}t.forEach(function(tab){tab.addEventListener('click',function(){s(tab.getAttribute('data-tab'))})});var d=document.querySelector('.mgmt-tab.default-active')||t[0];if(d){s(d.getAttribute('data-tab'))}})
+document.addEventListener('DOMContentLoaded', function() {
+    // Tabs Logic
+    var tabs = document.querySelectorAll('.mgmt-tab');
+    var contents = document.querySelectorAll('.mgmt-tab-content');
+
+    function setActiveTab(target) {
+        tabs.forEach(function(tab) {
+            tab.classList.toggle('active', tab.getAttribute('data-tab') === target);
+        });
+        contents.forEach(function(block) {
+            block.classList.toggle('active', block.getAttribute('data-tab') === target);
+        });
+    }
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            setActiveTab(tab.getAttribute('data-tab'));
+        });
+    });
+
+    // Default active tab
+    var defaultTab = document.querySelector('.mgmt-tab.default-active') || tabs[0];
+    if (defaultTab) {
+        setActiveTab(defaultTab.getAttribute('data-tab'));
+    }
+
+    // Modal Logic
+    var modal = document.getElementById('application-modal');
+    var span = document.getElementsByClassName("mgmt-modal-close")[0];
+    var content = document.getElementById('modal-application-content');
+
+    document.querySelectorAll('.view-application-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var dataStr = this.getAttribute('data-application');
+            var type = this.getAttribute('data-type');
+            var id = this.getAttribute('data-id');
+            
+            try {
+                var data = JSON.parse(dataStr);
+                
+                var html = '<div class="mgmt-detail-row"><span class="mgmt-detail-label">Application ID</span><span class="mgmt-detail-value">' + id + '</span></div>';
+                html += '<div class="mgmt-detail-row"><span class="mgmt-detail-label">Type</span><span class="mgmt-detail-value">' + type + '</span></div>';
+                
+                for (var key in data) {
+                    if (data.hasOwnProperty(key) && key !== 'application_type') {
+                        var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l){ return l.toUpperCase() });
+                        var value = data[key];
+                        // Handle objects/arrays if any
+                        if (typeof value === 'object' && value !== null) {
+                            value = JSON.stringify(value);
+                        }
+                        html += '<div class="mgmt-detail-row"><span class="mgmt-detail-label">' + label + '</span><span class="mgmt-detail-value">' + value + '</span></div>';
+                    }
+                }
+                
+                content.innerHTML = html;
+                modal.style.display = "block";
+            } catch (e) {
+                console.error('Error parsing application data', e);
+                alert('Error viewing application details.');
+            }
+        });
+    });
+
+    if (span) {
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+});
 </script>
 
 <?php get_footer(); ?>

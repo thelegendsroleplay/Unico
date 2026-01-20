@@ -43,48 +43,17 @@ wp_enqueue_style('auth-css', get_template_directory_uri() . '/assets/css/auth.cs
             </div>
         <?php endif; ?>
 
-        <form name="registerform" action="<?php echo esc_url( home_url( '/register' ) ); ?>" method="post">
-
-            <div class="form-stack">
-                <div class="input-group">
-                    <label class="input-label">Full Name</label>
-                    <input type="text" name="full_name" class="form-control" placeholder="John Doe" required>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Official Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="student@university.edu" required>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Phone Number</label>
-                    <input type="tel" name="phone" class="form-control" placeholder="+1234567890" required>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Account Type</label>
-                    <select name="user_type" class="form-control" required>
-                        <option value="unico_customer">Student / Individual Buyer</option>
-                        <option value="unico_agent">Agent</option>
-                        <option value="unico_reseller">Training Center / Reseller</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Min. 8 characters" minlength="8" required>
-                </div>
-
-                <div style="font-size: 12px; color: #64748B; line-height: 1.5; background: #F1F5F9; padding: 10px; border-radius: 8px;">
-                    <strong>Note:</strong> You will receive an email verification link after registration. Please verify your email before making purchases.
-                </div>
-
-                <?php wp_nonce_field( 'unicou_register_action', 'unicou_register_nonce' ); ?>
-
-                <button type="submit" name="unicou_register" class="btn-primary">Establish Identity</button>
+        <div class="form-stack">
+            <div class="input-group">
+                <label class="input-label">Registration is managed via applications</label>
+                <p style="font-size: 13px; color: #64748B; line-height: 1.6; margin-top: 6px;">
+                    Students must submit the
+                    <a href="<?php echo home_url('/student-application-form'); ?>">Student Application Form</a>.
+                    Agents and training partners must submit the
+                    <a href="<?php echo home_url('/agent-application-form'); ?>">Agent Application Form</a>.
+                </p>
             </div>
-
-        </form>
+        </div>
 
         <div class="footer-nav">
             Already verified? <a href="<?php echo home_url('/login'); ?>">Authorize Session</a>

@@ -13,8 +13,11 @@ $user_id = $current_user->ID;
 
 // Check if user can access reseller dashboard
 if (!Unico_User_Roles::user_can('access_reseller_dashboard') && !current_user_can('administrator')) {
-    wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
-    exit;
+    wp_die(
+        '<h1>Access Denied</h1><p>You do not have permission to access the Reseller Dashboard.</p><p><a href="' . home_url() . '">Return to Home</a></p>',
+        'Access Denied',
+        array('response' => 403)
+    );
 }
 
 // Get instances

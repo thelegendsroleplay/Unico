@@ -1,11 +1,11 @@
 <?php
 /**
- * Template Name: Student Application Form
+ * Template Name: Agent Application Form
  */
 
 $application_form = Unico_Application_Form::get_instance();
-$sections = $application_form->get_fields_by_section('student');
-$is_agent_form = false;
+$sections = $application_form->get_fields_by_section('agent');
+$is_agent_form = true;
 
 get_header();
 ?>
@@ -14,18 +14,13 @@ get_header();
     <section class="application-hero">
         <div class="application-hero-inner">
             <div class="application-badge">
-                <?php echo $is_agent_form ? 'AGENT PROTOCOL • PARTNER ONBOARDING' : 'STUDENT PROTOCOL • GLOBAL ADMISSIONS PIPELINE'; ?>
+                AGENT PROTOCOL • PARTNER ONBOARDING
             </div>
             <h1 class="application-title">
-                <?php echo $is_agent_form ? 'Agent Application' : 'Student Application'; ?>
+                Agent Application
             </h1>
             <p class="application-subtitle">
-                <?php if ($is_agent_form): ?>
-                    Share your agency details so UNICOU can onboard you as a verified partner and enable agent dashboards, pricing and workflows.
-                <?php else: ?>
-                    Submit a single, structured profile for global universities. Our counsellors triage,
-                    verify and route your case to the right admissions lane.
-                <?php endif; ?>
+                Share your agency details so UNICOU can onboard you as a verified partner and enable agent dashboards, pricing and workflows.
             </p>
         </div>
     </section>
@@ -45,7 +40,7 @@ get_header();
                         </p>
                         <p>
                             A confirmation email has been sent. Your profile is now queued for
-                            counsellor review. Expect an update within 24–48 hours.
+                            review. Expect an update within 24–48 hours.
                         </p>
                     </div>
                 </div>
@@ -62,14 +57,8 @@ get_header();
                 <?php endif; ?>
 
                 <div class="application-note">
-                    <?php if ($is_agent_form): ?>
-                        <strong>Partner screening.</strong>
-                        Provide accurate business details. Management will review and approve or reject your agent profile.
-                    <?php else: ?>
-                        <strong>Verification first.</strong>
-                        Fields marked with <span>*</span> are mandatory. Use official spellings that match your
-                        passport and academic records.
-                    <?php endif; ?>
+                    <strong>Partner screening.</strong>
+                    Provide accurate business details. Management will review and approve or reject your agent profile.
                 </div>
 
                 <form method="post" action="" class="application-form">
@@ -129,17 +118,17 @@ get_header();
                         </div>
                     <?php endforeach; ?>
 
-                    <input type="hidden" name="application_type" value="<?php echo $is_agent_form ? 'agent' : 'student'; ?>">
+                    <input type="hidden" name="application_type" value="agent">
 
                     <?php wp_nonce_field('submit_application', 'application_nonce'); ?>
 
                     <div class="application-actions">
                         <button type="submit" name="submit_application" class="application-submit">
-                            Submit application
+                            Submit Application
                         </button>
                         <p class="application-actions-note">
-                            By submitting, you authorise UNICOU to process your data for admissions,
-                            visa and compliance checks.
+                            By submitting, you authorise UNICOU to process your business data for
+                            partnership verification.
                         </p>
                     </div>
                 </form>
@@ -148,29 +137,20 @@ get_header();
 
         <aside class="application-sidebar">
             <div class="application-sidebar-card">
-                <h3>How this workflow runs</h3>
+                <h3>Agent Partnership Benefits</h3>
                 <ul>
-                    <li>Application is stored securely inside the UNICO admissions table.</li>
-                    <li>Status starts as <span>submitted</span> and is visible to management.</li>
-                    <li>Management or administrators can mark it as in review, approved or rejected.</li>
+                    <li>Access to exclusive pricing and commissions.</li>
+                    <li>Dedicated agent dashboard for student management.</li>
+                    <li>Priority support and training materials.</li>
                 </ul>
             </div>
 
             <div class="application-sidebar-card">
-                <h3>Who can approve</h3>
+                <h3>Approval Process</h3>
                 <ul>
-                    <li>Users with the Management role access the Management Dashboard.</li>
-                    <li>From there, they can update application status and attach internal notes.</li>
-                    <li>Every change is tied to their WordPress user account for auditability.</li>
-                </ul>
-            </div>
-
-            <div class="application-sidebar-card">
-                <h3>Typical response SLA</h3>
-                <ul>
-                    <li>Initial screening within 24–48 working hours.</li>
-                    <li>Program shortlisting and documentation review follow immediately after.</li>
-                    <li>Escalation to partner institutions for final offer issuance.</li>
+                    <li>Submit your agency details and registration documents.</li>
+                    <li>Our partnership team will verify your credentials.</li>
+                    <li>Upon approval, you will receive login credentials via email.</li>
                 </ul>
             </div>
         </aside>

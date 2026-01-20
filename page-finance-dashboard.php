@@ -12,8 +12,11 @@ $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
 if (!Unico_User_Roles::user_can('access_finance_dashboard') && !current_user_can('administrator')) {
-    wp_redirect(Unico_User_Roles::get_dashboard_url($user_id));
-    exit;
+    wp_die(
+        '<h1>Access Denied</h1><p>You do not have permission to access the Finance Dashboard.</p><p><a href="' . home_url() . '">Return to Home</a></p>',
+        'Access Denied',
+        array('response' => 403)
+    );
 }
 
 // Get financial data

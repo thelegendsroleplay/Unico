@@ -38,6 +38,8 @@ if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
 
+add_filter('woocommerce_enable_myaccount_registration', '__return_false');
+
 function unico_get_required_pages() {
     return array(
         'home' => array('title' => 'Home', 'template' => 'front-page.php'),
@@ -49,6 +51,7 @@ function unico_get_required_pages() {
         'management-dashboard' => array('title' => 'Management Dashboard', 'template' => 'page-management-dashboard.php'),
         'vouchers' => array('title' => 'Vouchers', 'template' => 'page-vouchers.php'),
         'student-application-form' => array('title' => 'Student Application Form', 'template' => 'page-student-application-form.php'),
+        'agent-application-form' => array('title' => 'Agent Application Form', 'template' => 'page-agent-application-form.php'),
         'study-abroad' => array('title' => 'Study Abroad', 'template' => 'page-study-abroad.php'),
         'support' => array('title' => 'Support', 'template' => 'page-support.php'),
         'login' => array('title' => 'Login', 'template' => 'page-login.php'),
@@ -1150,62 +1153,11 @@ add_action('init', function () {
  * -------------------------------------------------- */
 add_action('init', function () {
 
-    // Only handle our register form
-    if ( ! isset($_POST['unicou_register']) ) {
+    if (!isset($_POST['unicou_register'])) {
         return;
     }
 
-    if (
-        ! isset($_POST['unicou_register_nonce']) ||
-        ! wp_verify_nonce($_POST['unicou_register_nonce'], 'unicou_register_action')
-    ) {
-        wp_die('Security check failed');
-    }
-
-    $email = sanitize_email($_POST['email']);
-    $full_name = isset($_POST['full_name']) ? sanitize_text_field($_POST['full_name']) : '';
-    $user_type = isset($_POST['user_type']) ? sanitize_text_field($_POST['user_type']) : 'unico_customer';
-
-    if ( ! is_email($email) || email_exists($email) ) {
-        wp_redirect(home_url('/register?register=failed&error=email_exists'));
-        exit;
-    }
-
-    // Create user with provided password or generate one
-    $password = !empty($_POST['password']) ? $_POST['password'] : wp_generate_password(12, true);
-
-    $user_id = wp_create_user($email, $password, $email);
-
-    if (is_wp_error($user_id)) {
-        wp_redirect(home_url('/register?register=failed&error=creation_failed'));
-        exit;
-    }
-
-    // Set user meta
-    if (!empty($full_name)) {
-        $name_parts = explode(' ', $full_name, 2);
-        wp_update_user([
-            'ID' => $user_id,
-            'first_name' => $name_parts[0],
-            'last_name' => isset($name_parts[1]) ? $name_parts[1] : '',
-            'display_name' => $full_name
-        ]);
-    }
-
-    // Assign role
-    $user = new WP_User($user_id);
-    $user->set_role($user_type);
-
-    // Additional meta for phone if provided
-    if (isset($_POST['phone'])) {
-        update_user_meta($user_id, 'billing_phone', sanitize_text_field($_POST['phone']));
-    }
-
-    if (class_exists('Unico_User_Roles') && method_exists('Unico_User_Roles', 'create_user_approval')) {
-        Unico_User_Roles::create_user_approval($user_id, $user_type);
-    }
-
-    wp_redirect(home_url('/login?registered=true&verify_email=1'));
+    wp_redirect(home_url('/student-application-form'));
     exit;
 });
 
