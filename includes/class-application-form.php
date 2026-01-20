@@ -119,6 +119,20 @@ class Unico_Application_Form {
         dbDelta($sql_notifications);
         dbDelta($sql_verification);
 
+        // Manually check and add email column to verification table if missing
+        $row_verify = $wpdb->get_results("SHOW COLUMNS FROM $table_verification LIKE 'email'");
+        if (empty($row_verify)) {
+            $wpdb->query("ALTER TABLE $table_verification ADD COLUMN email varchar(255) DEFAULT NULL AFTER id");
+            $wpdb->query("ALTER TABLE $table_verification ADD INDEX email (email)");
+        }
+
+        // Manually check and add user_id column to verification table if missing (for compatibility)
+        $row_verify_uid = $wpdb->get_results("SHOW COLUMNS FROM $table_verification LIKE 'user_id'");
+        if (empty($row_verify_uid)) {
+            $wpdb->query("ALTER TABLE $table_verification ADD COLUMN user_id bigint(20) DEFAULT NULL AFTER id");
+            $wpdb->query("ALTER TABLE $table_verification ADD INDEX user_id (user_id)");
+        }
+
         // Manually check and add form_type column if dbDelta failed
         $row = $wpdb->get_results("SHOW COLUMNS FROM $table_fields LIKE 'form_type'");
         if (empty($row)) {
