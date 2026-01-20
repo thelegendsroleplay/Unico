@@ -1109,17 +1109,41 @@ class Unico_Application_Form {
         ";
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
+        
+        // Add From header to prevent rejection by some mail servers
+        $admin_email = get_option('admin_email');
+        $domain = parse_url(home_url(), PHP_URL_HOST);
+        $from_email = 'noreply@' . $domain;
+        if (!is_email($from_email)) {
+            $from_email = $admin_email;
+        }
+        $headers[] = 'From: ' . get_bloginfo('name') . ' <' . $from_email . '>';
+
+        // Setup error logging for mail failure
+        $mail_error_data = null;
+        $log_mail_error = function($error) use (&$mail_error_data) {
+            $mail_error_data = $error;
+        };
+        add_action('wp_mail_failed', $log_mail_error);
+
         $mail_sent = wp_mail($email, $subject, $message, $headers);
 
+        remove_action('wp_mail_failed', $log_mail_error);
+
         if (!$mail_sent) {
-            error_log('OTP Email Failed to: ' . $email);
+            $error_msg = 'OTP Email Failed to: ' . $email;
+            if ($mail_error_data) {
+                $error_msg .= ' Error: ' . print_r($mail_error_data, true);
+            }
+            error_log($error_msg);
         }
 
         // Return array with status and OTP
         return [
             'otp' => $otp,
             'mail_sent' => $mail_sent,
-            'db_error' => $inserted ? '' : $wpdb->last_error
+            'db_error' => $inserted ? '' : $wpdb->last_error,
+            'mail_error' => $mail_error_data // Return mail error for debugging
         ];
     }
 
@@ -1202,7 +1226,8 @@ class Unico_Application_Form {
                 $msg = 'Verification code sent to your email. Please check your inbox.';
                 if (!$result['mail_sent']) {
                     // For development/debugging when mail fails
-                    $msg = 'Verification code generated: ' . $result['otp'] . ' (Mail failed to send. Check server logs.)';
+                    $mail_error = isset($result['mail_error']) ? print_r($result['mail_error'], true) : 'Unknown error';
+                    $msg = 'Verification code generated: ' . $result['otp'] . ' (Mail failed: ' . $mail_error . ')';
                 }
                 wp_send_json_success(['message' => $msg]);
             } else {
