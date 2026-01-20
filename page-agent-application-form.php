@@ -200,7 +200,7 @@ get_header();
                             <p style="margin-bottom: 20px;">A 6-digit verification code has been sent to your email. Please enter it below:</p>
                             <div id="otp-error" style="display: none; background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #f5c6cb;"></div>
                             <input type="text" id="otp-input" maxlength="6" placeholder="Enter 6-digit code" style="width: 100%; padding: 12px; border: 2px solid #194f68; border-radius: 5px; font-size: 18px; text-align: center; letter-spacing: 5px; margin-bottom: 15px;" />
-                            <button type="button" onclick="verifyOTP()" style="background: #e95134; color: #fff; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">
+                            <button type="button" id="verify-otp-btn" onclick="verifyOTP()" style="background: #e95134; color: #fff; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;">
                                 Verify Code
                             </button>
                             <button type="button" onclick="backToSendOTP()" style="background: #6c757d; color: #fff; padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px;">
