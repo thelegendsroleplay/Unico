@@ -24,6 +24,19 @@ class Unico_User_Roles {
      */
     public function create_roles() {
 
+        // Role 0: Student (applying for universities)
+        add_role('unico_student', 'Student', [
+            'read' => true,
+            'view_own_orders' => true,
+            'view_own_vouchers' => true,
+            'create_support_tickets' => true,
+            'view_own_tickets' => true,
+            'make_purchases' => true,
+            'view_own_wallet' => true,
+            'access_student_dashboard' => true,
+            'apply_for_universities' => true
+        ]);
+
         // Role 1: Customer (default buyer)
         add_role('unico_customer', 'Customer', [
             'read' => true,
@@ -182,6 +195,7 @@ class Unico_User_Roles {
      */
     public static function get_custom_roles() {
         return [
+            'unico_student' => 'Student',
             'unico_customer' => 'Customer',
             'unico_agent' => 'Agent',
             'unico_reseller' => 'Training Center / Reseller',

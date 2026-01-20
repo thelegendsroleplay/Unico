@@ -44,201 +44,196 @@ $my_vouchers = $wpdb->get_results($wpdb->prepare(
 get_header();
 ?>
 
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-    <meta charset="<?php bloginfo('charset'); ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - <?php bloginfo('name'); ?></title>
-    <?php wp_head(); ?>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f8f9fa;
-            color: #4a4a4a;
-        }
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .dashboard-header {
-            background: linear-gradient(135deg, #103e54 0%, #1a5a7a 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(16, 62, 84, 0.3);
-        }
+<style>
+    /* Dashboard specific styles */
+    body {
+        background: #f8f9fa !important;
+        color: #4a4a4a;
+    }
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        min-height: 100vh;
+        position: relative;
+        z-index: 10;
+        display: block !important;
+        background: #f8f9fa;
+    }
+    .dashboard-header {
+        background: linear-gradient(135deg, #103e54 0%, #1a5a7a 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(16, 62, 84, 0.3);
+        margin-top: 20px;
+    }
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .header-title h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: white;
+    }
+    .header-title p {
+        opacity: 0.9;
+        font-size: 14px;
+    }
+    .verification-banner {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .verification-banner strong {
+        color: #856404;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    }
+    .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #103e54;
+    }
+    .main-content {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    .section-header {
+        background: #103e54;
+        color: white;
+        padding: 20px 25px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+    .section-body {
+        padding: 25px;
+    }
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary {
+        background: #e95134;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #c43d2a;
+    }
+    .btn-outline {
+        background: transparent;
+        color: #103e54;
+        border: 2px solid #103e54;
+    }
+    .btn-outline:hover {
+        background: #103e54;
+        color: white;
+    }
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .orders-table th {
+        text-align: left;
+        padding: 12px;
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 14px;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+    .orders-table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-pending { background: #f8d7da; color: #721c24; }
+    .voucher-code {
+        font-family: 'Courier New', monospace;
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state-icon {
+        font-size: 64px;
+        opacity: 0.3;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
         .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
+            flex-direction: column;
+            align-items: flex-start;
         }
-        .header-title h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        .header-title p {
-            opacity: 0.9;
-            font-size: 14px;
-        }
-        .verification-banner {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .verification-banner strong {
-            color: #856404;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
-        }
-        .stat-label {
-            font-size: 14px;
-            color: #6c757d;
-            margin-bottom: 10px;
-        }
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #103e54;
-        }
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
-        .section-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-        .section-header {
-            background: #103e54;
-            color: white;
-            padding: 20px 25px;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        .section-body {
-            padding: 25px;
-        }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-primary {
-            background: #e95134;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #c43d2a;
-        }
-        .btn-outline {
-            background: transparent;
-            color: #103e54;
-            border: 2px solid #103e54;
-        }
-        .btn-outline:hover {
-            background: #103e54;
-            color: white;
+        .wallet-card {
+            width: 100%;
+            text-align: left;
         }
         .orders-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .orders-table th {
-            text-align: left;
-            padding: 12px;
-            background: #f8f9fa;
-            font-weight: 600;
             font-size: 14px;
-            color: #6c757d;
-            text-transform: uppercase;
         }
-        .orders-table td {
-            padding: 15px 12px;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-processing { background: #fff3cd; color: #856404; }
-        .status-pending { background: #f8d7da; color: #721c24; }
-        .voucher-code {
-            font-family: 'Courier New', monospace;
-            background: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-        .empty-state-icon {
-            font-size: 64px;
-            opacity: 0.3;
-            margin-bottom: 20px;
-        }
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .wallet-card {
-                width: 100%;
-                text-align: left;
-            }
-            .orders-table {
-                font-size: 14px;
-            }
-        }
-    </style>
-</head>
-<body>
+        .dashboard-container { padding: 20px 15px; }
+        .dashboard-header { padding: 20px; }
+    }
+</style>
 
 <div class="dashboard-container">
 
@@ -383,9 +378,5 @@ get_header();
     </div>
 
 </div>
-
-<?php wp_footer(); ?>
-</body>
-</html>
 
 <?php get_footer(); ?>

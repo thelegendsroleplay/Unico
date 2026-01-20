@@ -43,6 +43,7 @@ add_filter('woocommerce_enable_myaccount_registration', '__return_false');
 function unico_get_required_pages() {
     return array(
         'home' => array('title' => 'Home', 'template' => 'front-page.php'),
+        'student-dashboard' => array('title' => 'Student Dashboard', 'template' => 'page-student-dashboard.php'),
         'customer-dashboard' => array('title' => 'Customer Dashboard', 'template' => 'page-customer-dashboard.php'),
         'agent-dashboard' => array('title' => 'Agent Dashboard', 'template' => 'page-agent-dashboard.php'),
         'reseller-dashboard' => array('title' => 'Reseller Dashboard', 'template' => 'page-reseller-dashboard.php'),
@@ -903,7 +904,11 @@ function unico_force_dashboard_templates() {
         'study-abroad'             => 'page-study-abroad.php',
         'student-application-form' => 'page-student-application-form.php',
         'about-us'                 => 'page-about-us.php',
-        'management-dashboard'     => 'page-management-dashboard.php'
+        'management-dashboard'     => 'page-management-dashboard.php',
+        'agent-dashboard'          => 'page-agent-dashboard.php',
+        'student-dashboard'        => 'page-student-dashboard.php',
+        'customer-dashboard'       => 'page-customer-dashboard.php',
+        'reseller-dashboard'       => 'page-reseller-dashboard.php',
     ];
 
     if (array_key_exists($request_path, $routes)) {

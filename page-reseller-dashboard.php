@@ -78,76 +78,271 @@ $total_spent = array_sum(array_map(function($order) {
 get_header();
 ?>
 
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-    <meta charset="<?php bloginfo('charset'); ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reseller Dashboard - <?php bloginfo('name'); ?></title>
-    <?php wp_head(); ?>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8f9fa; color: #4a4a4a; }
-        .dashboard-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
-        .dashboard-header { background: linear-gradient(135deg, #103e54 0%, #1a5a7a 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(16, 62, 84, 0.3); }
-        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-        .header-title h1 { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
-        .header-title p { opacity: 0.9; font-size: 14px; }
-        .header-stats { display: flex; gap: 30px; }
-        .header-stat { text-align: center; }
-        .header-stat-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
-        .header-stat-value { font-size: 24px; font-weight: 700; margin-top: 5px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); transition: transform 0.2s; }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12); }
-        .stat-icon { font-size: 32px; margin-bottom: 10px; }
-        .stat-label { font-size: 14px; color: #6c757d; margin-bottom: 10px; }
-        .stat-value { font-size: 32px; font-weight: 700; color: #103e54; }
-        .section-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); overflow: hidden; margin-bottom: 30px; }
-        .section-header { background: #103e54; color: white; padding: 20px 25px; font-size: 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-        .section-body { padding: 25px; }
-        .stock-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .stock-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #103e54; padding: 20px; border-radius: 8px; }
-        .stock-exam-name { font-size: 18px; font-weight: 700; color: #103e54; margin-bottom: 10px; }
-        .stock-count { font-size: 32px; font-weight: 700; color: #e95134; }
-        .stock-label { font-size: 12px; color: #6c757d; text-transform: uppercase; margin-top: 5px; }
-        .pricing-rules { display: grid; gap: 15px; }
-        .pricing-rule { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #e95134; padding: 20px; border-radius: 8px; }
-        .rule-detail-value { font-size: 20px; font-weight: 700; color: #e95134; margin-top: 5px; }
-        .rule-details { display: flex; gap: 30px; flex-wrap: wrap; }
-        .rule-detail { display: flex; flex-direction: column; }
-        .rule-detail-label { font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: 1px; }
-        .rule-detail-value { font-size: 20px; font-weight: 700; color: #e95134; margin-top: 5px; }
-        .orders-table { width: 100%; border-collapse: collapse; }
-        .orders-table th { text-align: left; padding: 12px; background: #f8f9fa; font-weight: 600; font-size: 14px; color: #6c757d; text-transform: uppercase; }
-        .orders-table td { padding: 15px 12px; border-bottom: 1px solid #e9ecef; }
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-processing { background: #fff3cd; color: #856404; }
-        .status-pending { background: #f8d7da; color: #721c24; }
-        .status-available { background: #d4edda; color: #155724; }
-        .status-delivered { background: #cfe2ff; color: #084298; }
-        .voucher-code { font-family: 'Courier New', monospace; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; font-weight: 600; display: inline-block; }
-        .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; border: none; cursor: pointer; }
-        .btn-primary { background: #e95134; color: white; }
-        .btn-primary:hover { background: #c43d2a; }
-        .btn-outline { background: transparent; color: #194f68; border: 2px solid #194f68; }
-        .btn-outline:hover { background: #194f68; color: white; }
-        .empty-state { text-align: center; padding: 60px 20px; color: #6c757d; }
-        .empty-state-icon { font-size: 64px; opacity: 0.3; margin-bottom: 20px; }
-        .info-banner { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px 20px; margin-bottom: 20px; border-radius: 8px; }
-        .info-banner h4 { color: #0c5460; margin-bottom: 8px; }
-        .low-stock { color: #dc3545; }
-        .medium-stock { color: #ffc107; }
-        .high-stock { color: #28a745; }
-        @media (max-width: 768px) {
-            .header-content { flex-direction: column; align-items: flex-start; }
-            .header-stats { width: 100%; justify-content: space-around; }
-            .orders-table { font-size: 14px; }
-        }
-    </style>
-</head>
-<body>
+<style>
+    /* Dashboard specific styles */
+    body {
+        background: #f8f9fa !important;
+        color: #4a4a4a;
+    }
+    .dashboard-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        min-height: 100vh;
+        position: relative;
+        z-index: 10;
+        display: block !important;
+        background: #f8f9fa;
+    }
+    .dashboard-header {
+        background: linear-gradient(135deg, #103e54 0%, #1a5a7a 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(16, 62, 84, 0.3);
+        margin-top: 20px;
+    }
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .header-title h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: white;
+    }
+    .header-title p {
+        opacity: 0.9;
+        font-size: 14px;
+    }
+    .header-stats {
+        display: flex;
+        gap: 30px;
+    }
+    .header-stat {
+        text-align: center;
+    }
+    .header-stat-label {
+        font-size: 12px;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .header-stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        margin-top: 5px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+    }
+    .stat-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+    .stat-label {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #103e54;
+    }
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+    .section-header {
+        background: #103e54;
+        color: white;
+        padding: 20px 25px;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .section-body {
+        padding: 25px;
+    }
+    .stock-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .stock-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #103e54;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    .stock-exam-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #103e54;
+        margin-bottom: 10px;
+    }
+    .stock-count {
+        font-size: 32px;
+        font-weight: 700;
+        color: #e95134;
+    }
+    .stock-label {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-top: 5px;
+    }
+    .pricing-rules {
+        display: grid;
+        gap: 15px;
+    }
+    .pricing-rule {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #e95134;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    .rule-details {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    .rule-detail {
+        display: flex;
+        flex-direction: column;
+    }
+    .rule-detail-label {
+        font-size: 12px;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .rule-detail-value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #e95134;
+        margin-top: 5px;
+    }
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .orders-table th {
+        text-align: left;
+        padding: 12px;
+        background: #f8f9fa;
+        font-weight: 600;
+        font-size: 14px;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+    .orders-table td {
+        padding: 15px 12px;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-processing { background: #fff3cd; color: #856404; }
+    .status-pending { background: #f8d7da; color: #721c24; }
+    .status-available { background: #d4edda; color: #155724; }
+    .status-delivered { background: #cfe2ff; color: #084298; }
+    .voucher-code {
+        font-family: 'Courier New', monospace;
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    .btn-primary {
+        background: #e95134;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #c43d2a;
+    }
+    .btn-outline {
+        background: transparent;
+        color: #194f68;
+        border: 2px solid #194f68;
+    }
+    .btn-outline:hover {
+        background: #194f68;
+        color: white;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state-icon {
+        font-size: 64px;
+        opacity: 0.3;
+        margin-bottom: 20px;
+    }
+    .info-banner {
+        background: #d1ecf1;
+        border-left: 4px solid #0c5460;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+    }
+    .info-banner h4 {
+        color: #0c5460;
+        margin-bottom: 8px;
+    }
+    .low-stock { color: #dc3545; }
+    .medium-stock { color: #ffc107; }
+    .high-stock { color: #28a745; }
+    @media (max-width: 768px) {
+        .header-content { flex-direction: column; align-items: flex-start; }
+        .header-stats { width: 100%; justify-content: space-around; }
+        .orders-table { font-size: 14px; }
+        .dashboard-container { padding: 20px 15px; }
+        .dashboard-header { padding: 20px; }
+    }
+</style>
 
 <div class="dashboard-container">
 
@@ -377,9 +572,5 @@ get_header();
     </div>
 
 </div>
-
-<?php wp_footer(); ?>
-</body>
-</html>
 
 <?php get_footer(); ?>
