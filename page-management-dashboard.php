@@ -623,22 +623,30 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
     $notes = isset($_POST['status_notes']) ? sanitize_textarea_field($_POST['status_notes']) : '';
     if ($application_id > 0 && $new_status) {
         $application_form->update_status($application_id, $new_status, $notes);
-        if ($new_status === 'approved') {
-            $submission = $application_form->get_submission($application_id);
-            if ($submission && !empty($submission->form_data)) {
-                $data = json_decode($submission->form_data, true) ?: [];
-                $email = isset($data['email']) ? sanitize_email($data['email']) : '';
-                $full_name = isset($data['full_name']) ? sanitize_text_field($data['full_name']) : '';
-                $phone = isset($data['phone']) ? sanitize_text_field($data['phone']) : '';
-                $application_type = isset($data['application_type']) ? $data['application_type'] : 'student';
-                if ($email && is_email($email)) {
+        
+        // Get submission data for emails
+        $submission = $application_form->get_submission($application_id);
+        if ($submission && !empty($submission->form_data)) {
+            $data = json_decode($submission->form_data, true) ?: [];
+            $email = isset($data['email']) ? sanitize_email($data['email']) : '';
+            $full_name = isset($data['full_name']) ? sanitize_text_field($data['full_name']) : '';
+            $application_type = isset($data['application_type']) ? $data['application_type'] : 'student';
+            
+            if ($email && is_email($email)) {
+                if ($new_status === 'approved') {
+                    $phone = isset($data['phone']) ? sanitize_text_field($data['phone']) : '';
+                    
                     $existing_user = get_user_by('email', $email);
                     $role = $application_type === 'agent' ? 'unico_agent' : 'unico_customer';
+                    $final_user_id = 0;
+
                     if ($existing_user) {
                         $existing_user->set_role($role);
                         if ($phone) {
                             update_user_meta($existing_user->ID, 'billing_phone', $phone);
                         }
+                        $final_user_id = $existing_user->ID;
+
                         $login_url = home_url('/login');
                         $subject = 'Your application has been approved';
                         $message = "
@@ -648,6 +656,7 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
                             <p>Your application has been approved. You can now log in using your existing password.</p>
                             <p><strong>Login URL:</strong> <a href='{$login_url}'>{$login_url}</a></p>
                             <p><strong>Username:</strong> {$email}</p>
+                            <p><strong>Status:</strong> Approved</p>
                         </body>
                         </html>
                         ";
@@ -657,6 +666,7 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
                         $password = wp_generate_password(12, true);
                         $user_id_created = wp_create_user($email, $password, $email);
                         if (!is_wp_error($user_id_created)) {
+                            $final_user_id = $user_id_created;
                             if ($full_name) {
                                 $name_parts = explode(' ', $full_name, 2);
                                 wp_update_user([
@@ -689,6 +699,47 @@ if (isset($_POST['update_application_status']) && isset($_POST['application_id']
                             wp_mail($email, $subject, $message, $headers);
                         }
                     }
+
+                    // Link user to submission if user exists
+                    if ($final_user_id > 0) {
+                        global $wpdb;
+                        $wpdb->update(
+                            $wpdb->prefix . 'unico_form_submissions', 
+                            ['user_id' => $final_user_id], 
+                            ['id' => $application_id]
+                        );
+                    }
+
+                } elseif ($new_status === 'rejected') {
+                    $subject = 'Update on your application';
+                    $message = "
+                    <html>
+                    <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+                        <h2 style='color:#194f68;'>Application Status Update</h2>
+                        <p>We have reviewed your application.</p>
+                        <p><strong>Status:</strong> <span style='color:red;'>Rejected</span></p>
+                        " . ($notes ? "<p><strong>Reason/Notes:</strong> " . nl2br(esc_html($notes)) . "</p>" : "") . "
+                        <p>If you have any questions, please contact our support team.</p>
+                    </body>
+                    </html>
+                    ";
+                    $headers = ['Content-Type: text/html; charset=UTF-8'];
+                    wp_mail($email, $subject, $message, $headers);
+
+                } elseif ($new_status === 'in_review') {
+                    $subject = 'Your application is under review';
+                    $message = "
+                    <html>
+                    <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+                        <h2 style='color:#194f68;'>Application Under Review</h2>
+                        <p>We are currently reviewing your application.</p>
+                        <p><strong>Status:</strong> <span style='color:orange;'>In Review</span></p>
+                        <p>We will notify you once a final decision has been made.</p>
+                    </body>
+                    </html>
+                    ";
+                    $headers = ['Content-Type: text/html; charset=UTF-8'];
+                    wp_mail($email, $subject, $message, $headers);
                 }
             }
         }

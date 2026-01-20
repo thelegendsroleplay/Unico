@@ -160,13 +160,50 @@ get_header();
             <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 20px;">Track your university applications and status.</p>
             
             <?php
-            // Placeholder for application logic
-            // In a real scenario, we would query the application form submissions
+            global $wpdb;
+            $submissions_table = $wpdb->prefix . 'unico_form_submissions';
+            $user_email_search = '%' . $wpdb->esc_like($current_user->user_email) . '%';
+            
+            $my_applications = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM $submissions_table WHERE user_id = %d OR form_data LIKE %s ORDER BY created_at DESC",
+                $user_id,
+                $user_email_search
+            ));
+            
+            $active_count = 0;
+            if ($my_applications) {
+                foreach ($my_applications as $app) {
+                    if (!in_array($app->status, ['rejected', 'cancelled'])) {
+                        $active_count++;
+                    }
+                }
+            }
             ?>
             <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
-                <span style="display: block; font-size: 24px; margin-bottom: 5px;">0</span>
+                <span style="display: block; font-size: 24px; margin-bottom: 5px;"><?php echo intval($active_count); ?></span>
                 <span style="font-size: 13px; color: #7f8c8d;">Active Applications</span>
             </div>
+            
+            <?php if (!empty($my_applications)): ?>
+                <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                    <?php foreach (array_slice($my_applications, 0, 3) as $app): 
+                        $status_color = '#3498db'; // Default/In Review
+                        if ($app->status === 'approved') $status_color = '#2ecc71';
+                        elseif ($app->status === 'rejected') $status_color = '#e74c3c';
+                        elseif ($app->status === 'submitted') $status_color = '#f39c12';
+                    ?>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px;">
+                            <div>
+                                <div style="font-weight: 600;"><?php echo esc_html($app->submission_number); ?></div>
+                                <div style="color: #95a5a6; font-size: 11px;"><?php echo date_i18n('M j, Y', strtotime($app->created_at)); ?></div>
+                            </div>
+                            <span style="background: <?php echo $status_color; ?>; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; text-transform: uppercase;">
+                                <?php echo esc_html(str_replace('_', ' ', $app->status)); ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
             
             <a href="<?php echo home_url('/student-application-form'); ?>" class="action-btn" style="width: 100%; text-align: center;">New Application</a>
         </div>
