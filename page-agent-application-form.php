@@ -255,12 +255,18 @@ get_header();
                     const email = emailField.value.trim();
                     const phone = phoneField.value.trim();
                     const errorDiv = document.getElementById('verification-error');
+                    const sendBtn = document.getElementById('send-otp-btn');
 
                     if (!email || !email.includes('@')) {
                         errorDiv.textContent = 'Please enter a valid email address';
                         errorDiv.style.display = 'block';
                         return;
                     }
+
+                    // Disable button
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = 'Sending...';
+                    errorDiv.style.display = 'none';
 
                     // Send AJAX request to send OTP
                     const formData = new FormData();
@@ -275,6 +281,9 @@ get_header();
                     })
                     .then(response => response.json())
                     .then(data => {
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send Verification Code';
+
                         if (data.success) {
                             // Move to step 2
                             document.getElementById('verification-step-1').style.display = 'none';
@@ -286,6 +295,8 @@ get_header();
                         }
                     })
                     .catch(error => {
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send Verification Code';
                         errorDiv.textContent = 'Network error. Please try again.';
                         errorDiv.style.display = 'block';
                     });
@@ -303,12 +314,18 @@ get_header();
                     const email = emailField.value.trim();
                     const otp = document.getElementById('otp-input').value.trim();
                     const errorDiv = document.getElementById('otp-error');
+                    const verifyBtn = document.getElementById('verify-otp-btn');
 
                     if (!otp || otp.length !== 6) {
                         errorDiv.textContent = 'Please enter the 6-digit verification code';
                         errorDiv.style.display = 'block';
                         return;
                     }
+
+                    // Disable button
+                    verifyBtn.disabled = true;
+                    verifyBtn.textContent = 'Verifying...';
+                    errorDiv.style.display = 'none';
 
                     // Send AJAX request to verify OTP
                     const formData = new FormData();
@@ -323,6 +340,9 @@ get_header();
                     })
                     .then(response => response.json())
                     .then(data => {
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify Code';
+
                         if (data.success) {
                             // Email verified successfully
                             isEmailVerified = true;
@@ -344,6 +364,8 @@ get_header();
                         }
                     })
                     .catch(error => {
+                        verifyBtn.disabled = false;
+                        verifyBtn.textContent = 'Verify Code';
                         errorDiv.textContent = 'Network error. Please try again.';
                         errorDiv.style.display = 'block';
                     });

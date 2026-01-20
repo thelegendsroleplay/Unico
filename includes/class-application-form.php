@@ -1094,11 +1094,21 @@ class Unico_Application_Form {
         ";
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
-        return wp_mail($email, $subject, $message, $headers);
+        $mail_sent = wp_mail($email, $subject, $message, $headers);
+
+        // Return array with status and OTP
+        return [
+            'otp' => $otp,
+            'mail_sent' => $mail_sent
+        ];
     }
 
     /**
      * Verify OTP for email verification
+     * Returns:
+     * 0: Success
+     * 1: Record not found
+     * 2: Expired
      */
     private function verify_application_otp($email, $otp) {
         global $wpdb;
@@ -1111,12 +1121,24 @@ class Unico_Application_Form {
         ));
 
         if (!$record) {
-            return false;
+            // Check if it exists but is already verified
+            $verified_record = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE email = %s AND token = %s AND verified_at IS NOT NULL",
+                $email,
+                $otp
+            ));
+            
+            if ($verified_record) {
+                // Already verified, treat as success (idempotent)
+                return 0;
+            }
+            
+            return 1; // Not found
         }
 
         // Check if expired
         if (strtotime($record->expires_at) < time()) {
-            return false;
+            return 2; // Expired
         }
 
         // Mark as verified
@@ -1126,7 +1148,7 @@ class Unico_Application_Form {
             ['id' => $record->id]
         );
 
-        return $updated !== false;
+        return $updated !== false ? 0 : 3; // 3: Update failed
     }
 
     /**
@@ -1148,12 +1170,17 @@ class Unico_Application_Form {
             }
 
             // Send OTP
-            $sent = $this->send_application_verification_otp($email);
+            $result = $this->send_application_verification_otp($email);
 
-            if ($sent) {
-                wp_send_json_success(['message' => 'Verification code sent to your email. Please check your inbox.']);
+            if ($result && isset($result['otp'])) {
+                $msg = 'Verification code sent to your email. Please check your inbox.';
+                if (!$result['mail_sent']) {
+                    // For development/debugging when mail fails
+                    $msg = 'Verification code generated: ' . $result['otp'] . ' (Mail failed to send on localhost)';
+                }
+                wp_send_json_success(['message' => $msg]);
             } else {
-                wp_send_json_error(['message' => 'Failed to send verification code. Please try again.']);
+                wp_send_json_error(['message' => 'Failed to generate verification code. Please try again.']);
             }
         } else {
             wp_send_json_error(['message' => 'Please enter a valid email address.']);
@@ -1174,12 +1201,21 @@ class Unico_Application_Form {
             return;
         }
 
-        $verified = $this->verify_application_otp($email, $otp);
+        $status = $this->verify_application_otp($email, $otp);
 
-        if ($verified) {
+        if ($status === 0) {
             wp_send_json_success(['message' => 'Email verified successfully!']);
+        } elseif ($status === 2) {
+            wp_send_json_error(['message' => 'Verification code has expired. Please request a new one.']);
+        } elseif ($status === 3) {
+            wp_send_json_error(['message' => 'Database update failed. Please try again.']);
         } else {
-            wp_send_json_error(['message' => 'Invalid or expired verification code. Please try again.']);
+            // Debug info for localhost
+            $debug = '';
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                $debug = " (Email: $email, OTP: $otp)";
+            }
+            wp_send_json_error(['message' => 'Invalid verification code. Please check and try again.' . $debug]);
         }
     }
 }
