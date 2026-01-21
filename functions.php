@@ -87,6 +87,51 @@ add_action('admin_init', function() {
     update_option('unico_checkout_page_fixed', true);
 });
 
+// Fix Email Verification Page (runs once)
+add_action('admin_init', function() {
+    // Check if already fixed
+    if (get_option('unico_email_verification_page_fixed')) {
+        return;
+    }
+
+    // Find or create the email verification page
+    $verification_page = get_page_by_path('email-verification');
+
+    if ($verification_page) {
+        // Page exists, ensure template is assigned
+        $current_template = get_post_meta($verification_page->ID, '_wp_page_template', true);
+        if ($current_template !== 'page-email-verification.php') {
+            update_post_meta($verification_page->ID, '_wp_page_template', 'page-email-verification.php');
+            error_log('Unico: Updated email verification page template (ID: ' . $verification_page->ID . ')');
+        }
+        // Ensure page is published
+        if ($verification_page->post_status !== 'publish') {
+            wp_update_post([
+                'ID' => $verification_page->ID,
+                'post_status' => 'publish'
+            ]);
+            error_log('Unico: Published email verification page (ID: ' . $verification_page->ID . ')');
+        }
+    } else {
+        // Create email verification page
+        $page_id = wp_insert_post([
+            'post_title' => 'Email Verification',
+            'post_name' => 'email-verification',
+            'post_status' => 'publish',
+            'post_type' => 'page',
+            'post_content' => '',
+        ]);
+
+        if ($page_id && !is_wp_error($page_id)) {
+            update_post_meta($page_id, '_wp_page_template', 'page-email-verification.php');
+            error_log('Unico: Created email verification page (ID: ' . $page_id . ')');
+        }
+    }
+
+    // Mark as fixed so this doesn't run again
+    update_option('unico_email_verification_page_fixed', true);
+});
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
