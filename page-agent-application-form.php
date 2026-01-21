@@ -562,6 +562,76 @@ get_header();
                         errorDiv.style.display = 'block';
                     });
                 }
+
+                // Handle form submission with PROPER WordPress AJAX
+                document.addEventListener('DOMContentLoaded', function() {
+                    const form = document.querySelector('.application-form');
+                    const submitBtn = document.getElementById('submit-application-btn');
+
+                    if (form && submitBtn) {
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault(); // Prevent default form submission
+
+                            console.log('Form submit intercepted - starting AJAX submission');
+
+                            // Check if email is verified
+                            if (!isEmailVerified) {
+                                alert('Please verify your email address before submitting the application.');
+                                return false;
+                            }
+
+                            // Disable submit button
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+
+                            // Get form data
+                            const formData = new FormData(form);
+
+                            // Add WordPress AJAX action
+                            formData.append('action', 'submit_application');
+
+                            console.log('Form data collected, sending to WordPress AJAX endpoint...');
+
+                            // Submit to WordPress AJAX endpoint (admin-ajax.php)
+                            fetch(ajaxUrl, {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'same-origin'
+                            })
+                            .then(response => {
+                                console.log('Server responded with status:', response.status);
+                                return response.json(); // Parse JSON response (not HTML!)
+                            })
+                            .then(data => {
+                                console.log('JSON Response received:', data);
+
+                                if (data.success) {
+                                    console.log('SUCCESS - Application submitted successfully');
+                                    console.log('Submission Number:', data.data.submission_number);
+
+                                    // Redirect to success page
+                                    window.location.href = window.location.pathname + '?submission_success=1&submission_number=' + data.data.submission_number;
+                                } else {
+                                    console.log('ERROR - Submission failed');
+                                    const errorMessage = data.data.message || 'Submission failed. Please try again.';
+
+                                    // Show error
+                                    alert('Error: ' + errorMessage);
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = 'Submit Application';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('FETCH ERROR:', error);
+                                alert('Network error: ' + error.message + '\nPlease check your internet connection and try again.');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Application';
+                            });
+
+                            return false;
+                        });
+                    }
+                });
                 </script>
             <?php endif; ?>
         </div>
