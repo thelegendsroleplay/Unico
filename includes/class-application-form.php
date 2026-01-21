@@ -33,6 +33,10 @@ class Unico_Application_Form {
         add_action('wp_ajax_nopriv_check_email_exists', [$this, 'ajax_check_email_exists']);
         add_action('wp_ajax_check_email_exists', [$this, 'ajax_check_email_exists']);
 
+        // AJAX handler for form submission (PROPER WORDPRESS AJAX)
+        add_action('wp_ajax_nopriv_submit_application', [$this, 'ajax_submit_application']);
+        add_action('wp_ajax_submit_application', [$this, 'ajax_submit_application']);
+
         $this->create_tables();
     }
 
@@ -1328,6 +1332,125 @@ class Unico_Application_Form {
             wp_send_json_success([
                 'message' => 'Email is available.',
                 'exists' => false
+            ]);
+        }
+    }
+
+    /**
+     * AJAX handler for form submission - PROPER WORDPRESS AJAX
+     * This returns JSON instead of redirecting, so AJAX works correctly
+     */
+    public function ajax_submit_application() {
+        // Verify nonce for security
+        check_ajax_referer('submit_application', 'application_nonce');
+
+        error_log('AJAX Application Submission: Started');
+
+        // Get application type
+        $application_type = isset($_POST['application_type']) ? sanitize_text_field($_POST['application_type']) : 'student';
+        error_log('AJAX Application Submission: Type = ' . $application_type);
+
+        // Collect form data
+        $form_data = [];
+        $fields = $this->get_form_fields($application_type);
+
+        foreach ($fields as $field) {
+            if (isset($_POST[$field->field_name])) {
+                $form_data[$field->field_name] = sanitize_text_field($_POST[$field->field_name]);
+            }
+        }
+
+        $form_data['application_type'] = $application_type;
+
+        // Get and validate email
+        $email = isset($form_data['email']) ? sanitize_email($form_data['email']) : '';
+        $phone = isset($form_data['phone']) ? $form_data['phone'] : '';
+
+        error_log('AJAX Application Submission: Email = ' . $email);
+
+        // Validate email format
+        if (empty($email) || !is_email($email)) {
+            error_log('AJAX Application Submission: Email validation failed');
+            wp_send_json_error([
+                'message' => 'Please provide a valid email address.'
+            ]);
+            return;
+        }
+
+        // Check if email is verified
+        if (!$this->is_email_verified_for_application($email)) {
+            error_log('AJAX Application Submission: Email not verified for ' . $email);
+            wp_send_json_error([
+                'message' => 'Please verify your email address before submitting the application.'
+            ]);
+            return;
+        }
+
+        error_log('AJAX Application Submission: Email verified successfully');
+
+        // Check if user already exists
+        $validation_result = $this->validate_user_existence($email, $phone);
+
+        if ($validation_result['exists']) {
+            error_log('AJAX Application Submission: User already exists - ' . $validation_result['message']);
+            wp_send_json_error([
+                'message' => $validation_result['message']
+            ]);
+            return;
+        }
+
+        // Generate submission number
+        $submission_number = 'APP-' . date('Ymd') . '-' . strtoupper(wp_generate_password(6, false));
+        error_log('AJAX Application Submission: Generated submission number = ' . $submission_number);
+
+        // Get user IP
+        $ip_address = $_SERVER['REMOTE_ADDR'];
+
+        // Save submission to database with status "pending"
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_form_submissions';
+
+        $inserted = $wpdb->insert($table, [
+            'submission_number' => $submission_number,
+            'user_id' => is_user_logged_in() ? get_current_user_id() : null,
+            'form_type' => $application_type,
+            'form_data' => json_encode($form_data),
+            'status' => 'pending',
+            'ip_address' => $ip_address,
+            'created_at' => current_time('mysql')
+        ]);
+
+        if ($inserted) {
+            error_log('AJAX Application Submission: Successfully inserted into database with status pending');
+
+            // Send confirmation email to applicant
+            if (isset($form_data['email'])) {
+                error_log('AJAX Application Submission: Sending confirmation email to ' . $form_data['email']);
+                $this->send_confirmation_email($form_data['email'], $submission_number, $application_type, $form_data);
+            }
+
+            // Send notification to management
+            error_log('AJAX Application Submission: Sending notification to management');
+            $this->send_management_notification($submission_number, $application_type, $form_data);
+
+            // Log activity if user is logged in
+            if (is_user_logged_in()) {
+                $security = Unico_Security::get_instance();
+                $security->log_activity(get_current_user_id(), 'application_submitted', "Application submitted: {$submission_number}");
+            }
+
+            error_log('AJAX Application Submission: SUCCESS - Returning JSON success response');
+
+            // Return JSON success response (NOT redirect!)
+            wp_send_json_success([
+                'submission_number' => $submission_number,
+                'message' => 'Application submitted successfully and is pending approval',
+                'application_type' => $application_type
+            ]);
+        } else {
+            error_log('AJAX Application Submission: Database insert FAILED - ' . $wpdb->last_error);
+            wp_send_json_error([
+                'message' => 'Database error: Unable to save application. Please try again.'
             ]);
         }
     }

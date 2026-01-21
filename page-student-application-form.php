@@ -573,7 +573,7 @@ get_header();
                     });
                 }
 
-                // Handle form submission with AJAX to prevent page refresh
+                // Handle form submission with PROPER WordPress AJAX
                 document.addEventListener('DOMContentLoaded', function() {
                     const form = document.querySelector('.application-form');
                     const submitBtn = document.getElementById('submit-application-btn');
@@ -597,51 +597,43 @@ get_header();
                             // Get form data
                             const formData = new FormData(form);
 
-                            console.log('Form data collected, sending to server...');
+                            // Add WordPress AJAX action
+                            formData.append('action', 'submit_application');
 
-                            // Submit via fetch
-                            fetch(window.location.href, {
+                            console.log('Form data collected, sending to WordPress AJAX endpoint...');
+
+                            // Submit to WordPress AJAX endpoint (admin-ajax.php)
+                            fetch(ajaxUrl, {
                                 method: 'POST',
                                 body: formData,
                                 credentials: 'same-origin'
                             })
                             .then(response => {
                                 console.log('Server responded with status:', response.status);
-                                return response.text();
+                                return response.json(); // Parse JSON response (not HTML!)
                             })
-                            .then(html => {
-                                console.log('Response received, checking for success/error');
+                            .then(data => {
+                                console.log('JSON Response received:', data);
 
-                                // Check if response contains success or error
-                                if (html.includes('submission_success=1')) {
-                                    console.log('SUCCESS - Submission successful');
-                                    // Extract submission number if present
-                                    const match = html.match(/submission_number=([A-Z0-9-]+)/);
-                                    const submissionNumber = match ? match[1] : '';
+                                if (data.success) {
+                                    console.log('SUCCESS - Application submitted successfully');
+                                    console.log('Submission Number:', data.data.submission_number);
 
                                     // Redirect to success page
-                                    window.location.href = window.location.pathname + '?submission_success=1&submission_number=' + submissionNumber;
-                                } else if (html.includes('submission_error=1')) {
+                                    window.location.href = window.location.pathname + '?submission_success=1&submission_number=' + data.data.submission_number;
+                                } else {
                                     console.log('ERROR - Submission failed');
-                                    // Extract error message if present
-                                    const match = html.match(/error_message=([^&"]+)/);
-                                    const errorMessage = match ? decodeURIComponent(match[1]) : 'Submission failed. Please try again.';
+                                    const errorMessage = data.data.message || 'Submission failed. Please try again.';
 
                                     // Show error
                                     alert('Error: ' + errorMessage);
                                     submitBtn.disabled = false;
                                     submitBtn.textContent = 'Submit Application';
-                                } else {
-                                    console.log('UNEXPECTED - No success or error flag found');
-                                    console.log('HTML preview:', html.substring(0, 500));
-                                    // Unexpected response - reload page
-                                    alert('Unexpected response from server. Reloading page...');
-                                    window.location.reload();
                                 }
                             })
                             .catch(error => {
                                 console.error('FETCH ERROR:', error);
-                                alert('Network error: ' + error.message);
+                                alert('Network error: ' + error.message + '\nPlease check your internet connection and try again.');
                                 submitBtn.disabled = false;
                                 submitBtn.textContent = 'Submit Application';
                             });
