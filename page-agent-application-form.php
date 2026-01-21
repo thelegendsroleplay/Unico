@@ -176,14 +176,14 @@ get_header();
                                                 <div id="email-status" style="display: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
                                                     <span id="email-status-text"></span>
                                                 </div>
-                                                <a href="#" id="verify-email-link" style="display: none; color: #194f68; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #e8f4f8; border-radius: 5px;" onclick="openVerificationPopup(event)">
+                                                <a href="#" id="verify-email-link" class="verify-link-btn" style="display: none;" onclick="openVerificationPopup(event)">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                                         <polyline points="22 4 12 14.01 9 11.01"></polyline>
                                                     </svg>
                                                     Click here to verify your email
                                                 </a>
-                                                <span id="email-verified-badge" style="display: none; color: #28a745; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #d4edda; border-radius: 5px;">
+                                                <span id="email-verified-badge" class="verified-badge" style="display: none;">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                                         <circle cx="12" cy="12" r="10"></circle>
                                                         <path d="M9 12l2 2 4-4"></path>
@@ -191,6 +191,35 @@ get_header();
                                                     Email Verified
                                                 </span>
                                             </div>
+                                            <style>
+                                                .verify-link-btn {
+                                                    color: #194f68;
+                                                    text-decoration: none;
+                                                    font-weight: 600;
+                                                    font-size: 14px;
+                                                    align-items: center;
+                                                    gap: 8px;
+                                                    padding: 8px 16px;
+                                                    background: #e8f4f8;
+                                                    border-radius: 5px;
+                                                }
+                                                .verify-link-btn[style*="inline-flex"] {
+                                                    display: inline-flex !important;
+                                                }
+                                                .verified-badge {
+                                                    color: #28a745;
+                                                    font-weight: 600;
+                                                    font-size: 14px;
+                                                    align-items: center;
+                                                    gap: 6px;
+                                                    padding: 8px 16px;
+                                                    background: #d4edda;
+                                                    border-radius: 5px;
+                                                }
+                                                .verified-badge[style*="inline-flex"] {
+                                                    display: inline-flex !important;
+                                                }
+                                            </style>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
