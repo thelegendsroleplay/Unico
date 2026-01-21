@@ -265,11 +265,18 @@ class Unico_Application_Form {
     }
 
     public function handle_submission() {
+        // Log submission attempt
+        error_log('Application Submission: Checking for POST data');
+
         if (!isset($_POST['submit_application']) || !wp_verify_nonce($_POST['application_nonce'], 'submit_application')) {
+            error_log('Application Submission: No submit_application POST or nonce failed');
             return;
         }
 
+        error_log('Application Submission: POST and nonce verified');
+
         $application_type = isset($_POST['application_type']) ? sanitize_text_field($_POST['application_type']) : 'student';
+        error_log('Application Submission: Type = ' . $application_type);
 
         $form_data = [];
         $fields = $this->get_form_fields($application_type);
@@ -286,7 +293,10 @@ class Unico_Application_Form {
         $email = isset($form_data['email']) ? sanitize_email($form_data['email']) : '';
         $phone = isset($form_data['phone']) ? $form_data['phone'] : '';
 
+        error_log('Application Submission: Email = ' . $email);
+
         if (empty($email) || !is_email($email)) {
+            error_log('Application Submission: Email validation failed');
             $redirect_base = $application_type === 'agent'
                 ? home_url('/agent-application-form')
                 : home_url('/student-application-form');
@@ -299,6 +309,7 @@ class Unico_Application_Form {
 
         // Check if email is verified
         if (!$this->is_email_verified_for_application($email)) {
+            error_log('Application Submission: Email verification failed for ' . $email);
             $redirect_base = $application_type === 'agent'
                 ? home_url('/agent-application-form')
                 : home_url('/student-application-form');
@@ -309,9 +320,12 @@ class Unico_Application_Form {
             exit;
         }
 
+        error_log('Application Submission: Email verified successfully');
+
         $validation_result = $this->validate_user_existence($email, $phone);
 
         if ($validation_result['exists']) {
+            error_log('Application Submission: User already exists - ' . $validation_result['message']);
             $redirect_base = $application_type === 'agent'
                 ? home_url('/agent-application-form')
                 : home_url('/student-application-form');
@@ -324,11 +338,12 @@ class Unico_Application_Form {
 
         // Generate submission number
         $submission_number = 'APP-' . date('Ymd') . '-' . strtoupper(wp_generate_password(6, false));
+        error_log('Application Submission: Generated submission number = ' . $submission_number);
 
         // Get user IP
         $ip_address = $_SERVER['REMOTE_ADDR'];
 
-        // Save submission
+        // Save submission with status "pending" as per requirements
         global $wpdb;
         $table = $wpdb->prefix . 'unico_form_submissions';
 
@@ -337,18 +352,22 @@ class Unico_Application_Form {
             'user_id' => is_user_logged_in() ? get_current_user_id() : null,
             'form_type' => $application_type,
             'form_data' => json_encode($form_data),
-            'status' => 'submitted',
+            'status' => 'pending',  // Changed from 'submitted' to 'pending' per requirements
             'ip_address' => $ip_address,
             'created_at' => current_time('mysql')
         ]);
 
         if ($inserted) {
+            error_log('Application Submission: Successfully inserted into database with status pending');
+
             // Send confirmation email to applicant
             if (isset($form_data['email'])) {
+                error_log('Application Submission: Sending confirmation email to ' . $form_data['email']);
                 $this->send_confirmation_email($form_data['email'], $submission_number, $application_type, $form_data);
             }
 
             // Send notification to management
+            error_log('Application Submission: Sending notification to management');
             $this->send_management_notification($submission_number, $application_type, $form_data);
 
             $redirect_base = $application_type === 'agent'
@@ -360,16 +379,21 @@ class Unico_Application_Form {
                 $security->log_activity(get_current_user_id(), 'application_submitted', "Application submitted: {$submission_number}");
             }
 
+            error_log('Application Submission: Redirecting to success page');
             wp_redirect(add_query_arg([
                 'submission_success' => '1',
                 'submission_number' => $submission_number
             ], $redirect_base));
             exit;
         } else {
+            error_log('Application Submission: Database insert FAILED - ' . $wpdb->last_error);
             $redirect_base = $application_type === 'agent'
                 ? home_url('/agent-application-form')
                 : home_url('/student-application-form');
-            wp_redirect(add_query_arg('submission_error', '1', $redirect_base));
+            wp_redirect(add_query_arg([
+                'submission_error' => '1',
+                'error_message' => urlencode('Database error: Unable to save application. Please try again.')
+            ], $redirect_base));
             exit;
         }
     }
@@ -540,27 +564,38 @@ class Unico_Application_Form {
 
     private function send_confirmation_email($email, $submission_number, $application_type = 'student', $form_data = []) {
         if ($application_type === 'agent') {
-            $subject = 'Agent Application Received - ' . get_bloginfo('name');
-            $intro_line = 'Your application is received and under review.';
-            $body_line = 'You will shortly receive an update on mail about your application.';
+            $subject = 'Agent Application Pending Approval - ' . get_bloginfo('name');
+            $intro_line = 'Your application has been submitted successfully and is pending approval.';
+            $body_line = 'Our management team will review your application and you will receive an email with the approval decision and login credentials (if approved) within 24-48 hours.';
         } else {
-            $subject = 'Application Received - ' . get_bloginfo('name');
-            $intro_line = 'Your application is received and under review.';
-            $body_line = 'You will shortly receive an update on mail about your application.';
+            $subject = 'Application Pending Approval - ' . get_bloginfo('name');
+            $intro_line = 'Your application has been submitted successfully and is pending approval.';
+            $body_line = 'Our management team will review your application and you will receive an email with the approval decision and login credentials (if approved) within 24-48 hours.';
         }
 
         $content = "
             <p style='margin-bottom: 24px;'>{$intro_line}</p>
-            
-            <div style='background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; margin-bottom: 24px;'>
-                <p style='margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;'>Application Number</p>
+
+            <div style='background: #fff3cd; border: 1px solid #ffc107; padding: 24px; border-radius: 12px; margin-bottom: 24px;'>
+                <p style='margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #856404; font-weight: 600;'>Application Number</p>
                 <p style='margin: 0; font-size: 24px; font-weight: 700; color: #194f68;'>{$submission_number}</p>
+                <p style='margin: 12px 0 0; font-size: 14px; color: #856404; font-weight: 600;'>Status: PENDING APPROVAL</p>
             </div>
-            
+
             <p style='margin-bottom: 24px;'>{$body_line}</p>
+
+            <div style='background: #e3f2fd; border-left: 4px solid #2196f3; padding: 16px; border-radius: 6px; margin-top: 24px;'>
+                <p style='margin: 0; font-size: 14px; color: #0d47a1;'><strong>Next Steps:</strong></p>
+                <ul style='margin: 8px 0 0; padding-left: 20px; font-size: 14px; color: #1565c0;'>
+                    <li>Your application is now in the review queue</li>
+                    <li>Management will evaluate your information</li>
+                    <li>If approved, you will receive login credentials via email</li>
+                    <li>If rejected, you will be notified with the reason</li>
+                </ul>
+            </div>
         ";
 
-        $message = $this->get_email_template('Application Received!', $content);
+        $message = $this->get_email_template('Application Pending Approval', $content);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
         wp_mail($email, $subject, $message, $headers);
