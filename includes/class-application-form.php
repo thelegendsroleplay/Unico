@@ -282,8 +282,20 @@ class Unico_Application_Form {
         $fields = $this->get_form_fields($application_type);
 
         foreach ($fields as $field) {
-            if (isset($_POST[$field->field_name])) {
-                $form_data[$field->field_name] = sanitize_text_field($_POST[$field->field_name]);
+            $value = isset($_POST[$field->field_name]) ? sanitize_text_field($_POST[$field->field_name]) : '';
+            $form_data[$field->field_name] = $value;
+
+            // Check required fields
+            if ($field->field_required && empty($value)) {
+                error_log('Application Submission: Missing required field - ' . $field->field_label);
+                $redirect_base = $application_type === 'agent'
+                    ? home_url('/agent-application-form')
+                    : home_url('/student-application-form');
+                wp_redirect(add_query_arg([
+                    'submission_error' => '1',
+                    'error_message' => urlencode('Please fill in all required fields: ' . $field->field_label)
+                ], $redirect_base));
+                exit;
             }
         }
 
@@ -347,9 +359,19 @@ class Unico_Application_Form {
         global $wpdb;
         $table = $wpdb->prefix . 'unico_form_submissions';
 
+        // Determine User ID (Logged in or Existing by Email)
+        $user_id = is_user_logged_in() ? get_current_user_id() : null;
+        if (!$user_id && !empty($email)) {
+            $existing_user = get_user_by('email', $email);
+            if ($existing_user) {
+                $user_id = $existing_user->ID;
+                error_log('Application Submission: Linked to existing user ID ' . $user_id);
+            }
+        }
+
         $inserted = $wpdb->insert($table, [
             'submission_number' => $submission_number,
-            'user_id' => is_user_logged_in() ? get_current_user_id() : null,
+            'user_id' => $user_id,
             'form_type' => $application_type,
             'form_data' => json_encode($form_data),
             'status' => 'pending',  // Changed from 'submitted' to 'pending' per requirements
@@ -413,37 +435,37 @@ class Unico_Application_Form {
         if (!empty($email)) {
             $user = get_user_by('email', $email);
             if ($user) {
-                $result['exists'] = true;
-                $result['message'] = 'A user with this email address already exists. Please login or use a different email.';
-                return $result;
+                // User exists - we allow them to submit a new application
+                // logic continues...
             }
         }
 
-        // Check if email or phone exists in previous submissions
+        // Check if email or phone exists in previous PENDING submissions
+        // We allow re-application if previous ones were rejected OR approved
         $table = $wpdb->prefix . 'unico_form_submissions';
 
         if (!empty($email)) {
             $existing = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM $table WHERE form_data LIKE %s AND status != 'rejected'",
+                "SELECT * FROM $table WHERE form_data LIKE %s AND status NOT IN ('rejected', 'approved')",
                 '%"email":"' . $wpdb->esc_like($email) . '"%'
             ));
 
             if ($existing) {
                 $result['exists'] = true;
-                $result['message'] = 'An application with this email address already exists. If your application was rejected, the data should have been deleted and you can reapply.';
+                $result['message'] = 'You have a pending application with this email address. Please wait for the approval decision.';
                 return $result;
             }
         }
 
         if (!empty($phone)) {
             $existing = $wpdb->get_row($wpdb->prepare(
-                "SELECT * FROM $table WHERE form_data LIKE %s AND status != 'rejected'",
+                "SELECT * FROM $table WHERE form_data LIKE %s AND status NOT IN ('rejected', 'approved')",
                 '%"phone":"' . $wpdb->esc_like($phone) . '"%'
             ));
 
             if ($existing) {
                 $result['exists'] = true;
-                $result['message'] = 'An application with this phone number already exists. If your application was rejected, the data should have been deleted and you can reapply.';
+                $result['message'] = 'You have a pending application with this phone number. Please wait for the approval decision.';
                 return $result;
             }
         }
@@ -659,35 +681,46 @@ class Unico_Application_Form {
         }
 
         // Check if user already exists
-        if (get_user_by('email', $email)) {
-            return ['success' => false, 'message' => 'User account already exists with this email'];
-        }
+        $user = get_user_by('email', $email);
+        $is_new_user = false;
+        $password = '';
 
-        // Generate username from email
-        $username = sanitize_user(current(explode('@', $email)));
-        $base_username = $username;
-        $counter = 1;
+        if (!$user) {
+            $is_new_user = true;
+            // Generate username from email
+            $username = sanitize_user(current(explode('@', $email)));
+            $base_username = $username;
+            $counter = 1;
 
-        // Ensure unique username
-        while (username_exists($username)) {
-            $username = $base_username . $counter;
-            $counter++;
-        }
+            // Ensure unique username
+            while (username_exists($username)) {
+                $username = $base_username . $counter;
+                $counter++;
+            }
 
-        // Generate random password
-        $password = wp_generate_password(12, true, false);
+            // Generate random password
+            $password = wp_generate_password(12, true, false);
 
-        // Create user account
-        $user_id = wp_create_user($username, $password, $email);
+            // Create user account
+            $user_id = wp_create_user($username, $password, $email);
 
-        if (is_wp_error($user_id)) {
-            return ['success' => false, 'message' => 'Failed to create user: ' . $user_id->get_error_message()];
+            if (is_wp_error($user_id)) {
+                return ['success' => false, 'message' => 'Failed to create user: ' . $user_id->get_error_message()];
+            }
+            
+            $user = new WP_User($user_id);
+        } else {
+            $user_id = $user->ID;
+            $username = $user->user_login;
         }
 
         // Set user role based on application type
-        $user = new WP_User($user_id);
         $role = $submission->form_type === 'agent' ? 'agent' : 'student';
-        $user->set_role($role);
+        
+        // Prevent changing role for admins/management
+        if (!in_array('administrator', (array)$user->roles) && !in_array('management', (array)$user->roles)) {
+            $user->set_role($role);
+        }
 
         // Update user meta
         if (!empty($full_name)) {
@@ -699,7 +732,7 @@ class Unico_Application_Form {
         }
 
         // Update submission status
-        $this->update_status($submission_id, 'approved', 'Application approved and user account created');
+        $this->update_status($submission_id, 'approved', 'Application approved. ' . ($is_new_user ? 'User created.' : 'Linked to existing user.'));
 
         // Link submission to user
         global $wpdb;
@@ -707,9 +740,13 @@ class Unico_Application_Form {
         $wpdb->update($table, ['user_id' => $user_id], ['id' => $submission_id]);
 
         // Send approval email with credentials
-        $this->send_approval_email($email, $username, $password, $role, $submission->submission_number);
+        if ($is_new_user) {
+            $this->send_approval_email($email, $username, $password, $role, $submission->submission_number);
+        } else {
+            $this->send_approval_email_existing_user($email, $username, $role, $submission->submission_number);
+        }
 
-        return ['success' => true, 'message' => 'Application approved and user account created', 'user_id' => $user_id];
+        return ['success' => true, 'message' => 'Application approved and user account ' . ($is_new_user ? 'created' : 'linked'), 'user_id' => $user_id];
     }
 
     /**
@@ -770,6 +807,55 @@ class Unico_Application_Form {
 
                 <div style='background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
                     <p style='margin: 0;'><strong>Security Notice:</strong> Please change your password after first login for security.</p>
+                </div>
+
+                <div style='text-align: center; margin-top: 30px;'>
+                    <a href='{$login_url}' style='background: #e95134; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin-right: 10px;'>
+                        Login Now
+                    </a>
+                    <a href='{$dashboard_url}' style='background: #194f68; color: #fff; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        Visit Dashboard
+                    </a>
+                </div>
+
+                <p style='margin-top: 30px; color: #666;'>
+                    Best regards,<br>
+                    " . get_bloginfo('name') . " Team
+                </p>
+            </div>
+        </body>
+        </html>
+        ";
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        wp_mail($email, $subject, $message, $headers);
+    }
+
+    /**
+     * Send approval email for existing user
+     */
+    private function send_approval_email_existing_user($email, $username, $role, $submission_number) {
+        $subject = 'Application Approved - ' . get_bloginfo('name');
+
+        $role_name = ucfirst($role);
+        $dashboard_url = $role === 'agent' ? home_url('/agent-dashboard') : home_url('/student-dashboard');
+        $login_url = home_url('/login');
+
+        $message = "
+        <html>
+        <body style='font-family: Arial, sans-serif; line-height: 1.6;'>
+            <div style='background: linear-gradient(135deg, #194f68 0%, #103e54 100%); padding: 30px; border-radius: 10px 10px 0 0;'>
+                <h2 style='color: #fff; margin: 0;'>🎉 Application Approved!</h2>
+            </div>
+            <div style='background: #f9f9f9; padding: 30px;'>
+                <p>Congratulations! Your application has been approved.</p>
+
+                <div style='background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                    <h3 style='color: #194f68; margin-top: 0;'>Your Account Details</h3>
+                    <p><strong>Application Number:</strong> <span style='color: #e95134;'>{$submission_number}</span></p>
+                    <p><strong>Username:</strong> <span style='font-family: monospace; background: #f5f5f5; padding: 5px 10px; border-radius: 3px;'>{$username}</span></p>
+                    <p><strong>Account Type:</strong> {$role_name}</p>
+                    <p>Please login with your existing password.</p>
                 </div>
 
                 <div style='text-align: center; margin-top: 30px;'>
@@ -918,8 +1004,7 @@ class Unico_Application_Form {
             if (!empty($email) && is_email($email)) {
                 // Check if email already exists
                 if (get_user_by('email', $email)) {
-                    wp_send_json_error(['message' => 'This email is already registered. Please login or use a different email.']);
-                    exit;
+                    // Existing user verified - proceed to allow OTP for new application
                 }
 
                 // Check in submissions
