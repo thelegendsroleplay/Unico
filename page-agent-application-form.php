@@ -91,9 +91,33 @@ get_header();
                 <?php endif; ?>
 
                 <div class="application-note">
-                    <strong>Partner screening.</strong>
-                    Provide accurate business details. Management will review and approve or reject your agent profile.
+                    <strong>Email Verification Required.</strong>
+                    After filling in your email address, you must verify it via OTP before submitting. Provide accurate business details. Management will review and approve or reject your agent profile.
                 </div>
+
+                <?php if (isset($_GET['submission_success']) || isset($_GET['submission_error']) || isset($_GET['email_verified'])): ?>
+                <script>
+                    // Auto-scroll to alert on page load
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const alert = document.querySelector('.application-alert');
+                        if (alert) {
+                            alert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Add pulse animation
+                            alert.style.animation = 'pulse 0.5s ease-in-out';
+                        }
+                    });
+
+                    // Add pulse animation CSS
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes pulse {
+                            0%, 100% { transform: scale(1); }
+                            50% { transform: scale(1.02); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                </script>
+                <?php endif; ?>
 
                 <form method="post" action="" class="application-form">
                     <?php foreach ($sections as $section_name => $fields): ?>
@@ -149,11 +173,22 @@ get_header();
 
                                         <?php if ($field->field_name === 'email'): ?>
                                             <div style="margin-top: 8px;">
-                                                <a href="#" id="verify-email-link" style="color: #194f68; text-decoration: none; font-weight: 600; font-size: 14px;" onclick="openVerificationPopup(event)">
-                                                    Click here to verify
+                                                <div id="email-status" style="display: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                                                    <span id="email-status-text"></span>
+                                                </div>
+                                                <a href="#" id="verify-email-link" style="display: none; color: #194f68; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #e8f4f8; border-radius: 5px;" onclick="openVerificationPopup(event)">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                                    </svg>
+                                                    Click here to verify your email
                                                 </a>
-                                                <span id="email-verified-badge" style="display: none; color: #28a745; font-weight: 600; font-size: 14px;">
-                                                    ✓ Verified
+                                                <span id="email-verified-badge" style="display: none; color: #28a745; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #d4edda; border-radius: 5px;">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <path d="M9 12l2 2 4-4"></path>
+                                                    </svg>
+                                                    Email Verified
                                                 </span>
                                             </div>
                                         <?php endif; ?>
@@ -214,8 +249,130 @@ get_header();
 
                 <script>
                 let isEmailVerified = false;
+                let emailCheckTimeout = null;
                 const ajaxUrl = '<?php echo admin_url('admin-ajax.php'); ?>';
                 const verifyNonce = '<?php echo wp_create_nonce('verify_application_email'); ?>';
+
+                // Real-time email checking
+                document.addEventListener('DOMContentLoaded', function() {
+                    const emailField = document.getElementById('email');
+                    const phoneField = document.getElementById('phone');
+                    const emailStatus = document.getElementById('email-status');
+                    const emailStatusText = document.getElementById('email-status-text');
+                    const verifyLink = document.getElementById('verify-email-link');
+
+                    if (emailField) {
+                        emailField.addEventListener('input', function() {
+                            const email = this.value.trim();
+
+                            // Clear previous timeout
+                            clearTimeout(emailCheckTimeout);
+
+                            // Hide verify link and verified badge while typing
+                            verifyLink.style.display = 'none';
+                            document.getElementById('email-verified-badge').style.display = 'none';
+
+                            if (!email || !email.includes('@')) {
+                                emailStatus.style.display = 'none';
+                                return;
+                            }
+
+                            // Show checking status
+                            emailStatus.style.display = 'block';
+                            emailStatus.style.background = '#e8f4f8';
+                            emailStatus.style.color = '#194f68';
+                            emailStatus.style.border = '1px solid #b8d4e0';
+                            emailStatusText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite; display: inline-block; margin-right: 6px;">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                                </svg>
+                                Checking email availability...
+                            `;
+
+                            // Add CSS animation for spinner
+                            if (!document.getElementById('spin-animation')) {
+                                const style = document.createElement('style');
+                                style.id = 'spin-animation';
+                                style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                                document.head.appendChild(style);
+                            }
+
+                            // Debounce the email check
+                            emailCheckTimeout = setTimeout(() => {
+                                checkEmailExists(email, phoneField.value);
+                            }, 800);
+                        });
+
+                        // Also check when phone changes (after email is entered)
+                        phoneField.addEventListener('blur', function() {
+                            const email = emailField.value.trim();
+                            if (email && email.includes('@') && !isEmailVerified) {
+                                clearTimeout(emailCheckTimeout);
+                                checkEmailExists(email, this.value);
+                            }
+                        });
+                    }
+                });
+
+                function checkEmailExists(email, phone) {
+                    const emailStatus = document.getElementById('email-status');
+                    const emailStatusText = document.getElementById('email-status-text');
+                    const verifyLink = document.getElementById('verify-email-link');
+
+                    const formData = new FormData();
+                    formData.append('action', 'check_email_exists');
+                    formData.append('nonce', verifyNonce);
+                    formData.append('email', email);
+                    formData.append('phone', phone);
+
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Email is available
+                            emailStatus.style.display = 'block';
+                            emailStatus.style.background = '#d1ecf1';
+                            emailStatus.style.color = '#0c5460';
+                            emailStatus.style.border = '1px solid #bee5eb';
+                            emailStatusText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline-block; margin-right: 6px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9 12l2 2 4-4"></path>
+                                </svg>
+                                Email is available
+                            `;
+
+                            // Show verify link after short delay
+                            setTimeout(() => {
+                                emailStatus.style.display = 'none';
+                                verifyLink.style.display = 'inline-flex';
+                            }, 1500);
+                        } else {
+                            // Email already exists
+                            emailStatus.style.display = 'block';
+                            emailStatus.style.background = '#f8d7da';
+                            emailStatus.style.color = '#721c24';
+                            emailStatus.style.border = '1px solid #f5c6cb';
+                            emailStatusText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline-block; margin-right: 6px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                                ${data.data.message}
+                            `;
+                            verifyLink.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Email check error:', error);
+                        emailStatus.style.display = 'none';
+                        verifyLink.style.display = 'inline-flex';
+                    });
+                }
 
                 function openVerificationPopup(event) {
                     event.preventDefault();

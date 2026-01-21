@@ -116,6 +116,10 @@ class Unico_Application_Form {
         add_action('wp_ajax_nopriv_verify_otp', [$this, 'ajax_verify_otp']);
         add_action('wp_ajax_verify_otp', [$this, 'ajax_verify_otp']);
 
+        // AJAX handler for real-time email checking
+        add_action('wp_ajax_nopriv_check_email_exists', [$this, 'ajax_check_email_exists']);
+        add_action('wp_ajax_check_email_exists', [$this, 'ajax_check_email_exists']);
+
         $this->create_tables();
     }
 
@@ -1347,6 +1351,36 @@ class Unico_Application_Form {
                 $debug = " (Email: $email, OTP: $otp)";
             }
             wp_send_json_error(['message' => 'Invalid verification code. Please check and try again.' . $debug]);
+        }
+    }
+
+    /**
+     * AJAX handler for checking if email already exists
+     */
+    public function ajax_check_email_exists() {
+        check_ajax_referer('verify_application_email', 'nonce');
+
+        $email = isset($_POST['email']) ? sanitize_email($_POST['email']) : '';
+        $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
+
+        if (empty($email) || !is_email($email)) {
+            wp_send_json_error(['message' => 'Please enter a valid email address.']);
+            return;
+        }
+
+        // Check if email/phone already exists
+        $validation_result = $this->validate_user_existence($email, $phone);
+
+        if ($validation_result['exists']) {
+            wp_send_json_error([
+                'message' => $validation_result['message'],
+                'exists' => true
+            ]);
+        } else {
+            wp_send_json_success([
+                'message' => 'Email is available.',
+                'exists' => false
+            ]);
         }
     }
 }
