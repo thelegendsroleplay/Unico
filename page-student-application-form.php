@@ -36,16 +36,22 @@ get_header();
                 <div class="application-alert application-alert-success">
                     <div class="application-alert-icon">✓</div>
                     <div class="application-alert-body">
-                        <h2>Application submitted successfully</h2>
+                        <h2>Application submitted successfully and is pending approval</h2>
                         <p>
-                            Application number: 
+                            Application number:
                             <span class="application-number">
                                 <?php echo esc_html($_GET['submission_number']); ?>
                             </span>
                         </p>
                         <p>
-                            Your application is submitted successfully and is under review. 
-                            You will shortly receive an update on mail about your application.
+                            <strong>Status:</strong> <span style="color: #ffc107; font-weight: 600;">PENDING APPROVAL</span>
+                        </p>
+                        <p style="margin-top: 12px;">
+                            Your application has been saved and sent to our management team for review.
+                            You will receive an email with the approval decision within 24-48 hours.
+                        </p>
+                        <p style="margin-top: 12px; font-size: 14px; color: #666;">
+                            <strong>Next Steps:</strong> If approved, you will receive login credentials via email to access your account.
                         </p>
                     </div>
                 </div>
