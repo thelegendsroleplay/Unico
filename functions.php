@@ -47,6 +47,46 @@ add_action('init', function() {
     }
 }, 5);
 
+// Fix WooCommerce Checkout Page (runs once)
+add_action('admin_init', function() {
+    // Check if already fixed
+    if (get_option('unico_checkout_page_fixed')) {
+        return;
+    }
+
+    // Only run if WooCommerce is active
+    if (!function_exists('WC')) {
+        return;
+    }
+
+    // Find the checkout page with correct template
+    $checkout_page = get_page_by_path('checkout');
+
+    if ($checkout_page) {
+        // Update WooCommerce setting
+        update_option('woocommerce_checkout_page_id', $checkout_page->ID);
+        error_log('Unico: Fixed WooCommerce checkout page to use /checkout (ID: ' . $checkout_page->ID . ')');
+    } else {
+        // Create checkout page if it doesn't exist
+        $page_id = wp_insert_post([
+            'post_title' => 'Checkout',
+            'post_name' => 'checkout',
+            'post_status' => 'publish',
+            'post_type' => 'page',
+            'post_content' => '',
+        ]);
+
+        if ($page_id && !is_wp_error($page_id)) {
+            update_post_meta($page_id, '_wp_page_template', 'page-checkout.php');
+            update_option('woocommerce_checkout_page_id', $page_id);
+            error_log('Unico: Created and configured checkout page (ID: ' . $page_id . ')');
+        }
+    }
+
+    // Mark as fixed so this doesn't run again
+    update_option('unico_checkout_page_fixed', true);
+});
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
