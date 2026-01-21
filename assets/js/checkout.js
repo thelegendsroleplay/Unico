@@ -164,6 +164,59 @@ document.addEventListener('DOMContentLoaded', function () {
       if (modeInput) {
         modeInput.value = btn.getAttribute('data-method');
       }
+
+      // Show/hide bank transfer details based on payment method
+      var bankDetails = document.getElementById('bank-transfer-details');
+      if (bankDetails) {
+        var selectedMethod = btn.getAttribute('data-method');
+        if (selectedMethod === 'bank_transfer') {
+          bankDetails.style.display = 'block';
+        } else {
+          bankDetails.style.display = 'none';
+        }
+      }
     });
   });
 });
+
+/**
+ * Copy to clipboard functionality
+ */
+function copyToClipboard(elementId, button) {
+  var element = document.getElementById(elementId);
+  if (!element) {
+    return;
+  }
+
+  var text = element.textContent || element.innerText;
+
+  // Create temporary textarea
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    // Copy to clipboard
+    var successful = document.execCommand('copy');
+    if (successful) {
+      // Change button state
+      var originalText = button.innerHTML;
+      button.classList.add('copied');
+      button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+
+      // Reset after 2 seconds
+      setTimeout(function() {
+        button.classList.remove('copied');
+        button.innerHTML = originalText;
+      }, 2000);
+    }
+  } catch (err) {
+    console.error('Failed to copy:', err);
+  }
+
+  // Clean up
+  document.body.removeChild(textarea);
+}

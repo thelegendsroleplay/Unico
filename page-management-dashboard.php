@@ -817,6 +817,7 @@ get_header();
         <button type="button" class="mgmt-tab" data-tab="orders">Orders</button>
         <button type="button" class="mgmt-tab" data-tab="analytics">Analytics</button>
         <button type="button" class="mgmt-tab" data-tab="users">Users</button>
+        <button type="button" class="mgmt-tab" data-tab="bank-accounts">Bank Accounts</button>
         <div class="mgmt-tabs-spacer"></div>
         <span class="mgmt-badge">Logged in as <?php echo esc_html($current_user->display_name); ?></span>
     </div>
@@ -1030,21 +1031,21 @@ get_header();
                                             </span>
                                         </td>
                                         <td>
-                                            <?php if ($application->status === 'submitted' || $application->status === 'in_review'): ?>
+                                            <?php if ($application->status === 'pending' || $application->status === 'submitted' || $application->status === 'in_review'): ?>
                                                 <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px; flex-wrap: wrap;">
-                                                    <button type="button" class="mgmt-btn mgmt-btn-secondary view-application-btn" 
+                                                    <button type="button" class="mgmt-btn mgmt-btn-secondary view-application-btn"
                                                         data-application='<?php echo esc_attr($application->form_data); ?>'
                                                         data-id="<?php echo esc_attr($application->submission_number); ?>"
                                                         data-type="<?php echo esc_attr($application_type_label); ?>">
                                                         View
                                                     </button>
-                                                    
+
                                                     <input type="text" name="status_notes" placeholder="Notes (for Reject)" style="padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 140px;">
-                                                    
+
                                                     <input type="hidden" name="application_id" value="<?php echo intval($application->id); ?>">
                                                     <input type="hidden" name="update_application_status" value="1">
                                                     <?php wp_nonce_field('update_application_status', 'application_status_nonce'); ?>
-                                                    
+
                                                     <button type="submit" name="new_status" value="approved" class="mgmt-btn mgmt-btn-primary" style="background-color: #28a745; border-color: #28a745;" onclick="return confirm('Approve this application? This will create a user account and send login details.')">Approve</button>
                                                     <button type="submit" name="new_status" value="rejected" class="mgmt-btn mgmt-btn-danger" style="background-color: #dc3545; border-color: #dc3545; color: white;" onclick="if(!this.form.status_notes.value.trim()){alert('Please provide a reason for rejection in the notes field.'); return false;} return confirm('Reject this application? This will delete the application data.');">Reject</button>
                                                 </form>
@@ -1702,6 +1703,223 @@ get_header();
                     </div>
                 <?php else: ?>
                     <p class="mgmt-muted-text">No users found.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Accounts Tab -->
+    <?php
+    $bank_system = Unico_Bank_Accounts::get_instance();
+
+    // Handle form submissions
+    if (isset($_POST['bank_action']) && wp_verify_nonce($_POST['bank_nonce'], 'unico_bank_management')) {
+        $action = sanitize_text_field($_POST['bank_action']);
+
+        if ($action === 'add_bank') {
+            $result = $bank_system->add_bank($_POST);
+            $mgmt_notices[] = [
+                'type' => $result['success'] ? 'success' : 'error',
+                'message' => $result['message']
+            ];
+        } elseif ($action === 'update_bank' && isset($_POST['bank_id'])) {
+            $result = $bank_system->update_bank($_POST['bank_id'], $_POST);
+            $mgmt_notices[] = [
+                'type' => $result['success'] ? 'success' : 'error',
+                'message' => $result['message']
+            ];
+        } elseif ($action === 'delete_bank' && isset($_POST['bank_id'])) {
+            $result = $bank_system->delete_bank($_POST['bank_id']);
+            $mgmt_notices[] = [
+                'type' => $result['success'] ? 'success' : 'error',
+                'message' => $result['message']
+            ];
+        } elseif ($action === 'toggle_active' && isset($_POST['bank_id'])) {
+            $result = $bank_system->toggle_active($_POST['bank_id']);
+            $mgmt_notices[] = [
+                'type' => $result['success'] ? 'success' : 'error',
+                'message' => $result['message']
+            ];
+        }
+    }
+
+    $all_banks = $bank_system->get_all_banks();
+    $bank_stats = $bank_system->get_bank_stats();
+    ?>
+    <div class="mgmt-tab-content" data-tab="bank-accounts">
+        <div class="mgmt-section-card">
+            <div class="mgmt-section-header">
+                <span>Bank Accounts Overview</span>
+                <span><?php echo $bank_stats['total']; ?> total accounts (<?php echo $bank_stats['active']; ?> active)</span>
+            </div>
+            <div class="mgmt-section-body">
+                <div class="mgmt-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="mgmt-stat-card">
+                        <div class="mgmt-stat-icon">🏦</div>
+                        <div class="mgmt-stat-label">Total Banks</div>
+                        <div class="mgmt-stat-value"><?php echo $bank_stats['total']; ?></div>
+                    </div>
+                    <div class="mgmt-stat-card">
+                        <div class="mgmt-stat-icon">✅</div>
+                        <div class="mgmt-stat-label">Active Banks</div>
+                        <div class="mgmt-stat-value"><?php echo $bank_stats['active']; ?></div>
+                    </div>
+                    <div class="mgmt-stat-card">
+                        <div class="mgmt-stat-icon">⏸️</div>
+                        <div class="mgmt-stat-label">Inactive Banks</div>
+                        <div class="mgmt-stat-value"><?php echo $bank_stats['inactive']; ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mgmt-section-card">
+            <div class="mgmt-section-header">
+                <span>Add New Bank Account</span>
+                <span>Bank details will be randomly displayed during checkout</span>
+            </div>
+            <div class="mgmt-section-body">
+                <form method="post">
+                    <div class="mgmt-form-row">
+                        <label>
+                            Bank Name *
+                            <input type="text" name="bank_name" required placeholder="e.g. State Bank of India">
+                        </label>
+                        <label>
+                            Account Holder Name *
+                            <input type="text" name="account_holder" required placeholder="e.g. UNICOU EDUCATION PVT LTD">
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label>
+                            Account Number *
+                            <input type="text" name="account_number" required placeholder="e.g. 1234567890">
+                        </label>
+                        <label>
+                            IFSC Code
+                            <input type="text" name="ifsc_code" placeholder="e.g. SBIN0001234">
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label>
+                            SWIFT Code (for international)
+                            <input type="text" name="swift_code" placeholder="e.g. SBININBB123">
+                        </label>
+                        <label>
+                            Branch Name
+                            <input type="text" name="branch_name" placeholder="e.g. Mumbai Main Branch">
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label>
+                            Country
+                            <input type="text" name="country" value="India" placeholder="e.g. India">
+                        </label>
+                        <label>
+                            Currency
+                            <input type="text" name="currency" value="INR" placeholder="e.g. INR, USD">
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label>
+                            Bank Logo URL (optional)
+                            <input type="url" name="bank_logo_url" placeholder="https://example.com/logo.png">
+                        </label>
+                        <label>
+                            Display Order (lower = higher priority)
+                            <input type="number" name="display_order" value="0" min="0">
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label style="grid-column: 1 / -1;">
+                            Internal Notes (not shown to customers)
+                            <textarea name="notes" rows="2" placeholder="e.g. Primary account for high-value transactions"></textarea>
+                        </label>
+                    </div>
+                    <div class="mgmt-form-row">
+                        <label>
+                            <input type="checkbox" name="is_active" value="1" checked>
+                            <span>Active (show in checkout)</span>
+                        </label>
+                    </div>
+                    <div class="mgmt-form-actions">
+                        <?php wp_nonce_field('unico_bank_management', 'bank_nonce'); ?>
+                        <button type="submit" name="bank_action" value="add_bank" class="mgmt-btn mgmt-btn-primary">Add Bank Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mgmt-section-card">
+            <div class="mgmt-section-header">
+                <span>All Bank Accounts</span>
+                <span><?php echo count($all_banks); ?> accounts configured</span>
+            </div>
+            <div class="mgmt-section-body">
+                <?php if (!empty($all_banks)): ?>
+                    <div class="mgmt-scroll">
+                        <table class="mgmt-table">
+                            <thead>
+                                <tr>
+                                    <th>Bank Name</th>
+                                    <th>Account Holder</th>
+                                    <th>Account Number</th>
+                                    <th>IFSC/SWIFT</th>
+                                    <th>Branch</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($all_banks as $bank): ?>
+                                    <tr>
+                                        <td><strong><?php echo esc_html($bank->bank_name); ?></strong></td>
+                                        <td><?php echo esc_html($bank->account_holder); ?></td>
+                                        <td><code><?php echo esc_html($bank->account_number); ?></code></td>
+                                        <td>
+                                            <?php if (!empty($bank->ifsc_code)): ?>
+                                                <div style="font-size: 12px;">IFSC: <?php echo esc_html($bank->ifsc_code); ?></div>
+                                            <?php endif; ?>
+                                            <?php if (!empty($bank->swift_code)): ?>
+                                                <div style="font-size: 12px;">SWIFT: <?php echo esc_html($bank->swift_code); ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo esc_html($bank->branch_name ?: '-'); ?></td>
+                                        <td>
+                                            <span class="mgmt-status-pill <?php echo $bank->is_active ? 'approved' : 'rejected'; ?>">
+                                                <?php echo $bank->is_active ? 'Active' : 'Inactive'; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                                <form method="post" style="display: inline;">
+                                                    <?php wp_nonce_field('unico_bank_management', 'bank_nonce'); ?>
+                                                    <input type="hidden" name="bank_id" value="<?php echo $bank->id; ?>">
+                                                    <button type="submit" name="bank_action" value="toggle_active" class="mgmt-btn mgmt-btn-secondary" style="font-size: 12px; padding: 4px 10px;">
+                                                        <?php echo $bank->is_active ? 'Deactivate' : 'Activate'; ?>
+                                                    </button>
+                                                </form>
+                                                <button type="button" class="mgmt-btn mgmt-btn-secondary edit-bank-btn"
+                                                    data-bank='<?php echo esc_attr(json_encode($bank)); ?>'
+                                                    style="font-size: 12px; padding: 4px 10px;">
+                                                    Edit
+                                                </button>
+                                                <form method="post" style="display: inline;" onsubmit="return confirm('Delete this bank account? This action cannot be undone.');">
+                                                    <?php wp_nonce_field('unico_bank_management', 'bank_nonce'); ?>
+                                                    <input type="hidden" name="bank_id" value="<?php echo $bank->id; ?>">
+                                                    <button type="submit" name="bank_action" value="delete_bank" class="mgmt-btn mgmt-btn-danger" style="font-size: 12px; padding: 4px 10px;">
+                                                        Delete
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <p class="mgmt-muted-text">No bank accounts configured. Add your first bank account above.</p>
                 <?php endif; ?>
             </div>
         </div>
