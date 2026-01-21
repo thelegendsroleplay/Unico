@@ -49,6 +49,121 @@ if (!defined('ABSPATH')) {
             </button>
             <input type="hidden" name="voucher_payment_mode" value="bank_transfer">
         </div>
+
+        <?php
+        // Get random active bank account for display
+        $bank_system = Unico_Bank_Accounts::get_instance();
+        $selected_bank = $bank_system->get_random_active_bank();
+        ?>
+
+        <!-- Bank Transfer Details (shown when bank transfer is selected) -->
+        <div class="unico-bank-details" id="bank-transfer-details" style="display: block;">
+            <?php if ($selected_bank): ?>
+                <div class="unico-bank-card">
+                    <div class="unico-bank-header">
+                        <span class="unico-bank-icon">🏦</span>
+                        <div>
+                            <div class="unico-bank-title">Bank Transfer Details</div>
+                            <div class="unico-bank-subtitle">Transfer exact amount to the account below</div>
+                        </div>
+                    </div>
+                    <div class="unico-bank-info">
+                        <?php if (!empty($selected_bank->bank_logo_url)): ?>
+                            <div class="unico-bank-logo">
+                                <img src="<?php echo esc_url($selected_bank->bank_logo_url); ?>" alt="<?php echo esc_attr($selected_bank->bank_name); ?>">
+                            </div>
+                        <?php endif; ?>
+                        <div class="unico-bank-name"><?php echo esc_html($selected_bank->bank_name); ?></div>
+
+                        <div class="unico-bank-field">
+                            <label>Account Holder Name</label>
+                            <div class="unico-bank-value">
+                                <span><?php echo esc_html($selected_bank->account_holder); ?></span>
+                            </div>
+                        </div>
+
+                        <div class="unico-bank-field">
+                            <label>Account Number</label>
+                            <div class="unico-bank-value">
+                                <span id="account-number"><?php echo esc_html($selected_bank->account_number); ?></span>
+                                <button type="button" class="unico-copy-btn" onclick="copyToClipboard('account-number', this)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <?php if (!empty($selected_bank->ifsc_code)): ?>
+                        <div class="unico-bank-field">
+                            <label>IFSC Code</label>
+                            <div class="unico-bank-value">
+                                <span id="ifsc-code"><?php echo esc_html($selected_bank->ifsc_code); ?></span>
+                                <button type="button" class="unico-copy-btn" onclick="copyToClipboard('ifsc-code', this)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($selected_bank->swift_code)): ?>
+                        <div class="unico-bank-field">
+                            <label>SWIFT Code</label>
+                            <div class="unico-bank-value">
+                                <span id="swift-code"><?php echo esc_html($selected_bank->swift_code); ?></span>
+                                <button type="button" class="unico-copy-btn" onclick="copyToClipboard('swift-code', this)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($selected_bank->branch_name)): ?>
+                        <div class="unico-bank-field">
+                            <label>Branch</label>
+                            <div class="unico-bank-value">
+                                <span><?php echo esc_html($selected_bank->branch_name); ?></span>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="unico-bank-notice">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <div>
+                            <strong>Important:</strong> Transfer the exact amount displayed below and upload the payment receipt with transaction ID.
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="selected_bank_id" value="<?php echo esc_attr($selected_bank->id); ?>">
+            <?php else: ?>
+                <div class="unico-bank-card" style="background: #fff3cd; border-color: #ffc107;">
+                    <div class="unico-bank-notice">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <div>
+                            <strong>Notice:</strong> No bank accounts are currently configured. Please contact support or use card payment.
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
         <div class="unico-field">
             <label>Payment Reference Number</label>
             <input type="text" name="voucher_payment_reference" placeholder="Transaction ID...">

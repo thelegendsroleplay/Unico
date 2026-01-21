@@ -443,3 +443,171 @@
 .woocommerce-checkout #place_order {
   display: none !important;
 }
+
+/* ---------------------------------
+   BANK TRANSFER DETAILS
+   --------------------------------- */
+
+.unico-bank-details {
+  margin: 20px 0;
+}
+
+.unico-bank-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.unico-bank-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.unico-bank-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.unico-bank-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #194f68;
+  margin-bottom: 4px;
+}
+
+.unico-bank-subtitle {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.unico-bank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.unico-bank-logo {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.unico-bank-logo img {
+  max-width: 120px;
+  max-height: 60px;
+  object-fit: contain;
+}
+
+.unico-bank-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #194f68;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.unico-bank-field {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.unico-bank-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.unico-bank-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.unico-bank-value span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  font-family: 'Courier New', monospace;
+  flex: 1;
+}
+
+.unico-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #194f68;
+  background: #e8f4f8;
+  border: 1px solid #b8d4e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.unico-copy-btn:hover {
+  background: #d1e8f0;
+  border-color: #9bc4d4;
+}
+
+.unico-copy-btn:active {
+  transform: scale(0.95);
+}
+
+.unico-copy-btn.copied {
+  background: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.unico-bank-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px;
+  background: #eff6ff;
+  border-left: 4px solid #2196f3;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1e40af;
+}
+
+.unico-bank-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.unico-bank-notice strong {
+  font-weight: 700;
+}
+
+/* Responsive adjustments */
+@media (min-width: 480px) {
+  .unico-bank-card {
+    padding: 24px;
+  }
+
+  .unico-bank-name {
+    font-size: 22px;
+  }
+
+  .unico-bank-value span {
+    font-size: 17px;
+  }
+}

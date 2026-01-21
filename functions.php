@@ -37,6 +37,9 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
 // Include Mail Settings
 require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
 
+// Include Bank Accounts Management
+require_once get_template_directory() . '/includes/class-bank-accounts.php';
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
@@ -689,12 +692,41 @@ add_action('woocommerce_checkout_update_order_meta', function ($order_id) {
         'voucher_payment_reference',
         'voucher_upload_receipt_note',
         'voucher_terms_confirmed',
+        'selected_bank_id',
     ];
     foreach ($fields as $field) {
         if (isset($_POST[$field])) {
             update_post_meta($order_id, $field, sanitize_text_field(wp_unslash($_POST[$field])));
         }
     }
+
+    // Save bank details if bank transfer was selected
+    if (isset($_POST['selected_bank_id']) && !empty($_POST['selected_bank_id'])) {
+        $bank_system = Unico_Bank_Accounts::get_instance();
+        $bank = $bank_system->get_bank(intval($_POST['selected_bank_id']));
+        if ($bank) {
+            update_post_meta($order_id, '_bank_name', $bank->bank_name);
+            update_post_meta($order_id, '_bank_account_holder', $bank->account_holder);
+            update_post_meta($order_id, '_bank_account_number', $bank->account_number);
+            update_post_meta($order_id, '_bank_ifsc_code', $bank->ifsc_code);
+            update_post_meta($order_id, '_bank_swift_code', $bank->swift_code);
+            update_post_meta($order_id, '_bank_branch', $bank->branch_name);
+
+            // Add order note with bank details
+            if (function_exists('wc_get_order')) {
+                $order = wc_get_order($order_id);
+                if ($order) {
+                    $order->add_order_note(sprintf(
+                        'Bank Transfer Details: %s - Account: %s (%s)',
+                        $bank->bank_name,
+                        $bank->account_number,
+                        $bank->account_holder
+                    ));
+                }
+            }
+        }
+    }
+
     if (isset($_FILES['voucher_payment_receipt']) && !empty($_FILES['voucher_payment_receipt']['name'])) {
         $upload = unico_handle_voucher_receipt_upload('voucher_payment_receipt', $order_id);
         if (!is_wp_error($upload)) {
