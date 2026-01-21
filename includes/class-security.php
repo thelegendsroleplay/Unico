@@ -203,6 +203,50 @@ class Unico_Security {
     }
 
     /**
+     * Send OTP for purchase verification
+     */
+    public function send_purchase_otp($user_id) {
+        $user = get_userdata($user_id);
+        if (!$user) return false;
+
+        $otp = rand(100000, 999999);
+        set_transient('unico_purchase_otp_' . $user_id, $otp, 10 * 60); // 10 minutes
+
+        $subject = 'Purchase Verification Code - ' . get_bloginfo('name');
+        $message = "Your verification code is: $otp\n\nThis code expires in 10 minutes.";
+        
+        return wp_mail($user->user_email, $subject, $message);
+    }
+
+    /**
+     * Verify Purchase OTP
+     */
+    public function verify_purchase_otp($user_id, $code) {
+        $stored_otp = get_transient('unico_purchase_otp_' . $user_id);
+        if ($stored_otp && $stored_otp == $code) {
+            delete_transient('unico_purchase_otp_' . $user_id);
+            // Use a short transient for the verified session (e.g., 30 mins)
+            set_transient('unico_purchase_verified_' . $user_id, true, 30 * 60);
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Check if purchase is verified
+     */
+    public function is_purchase_verified($user_id) {
+        return (bool) get_transient('unico_purchase_verified_' . $user_id);
+    }
+
+    /**
+     * Clear purchase verification
+     */
+    public function clear_purchase_verification($user_id) {
+        delete_transient('unico_purchase_verified_' . $user_id);
+    }
+
+    /**
      * Log user activity
      */
     public function log_activity($user_id, $activity_type, $description, $metadata = []) {

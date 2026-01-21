@@ -7,11 +7,13 @@ if (!defined('ABSPATH')) {
     <?php
     // Check email verification status
     $is_email_verified = false;
+    $is_purchase_verified = false;
     $user_email = '';
     if (is_user_logged_in() && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
         $user_id = get_current_user_id();
         $is_email_verified = $security->is_email_verified($user_id);
+        $is_purchase_verified = $security->is_purchase_verified($user_id);
         $current_user = wp_get_current_user();
         $user_email = $current_user->user_email;
     }
@@ -48,6 +50,118 @@ if (!defined('ABSPATH')) {
                 </span>
             </div>
         </div>
+
+        <?php if (!$is_purchase_verified): ?>
+        <div class="unico-verification-notice" style="background: #e2e3e5; border: 2px solid #d6d8db; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#383d41" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <div style="flex-grow: 1;">
+                    <strong style="color: #383d41; display: block; margin-bottom: 6px;">🔒 Identity Verification Required</strong>
+                    <p style="color: #383d41; margin: 0; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
+                        For security, please verify your identity for this purchase.
+                    </p>
+                    
+                    <div id="unico-otp-step-1">
+                        <button type="button" id="unico-send-otp-btn" style="padding: 8px 16px; background: #383d41; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                            Send Verification Code
+                        </button>
+                    </div>
+
+                    <div id="unico-otp-step-2" style="display: none; margin-top: 10px;">
+                        <input type="text" id="unico-otp-input" placeholder="Enter 6-digit code" style="padding: 8px; border: 1px solid #ced4da; border-radius: 4px; width: 150px; margin-right: 8px;">
+                        <button type="button" id="unico-verify-otp-btn" style="padding: 8px 16px; background: #28a745; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                            Verify Code
+                        </button>
+                        <p id="unico-otp-message" style="margin-top: 8px; font-size: 13px;"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('#unico-send-otp-btn').on('click', function() {
+                var btn = $(this);
+                btn.prop('disabled', true).text('Sending...');
+                
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'unico_send_purchase_otp',
+                        nonce: '<?php echo wp_create_nonce('unico_purchase_verification'); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#unico-otp-step-1').hide();
+                            $('#unico-otp-step-2').show();
+                            $('#unico-otp-message').text(response.data.message).css('color', 'green');
+                        } else {
+                            btn.prop('disabled', false).text('Send Verification Code');
+                            alert(response.data.message);
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).text('Send Verification Code');
+                        alert('Error sending request.');
+                    }
+                });
+            });
+
+            $('#unico-verify-otp-btn').on('click', function() {
+                var btn = $(this);
+                var code = $('#unico-otp-input').val();
+                
+                if (!code) {
+                    alert('Please enter the code');
+                    return;
+                }
+                
+                btn.prop('disabled', true).text('Verifying...');
+                
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'unico_verify_purchase_otp',
+                        code: code,
+                        nonce: '<?php echo wp_create_nonce('unico_purchase_verification'); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#unico-otp-message').text(response.data.message).css('color', 'green');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            btn.prop('disabled', false).text('Verify Code');
+                            $('#unico-otp-message').text(response.data.message).css('color', 'red');
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).text('Verify Code');
+                        alert('Error sending request.');
+                    }
+                });
+            });
+        });
+        </script>
+        <?php else: ?>
+        <div class="unico-verification-badge" style="background: #d4edda; border: 2px solid #c3e6cb; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#155724" stroke-width="2.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <span style="color: #155724; font-weight: 600; font-size: 14px;">
+                    ✓ Identity Verified for this purchase
+                </span>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <div class="unico-checkout-card" data-voucher-qty="<?php echo esc_attr(max(1, $voucher_qty)); ?>">

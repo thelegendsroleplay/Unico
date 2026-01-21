@@ -648,6 +648,50 @@ add_action('woocommerce_checkout_before_order_review', function () {
     }
 });
 
+// Add AJAX handlers for Purchase Verification
+add_action('wp_ajax_unico_send_purchase_otp', function() {
+    check_ajax_referer('unico_purchase_verification', 'nonce');
+    
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in']);
+    }
+    
+    if (class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        if ($security->send_purchase_otp($user_id)) {
+            wp_send_json_success(['message' => 'Verification code sent to your email']);
+        } else {
+            wp_send_json_error(['message' => 'Failed to send verification code']);
+        }
+    }
+    wp_send_json_error(['message' => 'Security system not available']);
+});
+
+add_action('wp_ajax_unico_verify_purchase_otp', function() {
+    check_ajax_referer('unico_purchase_verification', 'nonce');
+    
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in']);
+    }
+    
+    $code = isset($_POST['code']) ? sanitize_text_field($_POST['code']) : '';
+    if (empty($code)) {
+        wp_send_json_error(['message' => 'Please enter the verification code']);
+    }
+    
+    if (class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        if ($security->verify_purchase_otp($user_id, $code)) {
+            wp_send_json_success(['message' => 'Identity verified successfully']);
+        } else {
+            wp_send_json_error(['message' => 'Invalid or expired verification code']);
+        }
+    }
+    wp_send_json_error(['message' => 'Security system not available']);
+});
+
 add_action('woocommerce_checkout_process', function () {
     if (!unico_cart_has_voucher_items()) {
         return;
@@ -666,6 +710,11 @@ add_action('woocommerce_checkout_process', function () {
             // This prevents the order from being placed
             // User will see the error and cannot proceed until verified
             throw new Exception('Email verification required before purchase.');
+        }
+
+        if (!$security->is_purchase_verified($user_id)) {
+            wc_add_notice('❌ Identity verification required. Please verify your identity using the code sent to your email.', 'error');
+            throw new Exception('Identity verification required before purchase.');
         }
     }
     if (isset($_POST['voucher_cart_quantity'])) {
@@ -825,6 +874,14 @@ add_action('woocommerce_checkout_update_order_meta', function ($order_id) {
         if ($order) {
             $order->add_order_note('Voucher order marked as pending payment verification.');
         }
+    }
+});
+
+// Clear purchase verification after order
+add_action('woocommerce_thankyou', function($order_id) {
+    if (is_user_logged_in() && class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        $security->clear_purchase_verification(get_current_user_id());
     }
 });
 
