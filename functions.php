@@ -40,6 +40,13 @@ require_once get_template_directory() . '/includes/class-unico-mail-settings.php
 // Include Bank Accounts Management
 require_once get_template_directory() . '/includes/class-bank-accounts.php';
 
+// Initialize Bank Accounts System
+add_action('init', function() {
+    if (class_exists('Unico_Bank_Accounts')) {
+        Unico_Bank_Accounts::get_instance();
+    }
+}, 5);
+
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }

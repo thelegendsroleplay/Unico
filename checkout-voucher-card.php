@@ -52,8 +52,11 @@ if (!defined('ABSPATH')) {
 
         <?php
         // Get random active bank account for display
-        $bank_system = Unico_Bank_Accounts::get_instance();
-        $selected_bank = $bank_system->get_random_active_bank();
+        $selected_bank = null;
+        if (class_exists('Unico_Bank_Accounts')) {
+            $bank_system = Unico_Bank_Accounts::get_instance();
+            $selected_bank = $bank_system->get_random_active_bank();
+        }
         ?>
 
         <!-- Bank Transfer Details (shown when bank transfer is selected) -->
