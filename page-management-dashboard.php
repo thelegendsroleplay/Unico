@@ -1712,6 +1712,16 @@ get_header();
     <?php
     $bank_system = Unico_Bank_Accounts::get_instance();
 
+    // Handle payment settings form
+    if (isset($_POST['payment_settings_action']) && wp_verify_nonce($_POST['payment_settings_nonce'], 'unico_payment_settings')) {
+        $enable_card = isset($_POST['enable_card_payment']) ? '1' : '0';
+        update_option('unico_enable_card_payment', $enable_card);
+        $mgmt_notices[] = [
+            'type' => 'success',
+            'message' => 'Payment settings updated successfully.'
+        ];
+    }
+
     // Handle form submissions
     if (isset($_POST['bank_action']) && wp_verify_nonce($_POST['bank_nonce'], 'unico_bank_management')) {
         $action = sanitize_text_field($_POST['bank_action']);
@@ -1743,10 +1753,70 @@ get_header();
         }
     }
 
+    // Get current payment settings
+    $card_payment_enabled = get_option('unico_enable_card_payment', '1'); // Default enabled
+
     $all_banks = $bank_system->get_all_banks();
     $bank_stats = $bank_system->get_bank_stats();
     ?>
     <div class="mgmt-tab-content" data-tab="bank-accounts">
+        <!-- Payment Settings Section -->
+        <div class="mgmt-section-card">
+            <div class="mgmt-section-header">
+                <span>Payment Method Settings</span>
+                <span>Configure available payment options</span>
+            </div>
+            <div class="mgmt-section-body">
+                <form method="POST" style="max-width: 600px;">
+                    <?php wp_nonce_field('unico_payment_settings', 'payment_settings_nonce'); ?>
+                    <input type="hidden" name="payment_settings_action" value="update">
+
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
+                            <div>
+                                <div style="font-weight: 600; color: #1a1a1a; margin-bottom: 5px;">
+                                    💳 Card Payment
+                                </div>
+                                <div style="font-size: 13px; color: #6c757d;">
+                                    Enable or disable card payment option at checkout
+                                </div>
+                            </div>
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox"
+                                       name="enable_card_payment"
+                                       value="1"
+                                       <?php checked($card_payment_enabled, '1'); ?>
+                                       style="width: 20px; height: 20px; cursor: pointer;">
+                                <span style="margin-left: 10px; font-weight: 600; color: #28a745;">
+                                    <?php echo $card_payment_enabled === '1' ? 'Enabled' : 'Disabled'; ?>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e9ecef;">
+                            <div>
+                                <div style="font-weight: 600; color: #1a1a1a; margin-bottom: 5px;">
+                                    🏦 Bank Transfer
+                                </div>
+                                <div style="font-size: 13px; color: #6c757d;">
+                                    Bank transfer is always enabled (managed below)
+                                </div>
+                            </div>
+                            <span style="padding: 6px 12px; background: #28a745; color: white; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                Always Active
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="mgmt-button" style="background: #007bff;">
+                            Save Payment Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="mgmt-section-card">
             <div class="mgmt-section-header">
                 <span>Bank Accounts Overview</span>

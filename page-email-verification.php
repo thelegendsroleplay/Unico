@@ -13,19 +13,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'verify_email' && isset($_GET[
     $verification_result = $security->verify_email_token($_GET['token'], intval($_GET['user_id']));
 }
 
+// Handle redirect after verification
+$redirect_url = '';
+if (isset($_GET['redirect'])) {
+    $redirect = sanitize_text_field($_GET['redirect']);
+    if ($redirect === 'checkout') {
+        $redirect_url = wc_get_checkout_url();
+    }
+}
+
 get_header();
 ?>
-
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-    <meta charset="<?php bloginfo('charset'); ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification - <?php bloginfo('name'); ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <?php wp_head(); ?>
-</head>
-<body>
 
 <div class="auth-wrapper">
     <div class="auth-card">
@@ -42,7 +40,11 @@ get_header();
                     Your email address has been confirmed. You can now access all features and make purchases.
                 </div>
 
-                <?php if (is_user_logged_in()): ?>
+                <?php if (!empty($redirect_url)): ?>
+                    <div class="footer-nav">
+                        <a href="<?php echo esc_url($redirect_url); ?>" class="primary-link">Continue to Checkout</a>
+                    </div>
+                <?php elseif (is_user_logged_in()): ?>
                     <div class="footer-nav">
                         <a href="<?php echo home_url('/'); ?>">Go to Homepage</a>
                     </div>
@@ -89,9 +91,5 @@ get_header();
         <?php endif; ?>
     </div>
 </div>
-
-<?php wp_footer(); ?>
-</body>
-</html>
 
 <?php get_footer(); ?>
