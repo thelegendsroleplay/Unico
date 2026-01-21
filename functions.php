@@ -553,7 +553,26 @@ add_filter('woocommerce_add_to_cart_redirect', function ($url) {
         return $url;
     }
     $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
-    if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
+    $is_voucher = in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes';
+
+    if ($is_voucher) {
+        // Check if user is logged in
+        if (!is_user_logged_in()) {
+            wc_add_notice('Please log in to purchase vouchers.', 'error');
+            return home_url('/login');
+        }
+
+        // Check email verification before allowing checkout
+        $user_id = get_current_user_id();
+        if ($user_id && class_exists('Unico_Security')) {
+            $security = Unico_Security::get_instance();
+            if (!$security->is_email_verified($user_id)) {
+                wc_add_notice('Email verification required before purchasing vouchers.', 'error');
+                set_transient('unico_return_to_checkout_' . $user_id, wc_get_checkout_url(), 600);
+                return home_url('/email-verification?redirect=checkout');
+            }
+        }
+
         return wc_get_checkout_url();
     }
     return $url;
@@ -575,7 +594,15 @@ add_action('woocommerce_checkout_before_order_review', function () {
     if ($user_id && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
         if (!$security->is_email_verified($user_id)) {
-            wc_add_notice('Please verify your email address before completing your voucher purchase.', 'error');
+            // Block checkout completely - verification required before EVERY purchase
+            wc_add_notice('Email verification required. Please verify your email before making a purchase.', 'error');
+
+            // Store checkout URL to return after verification
+            set_transient('unico_return_to_checkout_' . $user_id, wc_get_checkout_url(), 600); // 10 minutes
+
+            // Redirect to email verification page
+            wp_redirect(home_url('/email-verification?redirect=checkout'));
+            exit;
         }
     }
     $cart = WC()->cart;
@@ -633,8 +660,12 @@ add_action('woocommerce_checkout_process', function () {
     if ($user_id && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
         if (!$security->is_email_verified($user_id)) {
-            wc_add_notice('Please verify your email address before completing your voucher purchase.', 'error');
-            return;
+            // CRITICAL: Block order placement - email verification is REQUIRED for every purchase
+            wc_add_notice('❌ Email verification required. You must verify your email before completing this purchase.', 'error');
+
+            // This prevents the order from being placed
+            // User will see the error and cannot proceed until verified
+            throw new Exception('Email verification required before purchase.');
         }
     }
     if (isset($_POST['voucher_cart_quantity'])) {
