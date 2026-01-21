@@ -562,6 +562,84 @@ get_header();
                         errorDiv.style.display = 'block';
                     });
                 }
+
+                // Handle form submission with AJAX to prevent page refresh
+                document.addEventListener('DOMContentLoaded', function() {
+                    const form = document.querySelector('.application-form');
+                    const submitBtn = document.getElementById('submit-application-btn');
+
+                    if (form && submitBtn) {
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault(); // Prevent default form submission
+
+                            console.log('Form submit intercepted - starting AJAX submission');
+
+                            // Check if email is verified
+                            if (!isEmailVerified) {
+                                alert('Please verify your email address before submitting the application.');
+                                return false;
+                            }
+
+                            // Disable submit button
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+
+                            // Get form data
+                            const formData = new FormData(form);
+
+                            console.log('Form data collected, sending to server...');
+
+                            // Submit via fetch
+                            fetch(window.location.href, {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'same-origin'
+                            })
+                            .then(response => {
+                                console.log('Server responded with status:', response.status);
+                                return response.text();
+                            })
+                            .then(html => {
+                                console.log('Response received, checking for success/error');
+
+                                // Check if response contains success or error
+                                if (html.includes('submission_success=1')) {
+                                    console.log('SUCCESS - Submission successful');
+                                    // Extract submission number if present
+                                    const match = html.match(/submission_number=([A-Z0-9-]+)/);
+                                    const submissionNumber = match ? match[1] : '';
+
+                                    // Redirect to success page
+                                    window.location.href = window.location.pathname + '?submission_success=1&submission_number=' + submissionNumber;
+                                } else if (html.includes('submission_error=1')) {
+                                    console.log('ERROR - Submission failed');
+                                    // Extract error message if present
+                                    const match = html.match(/error_message=([^&"]+)/);
+                                    const errorMessage = match ? decodeURIComponent(match[1]) : 'Submission failed. Please try again.';
+
+                                    // Show error
+                                    alert('Error: ' + errorMessage);
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = 'Submit Application';
+                                } else {
+                                    console.log('UNEXPECTED - No success or error flag found');
+                                    console.log('HTML preview:', html.substring(0, 500));
+                                    // Unexpected response - reload page
+                                    alert('Unexpected response from server. Reloading page...');
+                                    window.location.reload();
+                                }
+                            })
+                            .catch(error => {
+                                console.error('FETCH ERROR:', error);
+                                alert('Network error: ' + error.message);
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Application';
+                            });
+
+                            return false;
+                        });
+                    }
+                });
                 </script>
             <?php endif; ?>
         </div>
