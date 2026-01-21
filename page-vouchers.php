@@ -446,7 +446,7 @@ $show_bulk_pricing = in_array('unico_agent', $user_roles, true) || in_array('uni
                         if ($is_logged_in) {
                             $button_label = 'Secure Checkout →';
                             if (function_exists('wc_get_checkout_url')) {
-                                $button_url = add_query_arg('add-to-cart', $product_id, wc_get_checkout_url());
+                                $button_url = add_query_arg('add-to-cart', $product_id, home_url('/'));
                             } else {
                                 $button_url = $product->add_to_cart_url();
                             }
