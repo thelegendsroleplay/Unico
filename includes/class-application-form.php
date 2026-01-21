@@ -6,93 +6,6 @@
 
 if (!defined('ABSPATH')) {
     exit;
-    /**
-     * Generate consistent HTML email template
-     */
-    private function get_email_template($heading, $content) {
-        $site_name = get_bloginfo('name');
-        $year = date('Y');
-        
-        // Get Logo if available
-        $logo_url = '';
-        if (has_custom_logo()) {
-            $custom_logo_id = get_theme_mod('custom_logo');
-            $logo_data = wp_get_attachment_image_src($custom_logo_id, 'full');
-            if ($logo_data) {
-                $logo_url = $logo_data[0];
-            }
-        }
-
-        $header_element = $logo_url 
-            ? "<img src='{$logo_url}' alt='{$site_name}' style='max-width: 150px; height: auto;'>"
-            : "<span style='font-size: 24px; font-weight: 800; color: #194f68; text-transform: uppercase; letter-spacing: 1px;'>{$site_name}</span>";
-
-        return "
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-            <title>{$heading}</title>
-        </head>
-        <body style='margin: 0; padding: 0; background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #4a4a4a;'>
-            <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: #f6f9fc;'>
-                <tr>
-                    <td align='center' style='padding: 40px 20px;'>
-                        <!-- Header / Brand -->
-                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; margin-bottom: 30px;'>
-                            <tr>
-                                <td align='center'>
-                                    {$header_element}
-                                </td>
-                            </tr>
-                        </table>
-
-                        <!-- Main Card -->
-                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden;'>
-                            <!-- Top Accent Bar -->
-                            <tr>
-                                <td height='6' style='background: linear-gradient(90deg, #194f68 0%, #103e54 100%);'></td>
-                            </tr>
-                            
-                            <!-- Content -->
-                            <tr>
-                                <td style='padding: 48px 40px;'>
-                                    <h1 style='margin: 0 0 24px; color: #194f68; font-size: 24px; font-weight: 700; text-align: center;'>{$heading}</h1>
-                                    <div style='font-size: 16px; line-height: 1.6; color: #4a4a4a;'>
-                                        {$content}
-                                    </div>
-                                </td>
-                            </tr>
-                            
-                            <!-- Bottom Brand Strip -->
-                            <tr>
-                                <td style='background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;'>
-                                    <p style='margin: 0; font-size: 13px; color: #64748b; font-style: italic;'>
-                                        Empowering your educational journey
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-
-                        <!-- Footer -->
-                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%;'>
-                            <tr>
-                                <td align='center' style='padding-top: 24px; color: #9ca3af; font-size: 12px;'>
-                                    <p style='margin-bottom: 10px;'>&copy; {$year} {$site_name}. All rights reserved.</p>
-                                    <p style='margin: 0;'>
-                                        <a href='" . home_url() . "' style='color: #194f68; text-decoration: none; font-weight: 600;'>Visit Website</a>
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
-        ";
-    }
-
 }
 
 class Unico_Application_Form {
@@ -1382,5 +1295,92 @@ class Unico_Application_Form {
                 'exists' => false
             ]);
         }
+    }
+
+    /**
+     * Generate consistent HTML email template
+     */
+    private function get_email_template($heading, $content) {
+        $site_name = get_bloginfo('name');
+        $year = date('Y');
+
+        // Get Logo if available
+        $logo_url = '';
+        if (has_custom_logo()) {
+            $custom_logo_id = get_theme_mod('custom_logo');
+            $logo_data = wp_get_attachment_image_src($custom_logo_id, 'full');
+            if ($logo_data) {
+                $logo_url = $logo_data[0];
+            }
+        }
+
+        $header_element = $logo_url
+            ? "<img src='{$logo_url}' alt='{$site_name}' style='max-width: 150px; height: auto;'>"
+            : "<span style='font-size: 24px; font-weight: 800; color: #194f68; text-transform: uppercase; letter-spacing: 1px;'>{$site_name}</span>";
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+            <title>{$heading}</title>
+        </head>
+        <body style='margin: 0; padding: 0; background-color: #f6f9fc; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #4a4a4a;'>
+            <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: #f6f9fc;'>
+                <tr>
+                    <td align='center' style='padding: 40px 20px;'>
+                        <!-- Header / Brand -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; margin-bottom: 30px;'>
+                            <tr>
+                                <td align='center'>
+                                    {$header_element}
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Main Card -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05); overflow: hidden;'>
+                            <!-- Top Accent Bar -->
+                            <tr>
+                                <td height='6' style='background: linear-gradient(90deg, #194f68 0%, #103e54 100%);'></td>
+                            </tr>
+
+                            <!-- Content -->
+                            <tr>
+                                <td style='padding: 48px 40px;'>
+                                    <h1 style='margin: 0 0 24px; color: #194f68; font-size: 24px; font-weight: 700; text-align: center;'>{$heading}</h1>
+                                    <div style='font-size: 16px; line-height: 1.6; color: #4a4a4a;'>
+                                        {$content}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Bottom Brand Strip -->
+                            <tr>
+                                <td style='background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;'>
+                                    <p style='margin: 0; font-size: 13px; color: #64748b; font-style: italic;'>
+                                        Empowering your educational journey
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Footer -->
+                        <table border='0' cellpadding='0' cellspacing='0' width='600' style='max-width: 600px; width: 100%;'>
+                            <tr>
+                                <td align='center' style='padding-top: 24px; color: #9ca3af; font-size: 12px;'>
+                                    <p style='margin-bottom: 10px;'>&copy; {$year} {$site_name}. All rights reserved.</p>
+                                    <p style='margin: 0;'>
+                                        <a href='" . home_url() . "' style='color: #194f68; text-decoration: none; font-weight: 600;'>Visit Website</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        ";
     }
 }
