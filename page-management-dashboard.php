@@ -1030,21 +1030,21 @@ get_header();
                                             </span>
                                         </td>
                                         <td>
-                                            <?php if ($application->status === 'submitted' || $application->status === 'in_review'): ?>
+                                            <?php if ($application->status === 'pending' || $application->status === 'submitted' || $application->status === 'in_review'): ?>
                                                 <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px; flex-wrap: wrap;">
-                                                    <button type="button" class="mgmt-btn mgmt-btn-secondary view-application-btn" 
+                                                    <button type="button" class="mgmt-btn mgmt-btn-secondary view-application-btn"
                                                         data-application='<?php echo esc_attr($application->form_data); ?>'
                                                         data-id="<?php echo esc_attr($application->submission_number); ?>"
                                                         data-type="<?php echo esc_attr($application_type_label); ?>">
                                                         View
                                                     </button>
-                                                    
+
                                                     <input type="text" name="status_notes" placeholder="Notes (for Reject)" style="padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 140px;">
-                                                    
+
                                                     <input type="hidden" name="application_id" value="<?php echo intval($application->id); ?>">
                                                     <input type="hidden" name="update_application_status" value="1">
                                                     <?php wp_nonce_field('update_application_status', 'application_status_nonce'); ?>
-                                                    
+
                                                     <button type="submit" name="new_status" value="approved" class="mgmt-btn mgmt-btn-primary" style="background-color: #28a745; border-color: #28a745;" onclick="return confirm('Approve this application? This will create a user account and send login details.')">Approve</button>
                                                     <button type="submit" name="new_status" value="rejected" class="mgmt-btn mgmt-btn-danger" style="background-color: #dc3545; border-color: #dc3545; color: white;" onclick="if(!this.form.status_notes.value.trim()){alert('Please provide a reason for rejection in the notes field.'); return false;} return confirm('Reject this application? This will delete the application data.');">Reject</button>
                                                 </form>
