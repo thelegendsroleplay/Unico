@@ -4,6 +4,52 @@ if (!defined('ABSPATH')) {
 }
 ?>
 <div class="unico-checkout-node">
+    <?php
+    // Check email verification status
+    $is_email_verified = false;
+    $user_email = '';
+    if (is_user_logged_in() && class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        $user_id = get_current_user_id();
+        $is_email_verified = $security->is_email_verified($user_id);
+        $current_user = wp_get_current_user();
+        $user_email = $current_user->user_email;
+    }
+    ?>
+
+    <?php if (!$is_email_verified): ?>
+        <div class="unico-verification-notice" style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                    <strong style="color: #856404; display: block; margin-bottom: 6px;">⚠️ Email Verification Required</strong>
+                    <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+                        You must verify your email (<strong><?php echo esc_html($user_email); ?></strong>) before completing this purchase.
+                    </p>
+                    <a href="<?php echo home_url('/email-verification?redirect=checkout'); ?>" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #856404; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 13px;">
+                        Verify Email Now →
+                    </a>
+                </div>
+            </div>
+        </div>
+    <?php else: ?>
+        <div class="unico-verification-badge" style="background: #d4edda; border: 2px solid #c3e6cb; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#155724" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+                <span style="color: #155724; font-weight: 600; font-size: 14px;">
+                    ✓ Email Verified: <?php echo esc_html($user_email); ?>
+                </span>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div class="unico-checkout-card" data-voucher-qty="<?php echo esc_attr(max(1, $voucher_qty)); ?>">
         <div class="unico-checkout-header">
             <div class="unico-checkout-label">Checkout Node</div>
@@ -194,7 +240,14 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="unico-checkout-actions">
-                <button type="submit" class="unico-confirm-button">Confirm Order</button>
+                <button type="submit" class="unico-confirm-button" <?php echo !$is_email_verified ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
+                    <?php echo $is_email_verified ? 'Confirm Order' : '🔒 Verify Email to Purchase'; ?>
+                </button>
+                <?php if (!$is_email_verified): ?>
+                    <p style="font-size: 12px; color: #856404; margin: 8px 0 0; text-align: center;">
+                        Email verification required before purchase
+                    </p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
