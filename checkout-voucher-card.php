@@ -84,15 +84,23 @@ if (!defined('ABSPATH')) {
                 <input type="email" name="voucher_buyer_email" value="<?php echo esc_attr($buyer_email); ?>">
             </div>
         </div>
+
+        <?php
+        // Check if card payment is enabled
+        $card_payment_enabled = get_option('unico_enable_card_payment', '1');
+        ?>
+
         <div class="unico-checkout-row unico-checkout-methods">
             <button type="button" class="unico-method-button is-active" data-method="bank_transfer" data-limit="10">
                 <span>Bank Transfer</span>
                 <span class="unico-method-note">Limit 10 units</span>
             </button>
+            <?php if ($card_payment_enabled === '1'): ?>
             <button type="button" class="unico-method-button" data-method="card_payment" data-limit="3">
                 <span>Card Payment</span>
                 <span class="unico-method-note">Limit 3 units</span>
             </button>
+            <?php endif; ?>
             <input type="hidden" name="voucher_payment_mode" value="bank_transfer">
         </div>
 
