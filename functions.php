@@ -539,6 +539,23 @@ function unico_cart_has_voucher_items() {
     return false;
 }
 
+// CRITICAL: Force disable AJAX checkout when vouchers in cart (required for file uploads)
+add_filter('woocommerce_checkout_update_order_review_fragments', function($fragments) {
+    if (unico_cart_has_voucher_items()) {
+        // Returning false disables AJAX order review updates
+        return false;
+    }
+    return $fragments;
+});
+
+// Dequeue WooCommerce checkout.js for voucher orders to force traditional submission
+add_action('wp_enqueue_scripts', function() {
+    if (is_checkout() && unico_cart_has_voucher_items()) {
+        wp_dequeue_script('wc-checkout');
+        error_log('Unico: Dequeued WooCommerce AJAX checkout script for file upload support');
+    }
+}, 100);
+
 // Enable file uploads in WooCommerce checkout form
 add_filter('woocommerce_checkout_posted_data', function($data) {
     // Ensure files are included in checkout data
@@ -548,69 +565,41 @@ add_filter('woocommerce_checkout_posted_data', function($data) {
     return $data;
 });
 
-// Disable AJAX checkout for voucher orders (required for file uploads)
+// Add enctype and ensure traditional form submission
 add_action('woocommerce_before_checkout_form', function() {
     if (unico_cart_has_voucher_items()) {
         echo '<script type="text/javascript">
-        // CRITICAL: Disable AJAX checkout to allow file uploads
-        // WooCommerce AJAX checkout does NOT support file uploads!
-        (function() {
-            // Add enctype IMMEDIATELY
-            var checkoutForm = document.querySelector("form.checkout");
-            if (checkoutForm) {
-                checkoutForm.setAttribute("enctype", "multipart/form-data");
-                console.log("✅ Checkout form enctype set to multipart/form-data");
-            } else {
-                // Retry after a brief delay if form not found yet
-                setTimeout(function() {
-                    var form = document.querySelector("form.checkout");
-                    if (form) {
-                        form.setAttribute("enctype", "multipart/form-data");
-                        console.log("✅ Checkout form enctype set (delayed)");
-                    }
-                }, 100);
-            }
+        console.log("🚀 Unico: Setting up checkout for file uploads...");
 
-            // Wait for jQuery to load, then disable AJAX
-            if (typeof jQuery !== "undefined") {
-                setupFormSubmit();
-            } else {
-                document.addEventListener("DOMContentLoaded", setupFormSubmit);
-            }
+        // Add enctype to form
+        function setEnctype() {
+            var forms = document.querySelectorAll("form.checkout, form.woocommerce-checkout");
+            forms.forEach(function(form) {
+                form.setAttribute("enctype", "multipart/form-data");
+                console.log("✅ Set enctype on form:", form);
+            });
+        }
 
-            function setupFormSubmit() {
-                jQuery(document).ready(function($) {
-                    var $checkoutForm = $("form.checkout");
+        // Set enctype immediately
+        setEnctype();
 
-                    // Completely override WooCommerce AJAX checkout
-                    $checkoutForm.off("checkout_place_order");
-                    $checkoutForm.off("submit");
+        // Set enctype after a delay (in case form loads later)
+        setTimeout(setEnctype, 100);
+        setTimeout(setEnctype, 500);
+        setTimeout(setEnctype, 1000);
 
-                    // Use traditional form submission
-                    $checkoutForm.on("submit", function(e) {
-                        // Check if file is uploaded for bank transfer
-                        var paymentMode = $("input[name=voucher_payment_mode]").val();
-                        if (paymentMode === "bank_transfer") {
-                            var fileInput = document.getElementById("unico-receipt-upload");
-                            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-                                alert("⚠️ Please upload payment receipt before submitting.");
-                                e.preventDefault();
-                                return false;
-                            }
-                        }
+        // Monitor for form changes
+        if (typeof MutationObserver !== "undefined") {
+            var observer = new MutationObserver(function() {
+                setEnctype();
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
 
-                        console.log("✅ Submitting checkout form with file upload (traditional POST)");
-                        // Let form submit normally
-                        return true;
-                    });
-
-                    console.log("✅ AJAX checkout disabled - using traditional form submission for file uploads");
-                });
-            }
-        })();
+        console.log("✅ Unico: WooCommerce checkout.js dequeued - traditional form submission enabled");
         </script>';
     }
-}, 1); // Priority 1 to run very early
+}, 1);
 
 add_filter('woocommerce_add_to_cart_redirect', function ($url) {
     if (!isset($_REQUEST['add-to-cart'])) {
