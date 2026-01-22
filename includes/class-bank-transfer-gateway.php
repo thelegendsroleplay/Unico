@@ -27,14 +27,22 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
         $this->method_title = 'Bank Transfer (Unico)';
         $this->method_description = 'Accept bank transfer payments with receipt upload and manual verification.';
 
+        // Enable by default for voucher orders
+        $this->enabled = 'yes';
+
         // Load settings
         $this->init_form_fields();
         $this->init_settings();
 
+        // Override enabled status from settings if set
+        if ($this->get_option('enabled')) {
+            $this->enabled = $this->get_option('enabled');
+        }
+
         // Get settings
-        $this->title = $this->get_option('title');
-        $this->description = $this->get_option('description');
-        $this->instructions = $this->get_option('instructions');
+        $this->title = $this->get_option('title', 'Bank Transfer');
+        $this->description = $this->get_option('description', 'Upload your payment receipt after transferring to our bank account.');
+        $this->instructions = $this->get_option('instructions', 'Your order is pending payment verification.');
 
         // Actions
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -77,6 +85,25 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
                 'desc_tip' => true,
             ),
         );
+    }
+
+    /**
+     * Check if gateway is available
+     *
+     * @return bool
+     */
+    public function is_available() {
+        // Always available if enabled
+        if ($this->enabled !== 'yes') {
+            return false;
+        }
+
+        // Always available for voucher orders
+        if (function_exists('unico_cart_has_voucher_items') && unico_cart_has_voucher_items()) {
+            return true;
+        }
+
+        return parent::is_available();
     }
 
     /**
