@@ -128,7 +128,6 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
         <?php endif; ?>
-    <?php endif; ?>
 
     <div class="unico-checkout-card" data-voucher-qty="<?php echo esc_attr(max(1, $voucher_qty)); ?>">
         <div class="unico-checkout-header">
