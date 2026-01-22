@@ -542,43 +542,6 @@ if (!defined('ABSPATH')) {
             }
         });
 
-        // CRITICAL: Force traditional form submission (no AJAX) for file upload support
-        $(document.body).on('checkout_error', function() {
-            // Allow default error handling
-        });
-
-        // Unbind WooCommerce's AJAX checkout handler
-        $('form.checkout').off('checkout_place_order');
-        $('form.checkout').off('submit');
-
-        // Force enctype attribute on checkout form
-        var $checkoutForm = $('form.checkout, form.woocommerce-checkout');
-        if ($checkoutForm.length) {
-            $checkoutForm.attr('enctype', 'multipart/form-data');
-            console.log('✅ Unico: Set enctype=multipart/form-data on checkout form');
-
-            // Remove any AJAX submit handlers from WooCommerce
-            $checkoutForm.off('submit.wc-checkout');
-
-            // Add our own submit handler to ensure traditional submission
-            $checkoutForm.on('submit', function(e) {
-                // Check if file is required and present (fixed field name)
-                var paymentMode = $('input[name="voucher_payment_mode"]').val();
-                if (paymentMode === 'bank_transfer') {
-                    var fileInput = document.getElementById('unico-receipt-upload');
-                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-                        e.preventDefault();
-                        alert('⚠️ Please upload payment receipt before submitting.');
-                        return false;
-                    }
-                    console.log('✅ Unico: File ready for submission:', fileInput.files[0].name);
-                }
-
-                // Allow traditional form submission (don't preventDefault)
-                console.log('✅ Unico: Submitting form traditionally with file upload');
-                return true;
-            });
-        }
     });
     </script>
 </div>
