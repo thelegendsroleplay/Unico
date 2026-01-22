@@ -354,6 +354,16 @@ if (!defined('ABSPATH')) {
         var $qtyDisplay = $('#unico-qty-display');
         var $totalAmount = $('#unico-total-amount');
         var updateTimer = null;
+        var isUpdating = false;
+
+        // Initialize display on page load
+        function initializeDisplay() {
+            var currentQty = parseInt($qtyInput.val()) || 1;
+            $qtyDisplay.text(currentQty);
+            $card.attr('data-voucher-qty', currentQty);
+            var total = unitPrice * currentQty;
+            $totalAmount.text(total.toFixed(2));
+        }
 
         // Function to update prices in real-time
         function updatePrices(qty) {
@@ -372,6 +382,9 @@ if (!defined('ABSPATH')) {
 
         // Function to update cart via AJAX
         function updateCart(qty) {
+            if (isUpdating) return;
+            isUpdating = true;
+
             $.ajax({
                 url: '<?php echo admin_url('admin-ajax.php'); ?>',
                 type: 'POST',
@@ -383,19 +396,27 @@ if (!defined('ABSPATH')) {
                 },
                 success: function(response) {
                     if (response.success) {
-                        console.log('Cart updated successfully');
+                        console.log('Cart updated successfully', response.data);
+                        // Update with server-confirmed quantity
+                        if (response.data.quantity) {
+                            updatePrices(response.data.quantity);
+                        }
                     } else {
-                        console.error('Failed to update cart');
+                        console.error('Failed to update cart:', response.data.message);
                     }
+                    isUpdating = false;
                 },
                 error: function() {
                     console.error('AJAX error updating cart');
+                    isUpdating = false;
                 }
             });
         }
 
         // Handle +/- buttons
         $('.unico-qty-btn').on('click', function() {
+            if (isUpdating) return;
+
             var direction = $(this).data('direction');
             var currentQty = parseInt($qtyInput.val()) || 1;
             var newQty = direction === 'plus' ? currentQty + 1 : currentQty - 1;
@@ -414,6 +435,8 @@ if (!defined('ABSPATH')) {
 
         // Handle direct input change
         $qtyInput.on('change', function() {
+            if (isUpdating) return;
+
             var newQty = parseInt($(this).val()) || 1;
             if (newQty < 1) newQty = 1;
 
@@ -426,6 +449,9 @@ if (!defined('ABSPATH')) {
                 updateCart(newQty);
             }, 500);
         });
+
+        // Initialize on page load
+        initializeDisplay();
     });
     </script>
 </div>
