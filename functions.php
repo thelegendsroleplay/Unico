@@ -548,12 +548,14 @@ add_filter('woocommerce_checkout_posted_data', function($data) {
     return $data;
 });
 
-// Add enctype to checkout form for file uploads - CRITICAL for file uploads to work
+// Disable AJAX checkout for voucher orders (required for file uploads)
 add_action('woocommerce_before_checkout_form', function() {
     if (unico_cart_has_voucher_items()) {
         echo '<script type="text/javascript">
-        // Add enctype IMMEDIATELY - do not wait for document ready
+        // CRITICAL: Disable AJAX checkout to allow file uploads
+        // WooCommerce AJAX checkout does NOT support file uploads!
         (function() {
+            // Add enctype IMMEDIATELY
             var checkoutForm = document.querySelector("form.checkout");
             if (checkoutForm) {
                 checkoutForm.setAttribute("enctype", "multipart/form-data");
@@ -567,6 +569,43 @@ add_action('woocommerce_before_checkout_form', function() {
                         console.log("✅ Checkout form enctype set (delayed)");
                     }
                 }, 100);
+            }
+
+            // Wait for jQuery to load, then disable AJAX
+            if (typeof jQuery !== "undefined") {
+                setupFormSubmit();
+            } else {
+                document.addEventListener("DOMContentLoaded", setupFormSubmit);
+            }
+
+            function setupFormSubmit() {
+                jQuery(document).ready(function($) {
+                    var $checkoutForm = $("form.checkout");
+
+                    // Completely override WooCommerce AJAX checkout
+                    $checkoutForm.off("checkout_place_order");
+                    $checkoutForm.off("submit");
+
+                    // Use traditional form submission
+                    $checkoutForm.on("submit", function(e) {
+                        // Check if file is uploaded for bank transfer
+                        var paymentMode = $("input[name=voucher_payment_mode]").val();
+                        if (paymentMode === "bank_transfer") {
+                            var fileInput = document.getElementById("unico-receipt-upload");
+                            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                                alert("⚠️ Please upload payment receipt before submitting.");
+                                e.preventDefault();
+                                return false;
+                            }
+                        }
+
+                        console.log("✅ Submitting checkout form with file upload (traditional POST)");
+                        // Let form submit normally
+                        return true;
+                    });
+
+                    console.log("✅ AJAX checkout disabled - using traditional form submission for file uploads");
+                });
             }
         })();
         </script>';
@@ -804,16 +843,23 @@ add_action('woocommerce_checkout_process', function () {
             wc_add_notice('❌ Transaction ID is required for bank transfer.', 'error');
         }
 
+        // Debug logging
+        error_log('Unico Checkout Debug - POST keys: ' . implode(', ', array_keys($_POST)));
+        error_log('Unico Checkout Debug - FILES keys: ' . implode(', ', array_keys($_FILES)));
+        error_log('Unico Checkout Debug - Payment mode: ' . $mode);
+
         // Check file upload with detailed error messages
         $file_uploaded = false;
         $upload_error = '';
 
         if (!isset($_FILES['voucher_payment_receipt'])) {
-            $upload_error = 'No file field found in submission.';
+            $upload_error = 'No file field found. Form may not have enctype="multipart/form-data" or AJAX was used.';
+            error_log('Unico Checkout: $_FILES array: ' . print_r($_FILES, true));
         } elseif (empty($_FILES['voucher_payment_receipt']['name'])) {
             $upload_error = 'No file selected. Please choose a receipt image.';
         } elseif ($_FILES['voucher_payment_receipt']['error'] !== UPLOAD_ERR_OK) {
             $error_code = $_FILES['voucher_payment_receipt']['error'];
+            error_log('Unico Checkout: File upload error code: ' . $error_code);
             switch ($error_code) {
                 case UPLOAD_ERR_INI_SIZE:
                 case UPLOAD_ERR_FORM_SIZE:
@@ -826,15 +872,16 @@ add_action('woocommerce_checkout_process', function () {
                     $upload_error = 'No file was uploaded. Please select a receipt image.';
                     break;
                 default:
-                    $upload_error = 'Upload error occurred. Please try again.';
+                    $upload_error = 'Upload error occurred (Code: ' . $error_code . '). Please try again.';
             }
         } else {
             $file_uploaded = true;
+            error_log('Unico Checkout: File uploaded successfully - ' . $_FILES['voucher_payment_receipt']['name']);
         }
 
         if (!$file_uploaded) {
             wc_add_notice('❌ Payment Receipt Required: ' . $upload_error, 'error');
-            error_log('Unico Checkout: File upload failed - ' . $upload_error);
+            error_log('Unico Checkout: File upload validation failed - ' . $upload_error);
         }
     }
     if ($mode === 'card_payment' && $qty > 3) {
