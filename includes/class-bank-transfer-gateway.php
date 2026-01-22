@@ -189,11 +189,14 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
             return new WP_Error('upload_error', $error_message);
         }
 
-        // Validate file type
-        $allowed_types = array('image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp');
-        $file_type = wp_check_filetype($file['name']);
+        // Validate file type using wp_check_filetype
+        $file_info = wp_check_filetype($file['name']);
+        $allowed_extensions = array('jpg', 'jpeg', 'png', 'gif', 'webp');
 
-        if (!in_array($file['type'], $allowed_types)) {
+        error_log("Unico Bank Transfer: File extension: " . $file_info['ext']);
+        error_log("Unico Bank Transfer: File MIME type: " . $file['type']);
+
+        if (!$file_info['ext'] || !in_array(strtolower($file_info['ext']), $allowed_extensions)) {
             return new WP_Error('invalid_type', 'Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.');
         }
 
@@ -203,28 +206,98 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
             return new WP_Error('file_too_large', 'File size exceeds 5MB limit.');
         }
 
-        // Upload file
+        // Upload file using WordPress functions
         require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
 
+        // Override upload handling to bypass form checks
         $upload_overrides = array(
             'test_form' => false,
-            'mimes' => array(
-                'jpg|jpeg|jpe' => 'image/jpeg',
-                'png' => 'image/png',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-            )
+            'test_type' => false,  // Skip MIME type test since we validated it
+            'test_size' => true,
         );
 
+        error_log("Unico Bank Transfer: Calling wp_handle_upload with overrides: " . print_r($upload_overrides, true));
+        error_log("Unico Bank Transfer: File tmp_name: " . $file['tmp_name']);
+        error_log("Unico Bank Transfer: File exists: " . (file_exists($file['tmp_name']) ? 'YES' : 'NO'));
+
+        // Attempt upload
         $uploaded_file = wp_handle_upload($file, $upload_overrides);
 
+        error_log("Unico Bank Transfer: Upload result: " . print_r($uploaded_file, true));
+
         if (isset($uploaded_file['error'])) {
-            return new WP_Error('upload_failed', $uploaded_file['error']);
+            error_log("Unico Bank Transfer: Upload error - " . $uploaded_file['error']);
+
+            // If standard upload fails, try manual upload
+            if (file_exists($file['tmp_name'])) {
+                error_log("Unico Bank Transfer: Attempting manual file upload...");
+                return $this->manual_file_upload($file, $order_id);
+            }
+
+            return new WP_Error('upload_failed', 'File upload failed: ' . $uploaded_file['error']);
+        }
+
+        if (!isset($uploaded_file['url']) || !isset($uploaded_file['file'])) {
+            error_log("Unico Bank Transfer: Missing URL or file path in upload result");
+            return new WP_Error('upload_failed', 'File upload completed but missing file information.');
         }
 
         error_log("Unico Bank Transfer: File uploaded successfully - " . $uploaded_file['url']);
 
         return $uploaded_file;
+    }
+
+    /**
+     * Manual File Upload (Fallback Method)
+     *
+     * @param array $file The $_FILES array element
+     * @param int $order_id The order ID
+     * @return array|WP_Error
+     */
+    private function manual_file_upload($file, $order_id) {
+        error_log("Unico Bank Transfer: Starting manual file upload for order #{$order_id}");
+
+        // Get WordPress upload directory
+        $upload_dir = wp_upload_dir();
+
+        // Create custom subdirectory for payment receipts
+        $custom_dir = $upload_dir['basedir'] . '/payment-receipts';
+        $custom_url = $upload_dir['baseurl'] . '/payment-receipts';
+
+        // Create directory if it doesn't exist
+        if (!file_exists($custom_dir)) {
+            wp_mkdir_p($custom_dir);
+            error_log("Unico Bank Transfer: Created directory: " . $custom_dir);
+        }
+
+        // Generate unique filename
+        $file_info = pathinfo($file['name']);
+        $extension = strtolower($file_info['extension']);
+        $filename = 'receipt_order_' . $order_id . '_' . time() . '.' . $extension;
+        $target_path = $custom_dir . '/' . $filename;
+        $target_url = $custom_url . '/' . $filename;
+
+        error_log("Unico Bank Transfer: Target path: " . $target_path);
+
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $target_path)) {
+            error_log("Unico Bank Transfer: Manual upload successful - " . $target_url);
+
+            // Set proper permissions
+            chmod($target_path, 0644);
+
+            return array(
+                'file' => $target_path,
+                'url' => $target_url,
+                'type' => $file['type']
+            );
+        } else {
+            error_log("Unico Bank Transfer: Manual upload failed - move_uploaded_file returned false");
+            error_log("Unico Bank Transfer: Source exists: " . (file_exists($file['tmp_name']) ? 'YES' : 'NO'));
+            error_log("Unico Bank Transfer: Target dir writable: " . (is_writable($custom_dir) ? 'YES' : 'NO'));
+            return new WP_Error('manual_upload_failed', 'Failed to move uploaded file to destination.');
+        }
     }
 
     /**
