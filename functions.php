@@ -53,7 +53,74 @@ add_action('init', function() {
 // Register Custom Payment Gateway
 add_filter('woocommerce_payment_gateways', function($gateways) {
     $gateways[] = 'Unico_Bank_Transfer_Gateway';
+    error_log('Unico: Payment gateway registered');
     return $gateways;
+});
+
+// Ensure gateway is available for voucher orders
+add_filter('woocommerce_available_payment_gateways', function($available_gateways) {
+    if (!unico_cart_has_voucher_items()) {
+        return $available_gateways;
+    }
+
+    // For voucher orders, ONLY show unico_bank_transfer
+    $filtered_gateways = array();
+
+    if (isset($available_gateways['unico_bank_transfer'])) {
+        $filtered_gateways['unico_bank_transfer'] = $available_gateways['unico_bank_transfer'];
+        error_log('Unico: Bank transfer gateway is available for voucher checkout');
+    } else {
+        error_log('Unico: ERROR - Bank transfer gateway NOT available!');
+        error_log('Unico: Available gateways: ' . implode(', ', array_keys($available_gateways)));
+    }
+
+    return $filtered_gateways;
+});
+
+// Auto-fill billing fields for voucher orders
+add_filter('woocommerce_checkout_get_value', function($value, $input) {
+    if (!unico_cart_has_voucher_items() || !is_user_logged_in()) {
+        return $value;
+    }
+
+    $user = wp_get_current_user();
+
+    // Auto-fill billing fields from user data
+    $field_mappings = array(
+        'billing_first_name' => $user->first_name ?: 'Customer',
+        'billing_last_name' => $user->last_name ?: 'User',
+        'billing_email' => $user->user_email,
+        'billing_phone' => get_user_meta($user->ID, 'billing_phone', true) ?: '0000000000',
+        'billing_country' => 'US',
+        'billing_address_1' => 'N/A',
+        'billing_city' => 'N/A',
+        'billing_state' => 'N/A',
+        'billing_postcode' => '00000',
+    );
+
+    if (isset($field_mappings[$input])) {
+        return $field_mappings[$input];
+    }
+
+    return $value;
+}, 10, 2);
+
+// Make billing fields not required for voucher orders
+add_filter('woocommerce_checkout_fields', function($fields) {
+    if (!unico_cart_has_voucher_items()) {
+        return $fields;
+    }
+
+    // Only email is required for voucher orders
+    $required_fields = array('billing_email');
+
+    foreach ($fields['billing'] as $key => $field) {
+        if (!in_array($key, $required_fields)) {
+            $fields['billing'][$key]['required'] = false;
+        }
+    }
+
+    return $fields;
 });
 
 // Register Custom Order Status: Pending Verification
@@ -816,14 +883,24 @@ add_action('wp_ajax_unico_update_cart_quantity', function() {
 });
 
 add_action('woocommerce_checkout_process', function () {
+    error_log('=== Unico Checkout Process Started ===');
+    error_log('POST data: ' . print_r($_POST, true));
+    error_log('FILES data: ' . print_r($_FILES, true));
+
     if (!unico_cart_has_voucher_items()) {
+        error_log('Unico: No voucher items in cart, skipping custom validation');
         return;
     }
+
+    error_log('Unico: Voucher items detected, running validation');
+
     if (!is_user_logged_in()) {
+        error_log('Unico: User not logged in');
         wc_add_notice('You must be logged in to purchase exam vouchers.', 'error');
-        return;
+        throw new Exception('User not logged in.');
     }
     $user_id = get_current_user_id();
+    error_log('Unico: User ID: ' . $user_id);
     if ($user_id && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
 

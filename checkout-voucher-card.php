@@ -5,6 +5,11 @@ if (!defined('ABSPATH')) {
 ?>
 <div class="unico-checkout-node">
     <?php
+    // Display WooCommerce notices
+    if (function_exists('wc_print_notices')) {
+        wc_print_notices();
+    }
+
     // Check purchase verification status
     $is_purchase_verified = false;
     $user_email = '';
@@ -340,7 +345,9 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="unico-checkout-actions">
-                <button type="submit" class="unico-confirm-button" <?php echo !$is_purchase_verified ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
+                <?php wp_nonce_field( 'woocommerce-process_checkout', 'woocommerce-process-checkout-nonce' ); ?>
+                <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr(wp_unslash($_SERVER['REQUEST_URI'])); ?>" />
+                <button type="submit" name="woocommerce_checkout_place_order" class="unico-confirm-button" <?php echo !$is_purchase_verified ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
                     <?php echo $is_purchase_verified ? 'Confirm Order' : '🔒 Verify Purchase to Continue'; ?>
                 </button>
                 <?php if (!$is_purchase_verified): ?>
