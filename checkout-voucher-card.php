@@ -129,12 +129,17 @@ if (!defined('ABSPATH')) {
         </div>
         <?php endif; ?>
 
-    <div class="unico-checkout-card" data-voucher-qty="<?php echo esc_attr(max(1, $voucher_qty)); ?>">
+    <div class="unico-checkout-card"
+         data-voucher-qty="<?php echo esc_attr(max(1, $voucher_qty)); ?>"
+         data-unit-price="<?php echo esc_attr($unit_price); ?>"
+         data-product-id="<?php echo esc_attr($product_id); ?>"
+         data-currency-symbol="<?php echo esc_attr($symbol); ?>"
+         data-currency-code="<?php echo esc_attr($currency); ?>">
         <div class="unico-checkout-header">
             <div class="unico-checkout-label">Checkout Node</div>
             <div class="unico-checkout-title-row">
                 <div class="unico-checkout-title"><?php echo esc_html($title); ?></div>
-                <div class="unico-checkout-qty">x<?php echo esc_html(max(1, $voucher_qty)); ?></div>
+                <div class="unico-checkout-qty">x<span id="unico-qty-display"><?php echo esc_html(max(1, $voucher_qty)); ?></span></div>
             </div>
         </div>
         <div class="unico-checkout-row unico-qty-row">
@@ -322,20 +327,105 @@ if (!defined('ABSPATH')) {
                 <div class="unico-total-label">Total Settlement</div>
                 <div class="unico-total-value">
                     <span class="unico-total-symbol"><?php echo esc_html($symbol); ?></span>
-                    <?php echo esc_html($total_display); ?>
+                    <span id="unico-total-amount"><?php echo esc_html($total_display); ?></span>
                     <span class="unico-total-currency"><?php echo esc_html($currency); ?></span>
                 </div>
             </div>
             <div class="unico-checkout-actions">
-                <button type="submit" class="unico-confirm-button" <?php echo !$is_email_verified ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
-                    <?php echo $is_email_verified ? 'Confirm Order' : '🔒 Verify Email to Purchase'; ?>
+                <button type="submit" class="unico-confirm-button" <?php echo !$is_purchase_verified ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''; ?>>
+                    <?php echo $is_purchase_verified ? 'Confirm Order' : '🔒 Verify Purchase to Continue'; ?>
                 </button>
-                <?php if (!$is_email_verified): ?>
+                <?php if (!$is_purchase_verified): ?>
                     <p style="font-size: 12px; color: #856404; margin: 8px 0 0; text-align: center;">
-                        Email verification required before purchase
+                        Purchase verification required before placing order
                     </p>
                 <?php endif; ?>
             </div>
         </div>
     </div>
+
+    <script>
+    jQuery(document).ready(function($) {
+        var $card = $('.unico-checkout-card');
+        var unitPrice = parseFloat($card.data('unit-price'));
+        var productId = $card.data('product-id');
+        var currencySymbol = $card.data('currency-symbol');
+        var $qtyInput = $('input[name="voucher_cart_quantity"]');
+        var $qtyDisplay = $('#unico-qty-display');
+        var $totalAmount = $('#unico-total-amount');
+        var updateTimer = null;
+
+        // Function to update prices in real-time
+        function updatePrices(qty) {
+            qty = parseInt(qty) || 1;
+            if (qty < 1) qty = 1;
+
+            // Update quantity display
+            $qtyDisplay.text(qty);
+            $qtyInput.val(qty);
+            $card.attr('data-voucher-qty', qty);
+
+            // Calculate and update total
+            var total = unitPrice * qty;
+            $totalAmount.text(total.toFixed(2));
+        }
+
+        // Function to update cart via AJAX
+        function updateCart(qty) {
+            $.ajax({
+                url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                type: 'POST',
+                data: {
+                    action: 'unico_update_cart_quantity',
+                    product_id: productId,
+                    quantity: qty,
+                    nonce: '<?php echo wp_create_nonce('unico_update_cart'); ?>'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        console.log('Cart updated successfully');
+                    } else {
+                        console.error('Failed to update cart');
+                    }
+                },
+                error: function() {
+                    console.error('AJAX error updating cart');
+                }
+            });
+        }
+
+        // Handle +/- buttons
+        $('.unico-qty-btn').on('click', function() {
+            var direction = $(this).data('direction');
+            var currentQty = parseInt($qtyInput.val()) || 1;
+            var newQty = direction === 'plus' ? currentQty + 1 : currentQty - 1;
+
+            if (newQty < 1) newQty = 1;
+
+            // Update prices immediately
+            updatePrices(newQty);
+
+            // Debounce AJAX cart update
+            clearTimeout(updateTimer);
+            updateTimer = setTimeout(function() {
+                updateCart(newQty);
+            }, 500);
+        });
+
+        // Handle direct input change
+        $qtyInput.on('change', function() {
+            var newQty = parseInt($(this).val()) || 1;
+            if (newQty < 1) newQty = 1;
+
+            // Update prices immediately
+            updatePrices(newQty);
+
+            // Debounce AJAX cart update
+            clearTimeout(updateTimer);
+            updateTimer = setTimeout(function() {
+                updateCart(newQty);
+            }, 500);
+        });
+    });
+    </script>
 </div>
