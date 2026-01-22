@@ -90,12 +90,13 @@ add_action('admin_init', function() {
 // Fix Email Verification Page (runs once)
 add_action('admin_init', function() {
     // Check if already fixed
-    if (get_option('unico_email_verification_page_fixed')) {
+    if (get_option('unico_email_verification_page_fixed_v2')) {
         return;
     }
 
     // Find or create the email verification page
     $verification_page = get_page_by_path('email-verification');
+    $needs_flush = false;
 
     if ($verification_page) {
         // Page exists, ensure template is assigned
@@ -103,6 +104,7 @@ add_action('admin_init', function() {
         if ($current_template !== 'page-email-verification.php') {
             update_post_meta($verification_page->ID, '_wp_page_template', 'page-email-verification.php');
             error_log('Unico: Updated email verification page template (ID: ' . $verification_page->ID . ')');
+            $needs_flush = true;
         }
         // Ensure page is published
         if ($verification_page->post_status !== 'publish') {
@@ -111,6 +113,7 @@ add_action('admin_init', function() {
                 'post_status' => 'publish'
             ]);
             error_log('Unico: Published email verification page (ID: ' . $verification_page->ID . ')');
+            $needs_flush = true;
         }
     } else {
         // Create email verification page
@@ -125,11 +128,18 @@ add_action('admin_init', function() {
         if ($page_id && !is_wp_error($page_id)) {
             update_post_meta($page_id, '_wp_page_template', 'page-email-verification.php');
             error_log('Unico: Created email verification page (ID: ' . $page_id . ')');
+            $needs_flush = true;
         }
     }
 
+    // Flush rewrite rules if page was created or updated
+    if ($needs_flush) {
+        flush_rewrite_rules();
+        error_log('Unico: Flushed rewrite rules for email verification page');
+    }
+
     // Mark as fixed so this doesn't run again
-    update_option('unico_email_verification_page_fixed', true);
+    update_option('unico_email_verification_page_fixed_v2', true);
 });
 
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {

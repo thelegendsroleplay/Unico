@@ -177,4 +177,17 @@ get_header();
     </div>
 </div>
 
+<?php
+// Debug info (only visible to admins)
+if (current_user_can('manage_options')) {
+    echo '<!-- Email Verification Page Debug:';
+    echo ' is_verified=' . ($is_verified ? 'yes' : 'no');
+    echo ', is_logged_in=' . (is_user_logged_in() ? 'yes' : 'no');
+    echo ', user_email=' . esc_html($user_email);
+    echo ', verification_result=' . ($verification_result ? 'set' : 'not set');
+    echo ', class_exists=' . (class_exists('Unico_Security') ? 'yes' : 'no');
+    echo ' -->';
+}
+?>
+
 <?php get_footer(); ?>
