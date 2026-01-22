@@ -647,21 +647,6 @@ function unico_cart_has_voucher_items() {
 }
 
 // CRITICAL: Force disable AJAX checkout when vouchers in cart (required for file uploads)
-add_filter('woocommerce_checkout_update_order_review_fragments', function($fragments) {
-    if (unico_cart_has_voucher_items()) {
-        // Returning false disables AJAX order review updates
-        return false;
-    }
-    return $fragments;
-});
-
-// Dequeue WooCommerce checkout.js for voucher orders to force traditional submission
-add_action('wp_enqueue_scripts', function() {
-    if (is_checkout() && unico_cart_has_voucher_items()) {
-        wp_dequeue_script('wc-checkout');
-        error_log('Unico: Dequeued WooCommerce AJAX checkout script for file upload support');
-    }
-}, 100);
 
 // Enable file uploads in WooCommerce checkout form
 add_filter('woocommerce_checkout_posted_data', function($data) {
@@ -671,41 +656,18 @@ add_filter('woocommerce_checkout_posted_data', function($data) {
     }
     return $data;
 });
-
-// Add enctype and ensure traditional form submission
-add_action('woocommerce_before_checkout_form', function() {
-    if (unico_cart_has_voucher_items()) {
-        echo '<script type="text/javascript">
-        console.log("🚀 Unico: Setting up checkout for file uploads...");
-
-        // Add enctype to form
-        function setEnctype() {
-            var forms = document.querySelectorAll("form.checkout, form.woocommerce-checkout");
-            forms.forEach(function(form) {
-                form.setAttribute("enctype", "multipart/form-data");
-                console.log("✅ Set enctype on form:", form);
-            });
-        }
-
-        // Set enctype immediately
-        setEnctype();
-
-        // Set enctype after a delay (in case form loads later)
-        setTimeout(setEnctype, 100);
-        setTimeout(setEnctype, 500);
-        setTimeout(setEnctype, 1000);
-
-        // Monitor for form changes
-        if (typeof MutationObserver !== "undefined") {
-            var observer = new MutationObserver(function() {
-                setEnctype();
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-        }
-
-        console.log("✅ Unico: WooCommerce checkout.js dequeued - traditional form submission enabled");
-        </script>';
-    }
+add_action('woocommerce_before_checkout_form', function () {
+    ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var form = document.querySelector('form.checkout');
+            if (form) {
+                form.setAttribute('enctype', 'multipart/form-data');
+                console.log('Unico: enctype set on checkout form');
+            }
+        });
+    </script>
+    <?php
 }, 1);
 
 add_filter('woocommerce_add_to_cart_redirect', function ($url) {
