@@ -5,116 +5,19 @@ if (!defined('ABSPATH')) {
 ?>
 <div class="unico-checkout-node">
     <?php
-    // Check email verification status
-    $is_email_verified = false;
+    // Check purchase verification status
     $is_purchase_verified = false;
     $user_email = '';
     if (is_user_logged_in() && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
         $user_id = get_current_user_id();
-        $is_email_verified = $security->is_email_verified($user_id);
         $is_purchase_verified = $security->is_purchase_verified($user_id);
         $current_user = wp_get_current_user();
         $user_email = $current_user->user_email;
     }
     ?>
 
-    <?php if (!$is_email_verified): ?>
-        <div class="unico-verification-notice" style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: flex-start; gap: 12px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-                <div style="flex-grow: 1;">
-                    <strong style="color: #856404; display: block; margin-bottom: 6px;">⚠️ Email Verification Required</strong>
-                    <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
-                        You must verify your email (<strong><?php echo esc_html($user_email); ?></strong>) before completing this purchase.
-                    </p>
-
-                    <div id="unico-email-verify-step-1">
-                        <button type="button" id="unico-send-email-verify-btn" style="padding: 8px 16px; background: #856404; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
-                            Send Verification Email
-                        </button>
-                    </div>
-
-                    <div id="unico-email-verify-step-2" style="display: none; margin-top: 10px;">
-                        <p style="color: #155724; font-size: 13px; background: #d4edda; padding: 10px; border-radius: 6px; margin: 0;">
-                            ✓ Verification email sent! Check your inbox at <strong><?php echo esc_html($user_email); ?></strong> and click the verification link.
-                        </p>
-                        <p style="color: #6c757d; font-size: 12px; margin-top: 8px;">
-                            This page will refresh automatically once you verify.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <script>
-        jQuery(document).ready(function($) {
-            // Email verification button
-            $('#unico-send-email-verify-btn').on('click', function() {
-                var btn = $(this);
-                btn.prop('disabled', true).text('Sending...');
-
-                $.ajax({
-                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
-                    type: 'POST',
-                    data: {
-                        action: 'unico_send_email_verification',
-                        nonce: '<?php echo wp_create_nonce('unico_email_verification'); ?>'
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            $('#unico-email-verify-step-1').hide();
-                            $('#unico-email-verify-step-2').show();
-
-                            // Poll every 3 seconds to check if email is verified
-                            var checkInterval = setInterval(function() {
-                                $.ajax({
-                                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
-                                    type: 'POST',
-                                    data: {
-                                        action: 'unico_check_email_verified',
-                                        nonce: '<?php echo wp_create_nonce('unico_email_verification'); ?>'
-                                    },
-                                    success: function(checkResponse) {
-                                        if (checkResponse.success && checkResponse.data.verified) {
-                                            clearInterval(checkInterval);
-                                            location.reload();
-                                        }
-                                    }
-                                });
-                            }, 3000);
-                        } else {
-                            btn.prop('disabled', false).text('Send Verification Email');
-                            alert(response.data.message || 'Failed to send verification email');
-                        }
-                    },
-                    error: function() {
-                        btn.prop('disabled', false).text('Send Verification Email');
-                        alert('Error sending request.');
-                    }
-                });
-            });
-        });
-        </script>
-
-    <?php else: ?>
-        <div class="unico-verification-badge" style="background: #d4edda; border: 2px solid #c3e6cb; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#155724" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M9 12l2 2 4-4"></path>
-                </svg>
-                <span style="color: #155724; font-weight: 600; font-size: 14px;">
-                    ✓ Email Verified: <?php echo esc_html($user_email); ?>
-                </span>
-            </div>
-        </div>
-
-        <?php if (!$is_purchase_verified): ?>
+    <?php if (!$is_purchase_verified): ?>
         <div class="unico-verification-notice" style="background: #e2e3e5; border: 2px solid #d6d8db; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
             <div style="display: flex; align-items: flex-start; gap: 12px;">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#383d41" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
@@ -122,9 +25,9 @@ if (!defined('ABSPATH')) {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
                 <div style="flex-grow: 1;">
-                    <strong style="color: #383d41; display: block; margin-bottom: 6px;">🔒 Identity Verification Required</strong>
+                    <strong style="color: #383d41; display: block; margin-bottom: 6px;">🔒 Purchase Verification Required</strong>
                     <p style="color: #383d41; margin: 0; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
-                        For security, please verify your identity for this purchase.
+                        We'll send a verification code to <strong><?php echo esc_html($user_email); ?></strong>. Complete payment after verification.
                     </p>
                     
                     <div id="unico-otp-step-1">

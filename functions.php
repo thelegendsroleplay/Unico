@@ -776,18 +776,11 @@ add_action('woocommerce_checkout_process', function () {
     $user_id = get_current_user_id();
     if ($user_id && class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
-        if (!$security->is_email_verified($user_id)) {
-            // CRITICAL: Block order placement - email verification is REQUIRED for every purchase
-            wc_add_notice('❌ Email verification required. You must verify your email before completing this purchase.', 'error');
 
-            // This prevents the order from being placed
-            // User will see the error and cannot proceed until verified
-            throw new Exception('Email verification required before purchase.');
-        }
-
+        // Only check purchase OTP verification (simplified flow)
         if (!$security->is_purchase_verified($user_id)) {
-            wc_add_notice('❌ Identity verification required. Please verify your identity using the code sent to your email.', 'error');
-            throw new Exception('Identity verification required before purchase.');
+            wc_add_notice('❌ Purchase verification required. Please verify using the code sent to your email.', 'error');
+            throw new Exception('Purchase verification required before checkout.');
         }
     }
     if (isset($_POST['voucher_cart_quantity'])) {
