@@ -910,49 +910,30 @@ add_action('woocommerce_checkout_process', function () {
     if ($mode === 'bank_transfer') {
         if (empty($_POST['voucher_payment_reference'])) {
             wc_add_notice('❌ Transaction ID is required for bank transfer.', 'error');
+            throw new Exception('Transaction ID required.');
         }
 
-        // Debug logging
-        error_log('Unico Checkout Debug - POST keys: ' . implode(', ', array_keys($_POST)));
-        error_log('Unico Checkout Debug - FILES keys: ' . implode(', ', array_keys($_FILES)));
-        error_log('Unico Checkout Debug - Payment mode: ' . $mode);
+        // NEW VALIDATION: Check if receipt was uploaded via AJAX and stored in session
+        error_log('Unico Checkout: Checking for receipt in WooCommerce session');
 
-        // Check file upload with detailed error messages
-        $file_uploaded = false;
-        $upload_error = '';
+        $receipt_in_session = WC()->session ? WC()->session->get('unico_receipt_upload') : null;
 
-        if (!isset($_FILES['voucher_payment_receipt'])) {
-            $upload_error = 'No file field found. Form may not have enctype="multipart/form-data" or AJAX was used.';
-            error_log('Unico Checkout: $_FILES array: ' . print_r($_FILES, true));
-        } elseif (empty($_FILES['voucher_payment_receipt']['name'])) {
-            $upload_error = 'No file selected. Please choose a receipt image.';
-        } elseif ($_FILES['voucher_payment_receipt']['error'] !== UPLOAD_ERR_OK) {
-            $error_code = $_FILES['voucher_payment_receipt']['error'];
-            error_log('Unico Checkout: File upload error code: ' . $error_code);
-            switch ($error_code) {
-                case UPLOAD_ERR_INI_SIZE:
-                case UPLOAD_ERR_FORM_SIZE:
-                    $upload_error = 'File too large. Maximum size is 5MB.';
-                    break;
-                case UPLOAD_ERR_PARTIAL:
-                    $upload_error = 'File upload incomplete. Please try again.';
-                    break;
-                case UPLOAD_ERR_NO_FILE:
-                    $upload_error = 'No file was uploaded. Please select a receipt image.';
-                    break;
-                default:
-                    $upload_error = 'Upload error occurred (Code: ' . $error_code . '). Please try again.';
-            }
-        } else {
-            $file_uploaded = true;
-            error_log('Unico Checkout: File uploaded successfully - ' . $_FILES['voucher_payment_receipt']['name']);
-        }
+        error_log('Unico Checkout: Receipt in session: ' . print_r($receipt_in_session, true));
 
-        if (!$file_uploaded) {
-            wc_add_notice('❌ Payment Receipt Required: ' . $upload_error, 'error');
-            error_log('Unico Checkout: File upload validation failed - ' . $upload_error);
+        if (!$receipt_in_session || empty($receipt_in_session['url']) || empty($receipt_in_session['file'])) {
+            error_log('Unico Checkout: Payment receipt NOT found in session');
+            wc_add_notice('❌ Payment Receipt Required: Please upload your bank transfer receipt before placing the order.', 'error');
             throw new Exception('Payment receipt upload required for bank transfer.');
         }
+
+        // Verify file still exists
+        if (!file_exists($receipt_in_session['file'])) {
+            error_log('Unico Checkout: Receipt file no longer exists at: ' . $receipt_in_session['file']);
+            wc_add_notice('❌ Payment Receipt Error: The uploaded file is no longer available. Please upload again.', 'error');
+            throw new Exception('Payment receipt file missing.');
+        }
+
+        error_log('Unico Checkout: Receipt validation passed - ' . $receipt_in_session['url']);
     }
     if ($mode === 'card_payment' && $qty > 3) {
         wc_add_notice('Card Payment is limited to 3 units. Reduce quantity or choose Bank Transfer.', 'error');
@@ -1054,16 +1035,32 @@ add_action('woocommerce_checkout_update_order_meta', function ($order_id) {
         }
     }
 
-    if (isset($_FILES['voucher_payment_receipt']) && !empty($_FILES['voucher_payment_receipt']['name'])) {
-        $upload = unico_handle_voucher_receipt_upload('voucher_payment_receipt', $order_id);
-        if (!is_wp_error($upload)) {
-            update_post_meta($order_id, '_voucher_payment_receipt_id', $upload['attachment_id']);
-            update_post_meta($order_id, '_voucher_payment_receipt_url', $upload['url']);
-        } else {
+    // Get receipt from session (uploaded via AJAX)
+    $receipt_in_session = WC()->session ? WC()->session->get('unico_receipt_upload') : null;
+
+    if ($receipt_in_session && !empty($receipt_in_session['url']) && !empty($receipt_in_session['file'])) {
+        // Create WordPress attachment from the uploaded file
+        $filetype = wp_check_filetype($receipt_in_session['file'], null);
+        $attachment = [
+            'post_mime_type' => $filetype['type'],
+            'post_title' => 'Voucher payment receipt for order ' . $order_id,
+            'post_content' => '',
+            'post_status' => 'private',
+        ];
+        $attachment_id = wp_insert_attachment($attachment, $receipt_in_session['file'], $order_id);
+
+        if ($attachment_id && !is_wp_error($attachment_id)) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+            $attach_data = wp_generate_attachment_metadata($attachment_id, $receipt_in_session['file']);
+            wp_update_attachment_metadata($attachment_id, $attach_data);
+
+            update_post_meta($order_id, '_voucher_payment_receipt_id', $attachment_id);
+            update_post_meta($order_id, '_voucher_payment_receipt_url', $receipt_in_session['url']);
+
             if (function_exists('wc_get_order')) {
                 $order = wc_get_order($order_id);
                 if ($order) {
-                    $order->add_order_note('Voucher payment receipt upload failed: ' . $upload->get_error_message());
+                    $order->add_order_note('Payment receipt uploaded and saved (Attachment ID: ' . $attachment_id . ')');
                 }
             }
         }
@@ -1439,10 +1436,15 @@ add_action('wp_enqueue_scripts', function () {
         wp_enqueue_script(
             'unico-checkout-js',
             get_template_directory_uri() . '/assets/js/checkout.js',
-            [],
+            ['jquery', 'wc-checkout'],
             '1.0',
             true
         );
+
+        wp_localize_script('unico-checkout-js', 'unicoCheckout', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('unico-checkout')
+        ]);
     }
 
     if (is_page('about-us')) {
