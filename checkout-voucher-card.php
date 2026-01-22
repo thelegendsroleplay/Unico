@@ -169,23 +169,15 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
 
-        <?php
-        // Check if card payment is enabled
-        $card_payment_enabled = get_option('unico_enable_card_payment', '1');
-        ?>
-
         <div class="unico-checkout-row unico-checkout-methods">
             <button type="button" class="unico-method-button is-active" data-method="bank_transfer" data-limit="10">
                 <span>Bank Transfer</span>
                 <span class="unico-method-note">Limit 10 units</span>
             </button>
-            <?php if ($card_payment_enabled === '1'): ?>
-            <button type="button" class="unico-method-button" data-method="card_payment" data-limit="3">
-                <span>Card Payment</span>
-                <span class="unico-method-note">Limit 3 units</span>
-            </button>
-            <?php endif; ?>
+            <!-- Card payment option disabled per user request -->
             <input type="hidden" name="voucher_payment_mode" value="bank_transfer">
+            <!-- WooCommerce payment_method field - CRITICAL for order creation -->
+            <input type="hidden" name="payment_method" value="unico_bank_transfer">
         </div>
 
         <?php
@@ -563,8 +555,8 @@ if (!defined('ABSPATH')) {
 
             // Add our own submit handler to ensure traditional submission
             $checkoutForm.on('submit', function(e) {
-                // Check if file is required and present
-                var paymentMode = $('input[name="unico_payment_mode"]:checked').val();
+                // Check if file is required and present (fixed field name)
+                var paymentMode = $('input[name="voucher_payment_mode"]').val();
                 if (paymentMode === 'bank_transfer') {
                     var fileInput = document.getElementById('unico-receipt-upload');
                     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {

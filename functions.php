@@ -40,12 +40,52 @@ require_once get_template_directory() . '/includes/class-unico-mail-settings.php
 // Include Bank Accounts Management
 require_once get_template_directory() . '/includes/class-bank-accounts.php';
 
+// Include Custom Payment Gateway
+require_once get_template_directory() . '/includes/class-bank-transfer-gateway.php';
+
 // Initialize Bank Accounts System
 add_action('init', function() {
     if (class_exists('Unico_Bank_Accounts')) {
         Unico_Bank_Accounts::get_instance();
     }
 }, 5);
+
+// Register Custom Payment Gateway
+add_filter('woocommerce_payment_gateways', function($gateways) {
+    $gateways[] = 'Unico_Bank_Transfer_Gateway';
+    return $gateways;
+});
+
+// Register Custom Order Status: Pending Verification
+add_action('init', function() {
+    register_post_status('wc-pending-verification', array(
+        'label' => _x('Pending Verification', 'Order status', 'unico'),
+        'public' => true,
+        'exclude_from_search' => false,
+        'show_in_admin_all_list' => true,
+        'show_in_admin_status_list' => true,
+        'label_count' => _n_noop(
+            'Pending verification <span class="count">(%s)</span>',
+            'Pending verification <span class="count">(%s)</span>',
+            'unico'
+        )
+    ));
+});
+
+// Add Custom Order Status to WooCommerce Order Statuses
+add_filter('wc_order_statuses', function($order_statuses) {
+    $new_statuses = array();
+
+    // Add custom status after pending
+    foreach ($order_statuses as $key => $status) {
+        $new_statuses[$key] = $status;
+        if ('wc-pending' === $key) {
+            $new_statuses['wc-pending-verification'] = _x('Pending Verification', 'Order status', 'unico');
+        }
+    }
+
+    return $new_statuses;
+});
 
 // Fix WooCommerce Checkout Page (runs once)
 add_action('admin_init', function() {
@@ -822,6 +862,7 @@ add_action('woocommerce_checkout_process', function () {
     }
     if (empty($_POST['voucher_terms_confirmed'])) {
         wc_add_notice('Please confirm accuracy and non-refundable terms before placing your order.', 'error');
+        throw new Exception('Terms confirmation required.');
     }
     $mode = isset($_POST['voucher_payment_mode']) ? sanitize_text_field(wp_unslash($_POST['voucher_payment_mode'])) : '';
     $qty = unico_get_voucher_cart_quantity();
@@ -871,10 +912,12 @@ add_action('woocommerce_checkout_process', function () {
         if (!$file_uploaded) {
             wc_add_notice('❌ Payment Receipt Required: ' . $upload_error, 'error');
             error_log('Unico Checkout: File upload validation failed - ' . $upload_error);
+            throw new Exception('Payment receipt upload required for bank transfer.');
         }
     }
     if ($mode === 'card_payment' && $qty > 3) {
         wc_add_notice('Card Payment is limited to 3 units. Reduce quantity or choose Bank Transfer.', 'error');
+        throw new Exception('Card payment quantity limit exceeded.');
     }
     if ($mode === 'bank_transfer' && $qty > 10) {
         wc_add_notice('Bank Transfer is limited to 10 units. Reduce quantity before placing the order.', 'error');
@@ -1797,3 +1840,270 @@ function unico_get_ticket_details_ajax() {
 }
 
 add_action('wp_ajax_get_ticket_details', 'unico_get_ticket_details_ajax');
+
+// ============================================================================
+// PAYMENT RECEIPT VERIFICATION - ADMIN INTERFACE
+// ============================================================================
+
+/**
+ * Add Payment Receipt Meta Box to Order Edit Screen
+ */
+add_action('add_meta_boxes', function() {
+    add_meta_box(
+        'unico_payment_receipt',
+        __('Payment Receipt Verification', 'unico'),
+        'unico_payment_receipt_meta_box',
+        'shop_order',
+        'side',
+        'high'
+    );
+});
+
+/**
+ * Display Payment Receipt Meta Box
+ */
+function unico_payment_receipt_meta_box($post) {
+    $order = wc_get_order($post->ID);
+
+    if (!$order) {
+        return;
+    }
+
+    $payment_method = $order->get_payment_method();
+    $verification_status = $order->get_meta('_voucher_verification_status');
+    $receipt_url = $order->get_meta('_payment_receipt_url');
+    $receipt_uploaded = $order->get_meta('_payment_receipt_uploaded');
+
+    ?>
+    <div class="unico-payment-verification-box">
+        <?php if ($payment_method === 'unico_bank_transfer'): ?>
+
+            <?php if ($receipt_uploaded === 'yes' && $receipt_url): ?>
+                <div style="margin-bottom: 15px;">
+                    <strong>Payment Receipt:</strong><br>
+                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" style="color: #0073aa;">
+                        View Receipt →
+                    </a>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <img src="<?php echo esc_url($receipt_url); ?>"
+                         alt="Payment Receipt"
+                         style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <strong>Verification Status:</strong><br>
+                    <?php
+                    $status_colors = array(
+                        'pending' => '#ff9800',
+                        'approved' => '#4caf50',
+                        'rejected' => '#f44336'
+                    );
+                    $status_color = isset($status_colors[$verification_status]) ? $status_colors[$verification_status] : '#999';
+                    ?>
+                    <span style="display: inline-block; padding: 4px 12px; background: <?php echo $status_color; ?>; color: white; border-radius: 3px; font-size: 12px; margin-top: 5px;">
+                        <?php echo esc_html(ucfirst($verification_status)); ?>
+                    </span>
+                </div>
+
+                <?php if ($verification_status === 'pending'): ?>
+                    <div style="margin-top: 15px;">
+                        <button type="button"
+                                class="button button-primary"
+                                onclick="unicoApprovePayment(<?php echo $post->ID; ?>)"
+                                style="width: 100%; margin-bottom: 8px;">
+                            ✓ Approve Payment
+                        </button>
+                        <button type="button"
+                                class="button"
+                                onclick="unicoRejectPayment(<?php echo $post->ID; ?>)"
+                                style="width: 100%;">
+                            ✗ Reject Payment
+                        </button>
+                    </div>
+                <?php endif; ?>
+
+            <?php else: ?>
+                <p style="color: #999; font-style: italic;">No payment receipt uploaded.</p>
+            <?php endif; ?>
+
+        <?php else: ?>
+            <p style="color: #999; font-style: italic;">This order does not use bank transfer payment.</p>
+        <?php endif; ?>
+    </div>
+
+    <script>
+    function unicoApprovePayment(orderId) {
+        if (!confirm('Are you sure you want to approve this payment?')) {
+            return;
+        }
+
+        jQuery.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'unico_verify_payment',
+                order_id: orderId,
+                status: 'approved',
+                nonce: '<?php echo wp_create_nonce('unico_verify_payment'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('✓ Payment approved successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            },
+            error: function() {
+                alert('Failed to approve payment. Please try again.');
+            }
+        });
+    }
+
+    function unicoRejectPayment(orderId) {
+        var reason = prompt('Please enter reason for rejection:');
+        if (!reason) {
+            return;
+        }
+
+        jQuery.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'unico_verify_payment',
+                order_id: orderId,
+                status: 'rejected',
+                reason: reason,
+                nonce: '<?php echo wp_create_nonce('unico_verify_payment'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('✓ Payment rejected.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.data.message);
+                }
+            },
+            error: function() {
+                alert('Failed to reject payment. Please try again.');
+            }
+        });
+    }
+    </script>
+    <?php
+}
+
+/**
+ * AJAX Handler: Verify Payment (Approve/Reject)
+ */
+add_action('wp_ajax_unico_verify_payment', function() {
+    check_ajax_referer('unico_verify_payment', 'nonce');
+
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error(array('message' => 'Insufficient permissions.'));
+        return;
+    }
+
+    $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+    $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+    $reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : '';
+
+    if (!$order_id || !in_array($status, array('approved', 'rejected'))) {
+        wp_send_json_error(array('message' => 'Invalid parameters.'));
+        return;
+    }
+
+    $order = wc_get_order($order_id);
+
+    if (!$order) {
+        wp_send_json_error(array('message' => 'Order not found.'));
+        return;
+    }
+
+    // Update verification status
+    $order->update_meta_data('_voucher_verification_status', $status);
+
+    if ($status === 'approved') {
+        // Change order status to processing
+        $order->update_status('processing', __('Payment receipt approved and verified.', 'unico'));
+
+        // Add order note
+        $order->add_order_note(__('Payment receipt has been verified and approved by admin.', 'unico'), false, true);
+
+        error_log("Unico: Payment approved for order #{$order_id}");
+
+    } else {
+        // Change order status to failed
+        $order->update_status('failed', __('Payment receipt rejected: ' . $reason, 'unico'));
+
+        // Add order note with reason
+        $order->add_order_note(__('Payment receipt rejected. Reason: ' . $reason, 'unico'), false, true);
+
+        // Store rejection reason
+        $order->update_meta_data('_payment_rejection_reason', $reason);
+
+        error_log("Unico: Payment rejected for order #{$order_id}. Reason: {$reason}");
+    }
+
+    $order->save();
+
+    // Send customer notification email
+    $mailer = WC()->mailer();
+    $emails = $mailer->get_emails();
+
+    if ($status === 'approved' && isset($emails['WC_Email_Customer_Processing_Order'])) {
+        // Trigger processing order email
+        $emails['WC_Email_Customer_Processing_Order']->trigger($order_id);
+        error_log("Unico: Sent processing order email to customer for order #{$order_id}");
+    } elseif ($status === 'rejected' && isset($emails['WC_Email_Customer_Refunded_Order'])) {
+        // Trigger failed order email notification
+        do_action('woocommerce_order_status_failed', $order_id, $order);
+        error_log("Unico: Sent failed order notification for order #{$order_id}");
+    }
+
+    wp_send_json_success(array(
+        'message' => $status === 'approved' ? 'Payment approved.' : 'Payment rejected.',
+        'status' => $status
+    ));
+});
+
+/**
+ * Send Admin Notification When Order Requires Verification
+ */
+add_action('woocommerce_order_status_pending-verification', function($order_id, $order = null) {
+    if (!$order) {
+        $order = wc_get_order($order_id);
+    }
+
+    if (!$order) {
+        return;
+    }
+
+    // Send admin email notification
+    $admin_email = get_option('admin_email');
+    $receipt_url = $order->get_meta('_payment_receipt_url');
+
+    $subject = sprintf('[%s] New Order Awaiting Payment Verification (#%s)', get_bloginfo('name'), $order->get_order_number());
+
+    $message = sprintf(
+        "A new order is awaiting payment verification.\n\n" .
+        "Order: #%s\n" .
+        "Customer: %s\n" .
+        "Email: %s\n" .
+        "Total: %s\n\n" .
+        "Payment Receipt: %s\n\n" .
+        "Please review and approve the payment receipt in the admin panel:\n%s",
+        $order->get_order_number(),
+        $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
+        $order->get_billing_email(),
+        $order->get_formatted_order_total(),
+        $receipt_url ? $receipt_url : 'Not uploaded',
+        admin_url('post.php?post=' . $order_id . '&action=edit')
+    );
+
+    wp_mail($admin_email, $subject, $message);
+
+    error_log("Unico: Sent admin notification for order #{$order_id} pending verification");
+}, 10, 2);
