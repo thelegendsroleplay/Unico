@@ -607,17 +607,8 @@ add_filter('woocommerce_add_to_cart_redirect', function ($url) {
             return home_url('/login');
         }
 
-        // Check email verification before allowing checkout
-        $user_id = get_current_user_id();
-        if ($user_id && class_exists('Unico_Security')) {
-            $security = Unico_Security::get_instance();
-            if (!$security->is_email_verified($user_id)) {
-                wc_add_notice('Email verification required before purchasing vouchers.', 'error');
-                set_transient('unico_return_to_checkout_' . $user_id, wc_get_checkout_url(), 600);
-                return home_url('/email-verification?redirect=checkout');
-            }
-        }
-
+        // Allow user to proceed to checkout
+        // Email verification will be required on checkout page
         return wc_get_checkout_url();
     }
     return $url;
@@ -635,21 +626,8 @@ add_action('woocommerce_checkout_before_order_review', function () {
         wp_redirect(home_url('/login'));
         exit;
     }
-    $user_id = get_current_user_id();
-    if ($user_id && class_exists('Unico_Security')) {
-        $security = Unico_Security::get_instance();
-        if (!$security->is_email_verified($user_id)) {
-            // Block checkout completely - verification required before EVERY purchase
-            wc_add_notice('Email verification required. Please verify your email before making a purchase.', 'error');
-
-            // Store checkout URL to return after verification
-            set_transient('unico_return_to_checkout_' . $user_id, wc_get_checkout_url(), 600); // 10 minutes
-
-            // Redirect to email verification page
-            wp_redirect(home_url('/email-verification?redirect=checkout'));
-            exit;
-        }
-    }
+    // Email verification will be shown on checkout page UI
+    // No redirect - allow user to see checkout page
     $cart = WC()->cart;
     if (!$cart || $cart->is_empty()) {
         return;
