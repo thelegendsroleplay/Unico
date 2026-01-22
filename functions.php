@@ -609,6 +609,7 @@ add_action('woocommerce_checkout_before_order_review', function () {
     $buyer_name = $current_user && $current_user->exists() ? $current_user->display_name : '';
     $buyer_email = $current_user && $current_user->exists() ? $current_user->user_email : '';
     $title = $voucher_item->get_name();
+    $unit_price = (float) $voucher_item->get_price();
     $total = $cart->get_total('edit');
     $currency = get_woocommerce_currency();
     $symbol = '$';
@@ -619,6 +620,7 @@ add_action('woocommerce_checkout_before_order_review', function () {
     }
     $total_numeric = (float) $total;
     $total_display = $total_numeric > 0 ? number_format($total_numeric, 2) : number_format(0, 2);
+    $product_id = $voucher_item->get_id();
     $template = get_template_directory() . '/checkout-voucher-card.php';
     if (file_exists($template)) {
         include $template;
@@ -667,6 +669,48 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
         }
     }
     wp_send_json_error(['message' => 'Security system not available']);
+});
+
+// Add AJAX handler for updating cart quantity
+add_action('wp_ajax_unico_update_cart_quantity', function() {
+    check_ajax_referer('unico_update_cart', 'nonce');
+
+    $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+
+    if ($product_id < 1 || $quantity < 1) {
+        wp_send_json_error(['message' => 'Invalid product ID or quantity']);
+    }
+
+    if (!function_exists('WC')) {
+        wp_send_json_error(['message' => 'WooCommerce not available']);
+    }
+
+    $cart = WC()->cart;
+    if (!$cart) {
+        wp_send_json_error(['message' => 'Cart not available']);
+    }
+
+    // Find the cart item and update quantity
+    $updated = false;
+    foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
+        if ($cart_item['product_id'] == $product_id) {
+            $cart->set_quantity($cart_item_key, $quantity);
+            $updated = true;
+            break;
+        }
+    }
+
+    if ($updated) {
+        $cart->calculate_totals();
+        wp_send_json_success([
+            'message' => 'Cart updated successfully',
+            'quantity' => $quantity,
+            'total' => $cart->get_total('edit')
+        ]);
+    } else {
+        wp_send_json_error(['message' => 'Product not found in cart']);
+    }
 });
 
 add_action('woocommerce_checkout_process', function () {
