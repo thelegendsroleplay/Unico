@@ -166,7 +166,6 @@ class Unico_Init {
         add_rewrite_endpoint('support-dashboard', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('finance-dashboard', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('management-dashboard', EP_ROOT | EP_PAGES);
-        add_rewrite_endpoint('email-verification', EP_ROOT | EP_PAGES);
 
         flush_rewrite_rules();
     }

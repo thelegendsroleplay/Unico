@@ -87,61 +87,6 @@ add_action('admin_init', function() {
     update_option('unico_checkout_page_fixed', true);
 });
 
-// Fix Email Verification Page (runs once)
-add_action('admin_init', function() {
-    // Check if already fixed
-    if (get_option('unico_email_verification_page_fixed_v2')) {
-        return;
-    }
-
-    // Find or create the email verification page
-    $verification_page = get_page_by_path('email-verification');
-    $needs_flush = false;
-
-    if ($verification_page) {
-        // Page exists, ensure template is assigned
-        $current_template = get_post_meta($verification_page->ID, '_wp_page_template', true);
-        if ($current_template !== 'page-email-verification.php') {
-            update_post_meta($verification_page->ID, '_wp_page_template', 'page-email-verification.php');
-            error_log('Unico: Updated email verification page template (ID: ' . $verification_page->ID . ')');
-            $needs_flush = true;
-        }
-        // Ensure page is published
-        if ($verification_page->post_status !== 'publish') {
-            wp_update_post([
-                'ID' => $verification_page->ID,
-                'post_status' => 'publish'
-            ]);
-            error_log('Unico: Published email verification page (ID: ' . $verification_page->ID . ')');
-            $needs_flush = true;
-        }
-    } else {
-        // Create email verification page
-        $page_id = wp_insert_post([
-            'post_title' => 'Email Verification',
-            'post_name' => 'email-verification',
-            'post_status' => 'publish',
-            'post_type' => 'page',
-            'post_content' => '',
-        ]);
-
-        if ($page_id && !is_wp_error($page_id)) {
-            update_post_meta($page_id, '_wp_page_template', 'page-email-verification.php');
-            error_log('Unico: Created email verification page (ID: ' . $page_id . ')');
-            $needs_flush = true;
-        }
-    }
-
-    // Flush rewrite rules if page was created or updated
-    if ($needs_flush) {
-        flush_rewrite_rules();
-        error_log('Unico: Flushed rewrite rules for email verification page');
-    }
-
-    // Mark as fixed so this doesn't run again
-    update_option('unico_email_verification_page_fixed_v2', true);
-});
-
 if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
     define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
 }
@@ -167,7 +112,6 @@ function unico_get_required_pages() {
         'register' => array('title' => 'Register', 'template' => 'page-register.php'),
         'forgot-password' => array('title' => 'Forgot Password', 'template' => 'page-forgot-password.php'),
         'reset-password' => array('title' => 'Reset Password', 'template' => 'page-reset-password.php'),
-        'email-verification' => array('title' => 'Email Verification', 'template' => 'page-email-verification.php'),
         'checkout' => array('title' => 'Checkout', 'template' => 'page-checkout.php'),
         'about-us' => array('title' => 'About Us', 'template' => 'page-about-us.php')
     );
@@ -721,46 +665,6 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
         } else {
             wp_send_json_error(['message' => 'Invalid or expired verification code']);
         }
-    }
-    wp_send_json_error(['message' => 'Security system not available']);
-});
-
-// Add AJAX handler for Email Verification
-add_action('wp_ajax_unico_send_email_verification', function() {
-    check_ajax_referer('unico_email_verification', 'nonce');
-
-    $user_id = get_current_user_id();
-    if (!$user_id) {
-        wp_send_json_error(['message' => 'User not logged in']);
-    }
-
-    if (class_exists('Unico_Security')) {
-        $security = Unico_Security::get_instance();
-        $result = $security->send_verification_email($user_id);
-
-        if ($result && isset($result['success']) && $result['success']) {
-            wp_send_json_success(['message' => 'Verification email sent successfully']);
-        } else {
-            $error_msg = isset($result['message']) ? $result['message'] : 'Failed to send verification email';
-            wp_send_json_error(['message' => $error_msg]);
-        }
-    }
-    wp_send_json_error(['message' => 'Security system not available']);
-});
-
-add_action('wp_ajax_unico_check_email_verified', function() {
-    check_ajax_referer('unico_email_verification', 'nonce');
-
-    $user_id = get_current_user_id();
-    if (!$user_id) {
-        wp_send_json_error(['message' => 'User not logged in']);
-    }
-
-    if (class_exists('Unico_Security')) {
-        $security = Unico_Security::get_instance();
-        $is_verified = $security->is_email_verified($user_id);
-
-        wp_send_json_success(['verified' => $is_verified]);
     }
     wp_send_json_error(['message' => 'Security system not available']);
 });
