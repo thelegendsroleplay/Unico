@@ -539,6 +539,24 @@ function unico_cart_has_voucher_items() {
     return false;
 }
 
+// Enable file uploads in WooCommerce checkout form
+add_filter('woocommerce_checkout_posted_data', function($data) {
+    // Ensure files are included in checkout data
+    if (isset($_FILES['voucher_payment_receipt'])) {
+        $data['voucher_payment_receipt_uploaded'] = !empty($_FILES['voucher_payment_receipt']['name']);
+    }
+    return $data;
+});
+
+// Add enctype to checkout form for file uploads
+add_action('woocommerce_before_checkout_form', function() {
+    echo '<script>
+    jQuery(document).ready(function($) {
+        $("form.checkout").attr("enctype", "multipart/form-data");
+    });
+    </script>';
+});
+
 add_filter('woocommerce_add_to_cart_redirect', function ($url) {
     if (!isset($_REQUEST['add-to-cart'])) {
         return $url;
@@ -761,14 +779,23 @@ add_action('woocommerce_checkout_process', function () {
     if (empty($_POST['voucher_terms_confirmed'])) {
         wc_add_notice('Please confirm accuracy and non-refundable terms before placing your order.', 'error');
     }
-    if (empty($_POST['voucher_payment_reference'])) {
-        wc_add_notice('Transaction ID is required to complete your order.', 'error');
-    }
-    if (!isset($_FILES['voucher_payment_receipt']) || empty($_FILES['voucher_payment_receipt']['name'])) {
-        wc_add_notice('Upload of payment receipt image is required to complete your order.', 'error');
-    }
     $mode = isset($_POST['voucher_payment_mode']) ? sanitize_text_field(wp_unslash($_POST['voucher_payment_mode'])) : '';
     $qty = unico_get_voucher_cart_quantity();
+
+    // Validate payment details based on payment mode
+    if ($mode === 'bank_transfer') {
+        if (empty($_POST['voucher_payment_reference'])) {
+            wc_add_notice('Transaction ID is required for bank transfer.', 'error');
+        }
+        // Check file upload
+        $file_uploaded = isset($_FILES['voucher_payment_receipt']) &&
+                        !empty($_FILES['voucher_payment_receipt']['name']) &&
+                        $_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK;
+
+        if (!$file_uploaded) {
+            wc_add_notice('Payment receipt image is required for bank transfer.', 'error');
+        }
+    }
     if ($mode === 'card_payment' && $qty > 3) {
         wc_add_notice('Card Payment is limited to 3 units. Reduce quantity or choose Bank Transfer.', 'error');
     }
