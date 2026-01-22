@@ -548,14 +548,30 @@ add_filter('woocommerce_checkout_posted_data', function($data) {
     return $data;
 });
 
-// Add enctype to checkout form for file uploads
+// Add enctype to checkout form for file uploads - CRITICAL for file uploads to work
 add_action('woocommerce_before_checkout_form', function() {
-    echo '<script>
-    jQuery(document).ready(function($) {
-        $("form.checkout").attr("enctype", "multipart/form-data");
-    });
-    </script>';
-});
+    if (unico_cart_has_voucher_items()) {
+        echo '<script type="text/javascript">
+        // Add enctype IMMEDIATELY - do not wait for document ready
+        (function() {
+            var checkoutForm = document.querySelector("form.checkout");
+            if (checkoutForm) {
+                checkoutForm.setAttribute("enctype", "multipart/form-data");
+                console.log("✅ Checkout form enctype set to multipart/form-data");
+            } else {
+                // Retry after a brief delay if form not found yet
+                setTimeout(function() {
+                    var form = document.querySelector("form.checkout");
+                    if (form) {
+                        form.setAttribute("enctype", "multipart/form-data");
+                        console.log("✅ Checkout form enctype set (delayed)");
+                    }
+                }, 100);
+            }
+        })();
+        </script>';
+    }
+}, 1); // Priority 1 to run very early
 
 add_filter('woocommerce_add_to_cart_redirect', function ($url) {
     if (!isset($_REQUEST['add-to-cart'])) {
@@ -785,15 +801,40 @@ add_action('woocommerce_checkout_process', function () {
     // Validate payment details based on payment mode
     if ($mode === 'bank_transfer') {
         if (empty($_POST['voucher_payment_reference'])) {
-            wc_add_notice('Transaction ID is required for bank transfer.', 'error');
+            wc_add_notice('❌ Transaction ID is required for bank transfer.', 'error');
         }
-        // Check file upload
-        $file_uploaded = isset($_FILES['voucher_payment_receipt']) &&
-                        !empty($_FILES['voucher_payment_receipt']['name']) &&
-                        $_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK;
+
+        // Check file upload with detailed error messages
+        $file_uploaded = false;
+        $upload_error = '';
+
+        if (!isset($_FILES['voucher_payment_receipt'])) {
+            $upload_error = 'No file field found in submission.';
+        } elseif (empty($_FILES['voucher_payment_receipt']['name'])) {
+            $upload_error = 'No file selected. Please choose a receipt image.';
+        } elseif ($_FILES['voucher_payment_receipt']['error'] !== UPLOAD_ERR_OK) {
+            $error_code = $_FILES['voucher_payment_receipt']['error'];
+            switch ($error_code) {
+                case UPLOAD_ERR_INI_SIZE:
+                case UPLOAD_ERR_FORM_SIZE:
+                    $upload_error = 'File too large. Maximum size is 5MB.';
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $upload_error = 'File upload incomplete. Please try again.';
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                    $upload_error = 'No file was uploaded. Please select a receipt image.';
+                    break;
+                default:
+                    $upload_error = 'Upload error occurred. Please try again.';
+            }
+        } else {
+            $file_uploaded = true;
+        }
 
         if (!$file_uploaded) {
-            wc_add_notice('Payment receipt image is required for bank transfer.', 'error');
+            wc_add_notice('❌ Payment Receipt Required: ' . $upload_error, 'error');
+            error_log('Unico Checkout: File upload failed - ' . $upload_error);
         }
     }
     if ($mode === 'card_payment' && $qty > 3) {

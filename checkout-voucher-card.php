@@ -310,10 +310,26 @@ if (!defined('ABSPATH')) {
             <input type="text" name="voucher_payment_reference" placeholder="Transaction ID...">
         </div>
         <div class="unico-field unico-upload-field">
-            <label>Upload Transfer Receipt</label>
-            <div class="unico-upload-shell">
-                <input type="file" name="voucher_payment_receipt" accept="image/*" class="unico-upload-input">
-                <span class="unico-upload-placeholder">Click to upload receipt</span>
+            <label>Upload Transfer Receipt <span style="color: #dc3545;">*</span></label>
+            <p style="font-size: 12px; color: #6c757d; margin: 5px 0 10px;">
+                📄 Supported formats: JPG, PNG, GIF, WEBP (Max 5MB)
+            </p>
+            <div class="unico-upload-shell" style="position: relative; border: 2px dashed #ced4da; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; background: #f8f9fa; transition: all 0.3s;">
+                <input type="file" name="voucher_payment_receipt" id="unico-receipt-upload" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="unico-upload-input" style="position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer;">
+                <div id="unico-upload-content">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6c757d" stroke-width="2" style="margin: 0 auto 10px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span class="unico-upload-placeholder" style="display: block; color: #6c757d; font-size: 14px;">📎 Click to upload receipt or drag & drop</span>
+                    <span id="unico-file-name" style="display: none; color: #28a745; font-weight: 600; font-size: 14px; margin-top: 10px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2" style="display: inline; vertical-align: middle;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span id="unico-file-name-text"></span>
+                    </span>
+                </div>
             </div>
         </div>
         <div class="unico-confirm-row">
@@ -452,6 +468,80 @@ if (!defined('ABSPATH')) {
 
         // Initialize on page load
         initializeDisplay();
+
+        // Handle file upload feedback
+        $('#unico-receipt-upload').on('change', function() {
+            var file = this.files[0];
+            var $uploadShell = $('.unico-upload-shell');
+            var $placeholder = $('.unico-upload-placeholder');
+            var $fileName = $('#unico-file-name');
+            var $fileNameText = $('#unico-file-name-text');
+
+            if (file) {
+                // Validate file size (5MB = 5 * 1024 * 1024 bytes)
+                var maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    alert('⚠️ File too large! Maximum size is 5MB.\n\nYour file: ' + (file.size / 1024 / 1024).toFixed(2) + ' MB\n\nPlease choose a smaller file.');
+                    $(this).val(''); // Clear the input
+                    return;
+                }
+
+                // Validate file type
+                var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('⚠️ Invalid file type!\n\nAllowed formats: JPG, PNG, GIF, WEBP\n\nYour file type: ' + file.type);
+                    $(this).val(''); // Clear the input
+                    return;
+                }
+
+                // Show success feedback
+                $placeholder.hide();
+                $fileNameText.text(file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)');
+                $fileName.show();
+                $uploadShell.css({
+                    'border-color': '#28a745',
+                    'background': '#d4edda'
+                });
+
+                console.log('✅ File selected:', file.name, 'Size:', (file.size / 1024).toFixed(0) + ' KB');
+            } else {
+                // Reset to default state
+                $fileName.hide();
+                $placeholder.show();
+                $uploadShell.css({
+                    'border-color': '#ced4da',
+                    'background': '#f8f9fa'
+                });
+            }
+        });
+
+        // Drag and drop support
+        $('.unico-upload-shell').on('dragover', function(e) {
+            e.preventDefault();
+            $(this).css({
+                'border-color': '#007bff',
+                'background': '#e7f3ff'
+            });
+        });
+
+        $('.unico-upload-shell').on('dragleave', function(e) {
+            e.preventDefault();
+            var $uploadShell = $(this);
+            var hasFile = $('#unico-receipt-upload')[0].files.length > 0;
+            $uploadShell.css({
+                'border-color': hasFile ? '#28a745' : '#ced4da',
+                'background': hasFile ? '#d4edda' : '#f8f9fa'
+            });
+        });
+
+        $('.unico-upload-shell').on('drop', function(e) {
+            e.preventDefault();
+            var files = e.originalEvent.dataTransfer.files;
+            if (files.length > 0) {
+                $('#unico-receipt-upload')[0].files = files;
+                $('#unico-receipt-upload').trigger('change');
+            }
+        });
     });
     </script>
 </div>
