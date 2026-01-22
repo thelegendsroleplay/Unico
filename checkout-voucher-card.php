@@ -27,17 +27,80 @@ if (!defined('ABSPATH')) {
                     <line x1="12" y1="9" x2="12" y2="13"></line>
                     <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
-                <div>
+                <div style="flex-grow: 1;">
                     <strong style="color: #856404; display: block; margin-bottom: 6px;">⚠️ Email Verification Required</strong>
-                    <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5;">
+                    <p style="color: #856404; margin: 0; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
                         You must verify your email (<strong><?php echo esc_html($user_email); ?></strong>) before completing this purchase.
                     </p>
-                    <a href="<?php echo home_url('/email-verification?redirect=checkout'); ?>" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background: #856404; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 13px;">
-                        Verify Email Now →
-                    </a>
+
+                    <div id="unico-email-verify-step-1">
+                        <button type="button" id="unico-send-email-verify-btn" style="padding: 8px 16px; background: #856404; color: #fff; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;">
+                            Send Verification Email
+                        </button>
+                    </div>
+
+                    <div id="unico-email-verify-step-2" style="display: none; margin-top: 10px;">
+                        <p style="color: #155724; font-size: 13px; background: #d4edda; padding: 10px; border-radius: 6px; margin: 0;">
+                            ✓ Verification email sent! Check your inbox at <strong><?php echo esc_html($user_email); ?></strong> and click the verification link.
+                        </p>
+                        <p style="color: #6c757d; font-size: 12px; margin-top: 8px;">
+                            This page will refresh automatically once you verify.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Email verification button
+            $('#unico-send-email-verify-btn').on('click', function() {
+                var btn = $(this);
+                btn.prop('disabled', true).text('Sending...');
+
+                $.ajax({
+                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                    type: 'POST',
+                    data: {
+                        action: 'unico_send_email_verification',
+                        nonce: '<?php echo wp_create_nonce('unico_email_verification'); ?>'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#unico-email-verify-step-1').hide();
+                            $('#unico-email-verify-step-2').show();
+
+                            // Poll every 3 seconds to check if email is verified
+                            var checkInterval = setInterval(function() {
+                                $.ajax({
+                                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                                    type: 'POST',
+                                    data: {
+                                        action: 'unico_check_email_verified',
+                                        nonce: '<?php echo wp_create_nonce('unico_email_verification'); ?>'
+                                    },
+                                    success: function(checkResponse) {
+                                        if (checkResponse.success && checkResponse.data.verified) {
+                                            clearInterval(checkInterval);
+                                            location.reload();
+                                        }
+                                    }
+                                });
+                            }, 3000);
+                        } else {
+                            btn.prop('disabled', false).text('Send Verification Email');
+                            alert(response.data.message || 'Failed to send verification email');
+                        }
+                    },
+                    error: function() {
+                        btn.prop('disabled', false).text('Send Verification Email');
+                        alert('Error sending request.');
+                    }
+                });
+            });
+        });
+        </script>
+
     <?php else: ?>
         <div class="unico-verification-badge" style="background: #d4edda; border: 2px solid #c3e6cb; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 10px;">

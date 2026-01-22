@@ -725,6 +725,46 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
     wp_send_json_error(['message' => 'Security system not available']);
 });
 
+// Add AJAX handler for Email Verification
+add_action('wp_ajax_unico_send_email_verification', function() {
+    check_ajax_referer('unico_email_verification', 'nonce');
+
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in']);
+    }
+
+    if (class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        $result = $security->send_verification_email($user_id);
+
+        if ($result && isset($result['success']) && $result['success']) {
+            wp_send_json_success(['message' => 'Verification email sent successfully']);
+        } else {
+            $error_msg = isset($result['message']) ? $result['message'] : 'Failed to send verification email';
+            wp_send_json_error(['message' => $error_msg]);
+        }
+    }
+    wp_send_json_error(['message' => 'Security system not available']);
+});
+
+add_action('wp_ajax_unico_check_email_verified', function() {
+    check_ajax_referer('unico_email_verification', 'nonce');
+
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error(['message' => 'User not logged in']);
+    }
+
+    if (class_exists('Unico_Security')) {
+        $security = Unico_Security::get_instance();
+        $is_verified = $security->is_email_verified($user_id);
+
+        wp_send_json_success(['verified' => $is_verified]);
+    }
+    wp_send_json_error(['message' => 'Security system not available']);
+});
+
 add_action('woocommerce_checkout_process', function () {
     if (!unico_cart_has_voucher_items()) {
         return;
