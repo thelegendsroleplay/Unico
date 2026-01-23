@@ -125,6 +125,20 @@ class Unico_Checkout {
 
         // Validate bank transfer fields
         if ($_POST['voucher_payment_mode'] === 'bank_transfer') {
+            if (empty($_POST['selected_bank_id'])) {
+                $this->add_error('Bank selection is missing. Please reload the page to get account details.');
+                return false;
+            }
+
+            if (class_exists('Unico_Bank_Accounts')) {
+                $bank_system = Unico_Bank_Accounts::get_instance();
+                $bank = $bank_system->get_bank(intval($_POST['selected_bank_id']));
+                if (!$bank || (int) $bank->is_active !== 1) {
+                    $this->add_error('Selected bank is no longer available. Please reload to get a new account.');
+                    return false;
+                }
+            }
+
             if (empty($_POST['voucher_payment_reference'])) {
                 $this->add_error('Transaction ID is required for bank transfer.');
                 return false;
@@ -159,7 +173,6 @@ class Unico_Checkout {
                             'png' => 'image/png',
                             'gif' => 'image/gif',
                             'webp' => 'image/webp',
-                            'pdf' => 'application/pdf',
                         ],
                     ]);
 
@@ -174,7 +187,7 @@ class Unico_Checkout {
             }
 
             if (!$has_valid_receipt) {
-                $this->add_error('Payment receipt is required. Please upload your bank transfer receipt.');
+                $this->add_error('Payment receipt is required. Please upload your bank transfer screenshot.');
                 return false;
             }
         }
@@ -276,9 +289,17 @@ class Unico_Checkout {
         // Add order note
         $order->add_note('Order created via custom checkout. Pending payment verification.');
 
+        if ($selected_bank_id) {
+            update_user_meta($user_id, 'unico_last_bank_id', $selected_bank_id);
+        }
+
         // Clear receipt from session
         if (isset($_SESSION['unico_receipt_upload'])) {
             unset($_SESSION['unico_receipt_upload']);
+        }
+
+        if (isset($_SESSION['unico_checkout_bank_id'])) {
+            unset($_SESSION['unico_checkout_bank_id']);
         }
 
         // Send admin notification email
@@ -308,7 +329,6 @@ class Unico_Checkout {
                 'png' => 'image/png',
                 'gif' => 'image/gif',
                 'webp' => 'image/webp',
-                'pdf' => 'application/pdf',
             ],
         ]);
 

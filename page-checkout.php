@@ -10,6 +10,10 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+if (!session_id()) {
+    session_start();
+}
+
 get_header();
 
 // Get cart instance
@@ -21,6 +25,33 @@ $is_empty = empty($cart_items);
 $checkout = Unico_Checkout::get_instance();
 $errors = $checkout->get_errors();
 $notices = $checkout->get_notices();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+    $post_max = ini_get('post_max_size');
+    $content_length = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+
+    $to_bytes = function ($value) {
+        $value = trim($value);
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+        switch ($unit) {
+            case 'g':
+                return (int) ($number * 1024 * 1024 * 1024);
+            case 'm':
+                return (int) ($number * 1024 * 1024);
+            case 'k':
+                return (int) ($number * 1024);
+            default:
+                return (int) $number;
+        }
+    };
+
+    if ($content_length > 0 && $content_length > $to_bytes($post_max)) {
+        $errors[] = 'Upload too large. Please use a smaller payment screenshot and try again.';
+    } else {
+        $errors[] = 'Your submission could not be processed. Please try again and ensure the form is fully completed.';
+    }
+}
 
 // Get current user and verification status
 $current_user = wp_get_current_user();
@@ -34,7 +65,30 @@ if (class_exists('Unico_Security')) {
 $selected_bank = null;
 if (class_exists('Unico_Bank_Accounts')) {
     $bank_system = Unico_Bank_Accounts::get_instance();
-    $selected_bank = $bank_system->get_random_active_bank();
+    $session_bank_id = isset($_SESSION['unico_checkout_bank_id']) ? intval($_SESSION['unico_checkout_bank_id']) : null;
+
+    if ($session_bank_id) {
+        $selected_bank = $bank_system->get_bank($session_bank_id);
+        if ($selected_bank && (int) $selected_bank->is_active !== 1) {
+            $selected_bank = null;
+        }
+    }
+
+    if (!$selected_bank) {
+        $last_bank_id = intval(get_user_meta(get_current_user_id(), 'unico_last_bank_id', true));
+        $selected_bank = $bank_system->get_random_active_bank($last_bank_id ? [$last_bank_id] : []);
+        if (!$selected_bank) {
+            $selected_bank = $bank_system->get_random_active_bank();
+        }
+        if ($selected_bank) {
+            $_SESSION['unico_checkout_bank_id'] = $selected_bank->id;
+        }
+    }
+}
+
+$bank_unavailable = !$is_empty && !$selected_bank;
+if ($bank_unavailable) {
+    $errors[] = 'Bank transfer is currently unavailable. Please contact support or try again later.';
 }
 ?>
 
@@ -347,26 +401,128 @@ if (class_exists('Unico_Bank_Accounts')) {
     font-weight: 600;
 }
 
-/* Payment Method */
-.payment-method {
-    display: inline-flex;
-    flex-direction: column;
-    padding: 16px 24px;
-    background: #103e54;
-    color: #fff;
-    border-radius: 14px;
-    font-weight: 600;
+/* Payment Methods */
+.payment-methods {
+    display: grid;
+    gap: 12px;
     margin-bottom: 20px;
 }
 
-.payment-method-name {
-    font-size: 15px;
+.payment-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 2px solid #e2e8f0;
+    background: #fff;
+    color: #0f172a;
+    transition: border-color 0.2s ease;
 }
 
-.payment-method-note {
+.payment-option.is-active {
+    border-color: #0f766e;
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
+}
+
+.payment-option.is-disabled {
+    opacity: 0.6;
+    background: #f8fafc;
+}
+
+.payment-option input {
+    margin-right: 10px;
+}
+
+.payment-option-title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.payment-option-note {
     font-size: 12px;
-    opacity: 0.8;
+    color: #64748b;
     margin-top: 4px;
+}
+
+.payment-option-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+}
+
+.payment-option.is-active .payment-option-badge {
+    background: #ccfbf1;
+    color: #0f766e;
+}
+
+/* OTP Modal */
+.otp-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.otp-modal.is-open {
+    display: flex;
+}
+
+.otp-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.otp-modal-card {
+    position: relative;
+    z-index: 2;
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px;
+    width: min(420px, 90vw);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.otp-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.otp-modal-text {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 18px;
+}
+
+.otp-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.otp-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.otp-modal .otp-input {
+    flex: 1;
+    min-width: 160px;
 }
 
 /* Bank Card */
@@ -709,21 +865,9 @@ if (class_exists('Unico_Bank_Accounts')) {
                                         We'll send a verification code to <strong><?php echo esc_html($current_user->user_email); ?></strong>
                                     </div>
 
-                                    <div id="otp-step-1">
-                                        <button type="button" id="unico-send-otp-btn" class="verification-btn">
-                                            Send Verification Code
-                                        </button>
-                                    </div>
-
-                                    <div id="otp-step-2" style="display: none;">
-                                        <div class="otp-input-row">
-                                            <input type="text" id="unico-otp-input" class="otp-input" placeholder="000000" maxlength="6">
-                                            <button type="button" id="unico-verify-otp-btn" class="verification-btn verify">
-                                                Verify
-                                            </button>
-                                        </div>
-                                        <div id="otp-message" class="otp-message"></div>
-                                    </div>
+                                    <button type="button" id="unico-open-otp-modal" class="verification-btn">
+                                        Verify with Email OTP
+                                    </button>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -773,9 +917,25 @@ if (class_exists('Unico_Bank_Accounts')) {
                                 </div>
 
                                 <!-- Payment Method -->
-                                <div class="payment-method">
-                                    <span class="payment-method-name">Bank Transfer</span>
-                                    <span class="payment-method-note">Limit 10 units per order</span>
+                                <div class="payment-methods">
+                                    <label class="payment-option is-active">
+                                        <div>
+                                            <div class="payment-option-title">
+                                                Bank Transfer
+                                            </div>
+                                            <div class="payment-option-note">Limit 10 units per order · Manual verification</div>
+                                        </div>
+                                        <span class="payment-option-badge">Enabled</span>
+                                    </label>
+                                    <label class="payment-option is-disabled">
+                                        <div>
+                                            <div class="payment-option-title">
+                                                Card Payment
+                                            </div>
+                                            <div class="payment-option-note">Coming soon · Disabled for now</div>
+                                        </div>
+                                        <span class="payment-option-badge">Disabled</span>
+                                    </label>
                                 </div>
 
                                 <!-- Bank Details -->
@@ -815,6 +975,25 @@ if (class_exists('Unico_Bank_Accounts')) {
                                                 </div>
                                             </div>
                                         <?php endif; ?>
+
+                                        <?php if (!empty($selected_bank->swift_code)): ?>
+                                            <div class="bank-field">
+                                                <div class="bank-field-label">SWIFT Code</div>
+                                                <div class="bank-field-value">
+                                                    <span class="bank-field-text" id="swift-code"><?php echo esc_html($selected_bank->swift_code); ?></span>
+                                                    <button type="button" class="copy-btn" onclick="copyToClipboard('swift-code', this)">Copy</button>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($selected_bank->branch_name)): ?>
+                                            <div class="bank-field">
+                                                <div class="bank-field-label">Branch Name</div>
+                                                <div class="bank-field-value">
+                                                    <span class="bank-field-text"><?php echo esc_html($selected_bank->branch_name); ?></span>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <input type="hidden" name="selected_bank_id" value="<?php echo esc_attr($selected_bank->id); ?>">
                                 <?php endif; ?>
@@ -831,15 +1010,15 @@ if (class_exists('Unico_Bank_Accounts')) {
                                 <!-- Receipt Upload -->
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label class="form-label">Upload Payment Receipt</label>
+                                        <label class="form-label">Upload Payment Screenshot</label>
                                         <div class="upload-box" id="upload-box">
                                             <input type="file" name="voucher_payment_receipt" id="receipt-input"
-                                                   accept="image/*,.pdf" required>
+                                                   accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" required>
                                             <div class="upload-icon">📄</div>
                                             <div class="upload-text">
                                                 <strong>Click to upload</strong> or drag and drop
                                             </div>
-                                            <div class="upload-hint">PNG, JPG, PDF up to 5MB</div>
+                                            <div class="upload-hint">PNG, JPG, or WEBP up to 5MB</div>
                                         </div>
                                         <div class="upload-preview" id="upload-preview"></div>
                                     </div>
@@ -853,7 +1032,9 @@ if (class_exists('Unico_Bank_Accounts')) {
                                 <input type="checkbox" name="voucher_terms_confirmed" value="1" required>
                                 <span>I confirm that the details provided are accurate and I agree to the non-refundable terms.</span>
                             </label>
-                            <button type="submit" class="submit-btn">Place Order</button>
+                            <button type="submit" class="submit-btn" <?php echo $bank_unavailable ? 'disabled' : ''; ?>>
+                                <?php echo $bank_unavailable ? 'Bank Unavailable' : 'Place Order'; ?>
+                            </button>
                         </div>
                     </div>
 
@@ -881,6 +1062,35 @@ if (class_exists('Unico_Bank_Accounts')) {
     </div>
 </div>
 
+<?php if (!$is_purchase_verified): ?>
+    <div class="otp-modal" id="otp-modal" aria-hidden="true">
+        <div class="otp-modal-overlay" data-otp-close></div>
+        <div class="otp-modal-card" role="dialog" aria-modal="true" aria-labelledby="otp-modal-title">
+            <button type="button" class="otp-modal-close" data-otp-close aria-label="Close">×</button>
+            <div class="otp-modal-title" id="otp-modal-title">Email OTP Verification</div>
+            <div class="otp-modal-text">
+                We will send a 6-digit code to <strong><?php echo esc_html($current_user->user_email); ?></strong>. Enter it below to verify this purchase.
+            </div>
+
+            <div id="otp-step-1">
+                <button type="button" id="unico-send-otp-btn" class="verification-btn">
+                    Send Verification Code
+                </button>
+            </div>
+
+            <div id="otp-step-2" style="display: none;">
+                <div class="otp-input-row">
+                    <input type="text" id="unico-otp-input" class="otp-input" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+                    <button type="button" id="unico-verify-otp-btn" class="verification-btn verify">
+                        Verify
+                    </button>
+                </div>
+            </div>
+            <div id="otp-message" class="otp-message" role="status" aria-live="polite"></div>
+        </div>
+    </div>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // File upload preview
@@ -899,6 +1109,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    var otpModal = document.getElementById('otp-modal');
+    var openOtpBtn = document.getElementById('unico-open-otp-modal');
+    var closeOtpBtns = document.querySelectorAll('[data-otp-close]');
+
+    function openOtpModal() {
+        if (!otpModal) return;
+        otpModal.classList.add('is-open');
+        otpModal.setAttribute('aria-hidden', 'false');
+        var input = document.getElementById('unico-otp-input');
+        if (input) {
+            input.focus();
+        }
+    }
+
+    function closeOtpModal() {
+        if (!otpModal) return;
+        otpModal.classList.remove('is-open');
+        otpModal.setAttribute('aria-hidden', 'true');
+    }
+
+    if (openOtpBtn) {
+        openOtpBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openOtpModal();
+        });
+    }
+
+    closeOtpBtns.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeOtpModal();
+        });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeOtpModal();
+        }
+    });
 
     // OTP Send Button
     var sendOtpBtn = document.getElementById('unico-send-otp-btn');
@@ -927,13 +1177,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         btn.disabled = false;
                         btn.textContent = 'Send Verification Code';
-                        alert(response.data.message || 'Failed to send code');
+                        document.getElementById('otp-message').textContent = response.data.message || 'Failed to send code';
+                        document.getElementById('otp-message').style.color = '#dc2626';
                     }
                 },
                 error: function() {
                     btn.disabled = false;
                     btn.textContent = 'Send Verification Code';
-                    alert('Network error. Please try again.');
+                    document.getElementById('otp-message').textContent = 'Network error. Please try again.';
+                    document.getElementById('otp-message').style.color = '#dc2626';
                 }
             });
         });
@@ -942,6 +1194,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // OTP Verify Button
     var verifyOtpBtn = document.getElementById('unico-verify-otp-btn');
     if (verifyOtpBtn) {
+        var otpInput = document.getElementById('unico-otp-input');
+        if (otpInput) {
+            otpInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            });
+        }
+
         verifyOtpBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -950,8 +1209,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var code = document.getElementById('unico-otp-input').value;
             var message = document.getElementById('otp-message');
 
-            if (!code || code.length < 4) {
-                message.textContent = 'Please enter the verification code';
+            if (!code || code.length < 6) {
+                message.textContent = 'Please enter the 6-digit verification code';
                 message.style.color = '#dc2626';
                 return;
             }
