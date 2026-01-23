@@ -16,6 +16,10 @@ if (!session_id()) {
 
 get_header();
 
+if (!session_id()) {
+    session_start();
+}
+
 // Get cart instance
 $cart = Unico_Cart::get_instance();
 $cart_items = $cart->get_cart();
@@ -793,6 +797,7 @@ if ($bank_unavailable) {
         align-items: center;
         justify-content: space-between;
     }
+}
 
     .checkout-total {
         margin-bottom: 0;
