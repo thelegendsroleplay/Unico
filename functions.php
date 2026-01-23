@@ -761,7 +761,9 @@ add_action('wp_enqueue_scripts', function () {
 
         wp_localize_script('unico-checkout-js', 'unicoCheckout', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('unico-checkout')
+            'nonce' => wp_create_nonce('unico-checkout'),
+            'nonce_verification' => wp_create_nonce('unico_purchase_verification'),
+            'nonce_update_cart' => wp_create_nonce('unico_update_cart')
         ]);
     }
 
