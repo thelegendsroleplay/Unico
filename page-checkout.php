@@ -16,6 +16,10 @@ if (!session_id()) {
 
 get_header();
 
+if (!session_id()) {
+    session_start();
+}
+
 // Get cart instance
 $cart = Unico_Cart::get_instance();
 $cart_items = $cart->get_cart();
@@ -453,6 +457,86 @@ if ($bank_unavailable) {
 
 .payment-option-badge {
     display: none;
+}
+
+/* OTP Modal */
+.otp-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.otp-modal.is-open {
+    display: flex;
+}
+
+.otp-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.otp-modal-card {
+    position: relative;
+    z-index: 2;
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px;
+    width: min(420px, 90vw);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.otp-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.otp-modal-text {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 18px;
+}
+
+.otp-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.otp-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.otp-modal .otp-input {
+    flex: 1;
+    min-width: 160px;
+}
+
+.payment-option-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+}
+
+.payment-option.is-active .payment-option-badge {
+    background: #ccfbf1;
+    color: #0f766e;
 }
 
 /* OTP Modal */
