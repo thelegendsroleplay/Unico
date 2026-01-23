@@ -10,6 +10,10 @@ if (!is_user_logged_in()) {
     exit;
 }
 
+if (!session_id()) {
+    session_start();
+}
+
 get_header();
 
 if (!session_id()) {
@@ -57,6 +61,11 @@ if (class_exists('Unico_Bank_Accounts')) {
             $_SESSION['unico_checkout_bank_id'] = $selected_bank->id;
         }
     }
+}
+
+$bank_unavailable = !$is_empty && !$selected_bank;
+if ($bank_unavailable) {
+    $errors[] = 'Bank transfer is currently unavailable. Please contact support or try again later.';
 }
 ?>
 
@@ -1000,7 +1009,9 @@ if (class_exists('Unico_Bank_Accounts')) {
                                 <input type="checkbox" name="voucher_terms_confirmed" value="1" required>
                                 <span>I confirm that the details provided are accurate and I agree to the non-refundable terms.</span>
                             </label>
-                            <button type="submit" class="submit-btn">Place Order</button>
+                            <button type="submit" class="submit-btn" <?php echo $bank_unavailable ? 'disabled' : ''; ?>>
+                                <?php echo $bank_unavailable ? 'Bank Unavailable' : 'Place Order'; ?>
+                            </button>
                         </div>
                     </div>
 
