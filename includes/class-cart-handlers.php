@@ -33,6 +33,34 @@ class Unico_Cart_Handlers {
 
         // Add to cart redirect filter
         add_filter('unico_add_to_cart_redirect', [$this, 'add_to_cart_redirect'], 10, 2);
+
+        // Clear cart on non-checkout pages
+        add_action('template_redirect', [$this, 'maybe_clear_cart']);
+    }
+
+    /**
+     * Clear cart if not on checkout page
+     */
+    public function maybe_clear_cart() {
+        if (is_admin() || (defined('DOING_AJAX') && DOING_AJAX)) {
+            return;
+        }
+
+        // If it's an add-to-cart request, skip (handled by handle_add_to_cart)
+        if (isset($_REQUEST['unico_add_to_cart']) || isset($_REQUEST['add-to-cart'])) {
+            return;
+        }
+
+        // If we are on checkout or order-received page, keep the cart
+        if (is_page('checkout') || is_page('order-received')) {
+            return;
+        }
+
+        // Otherwise, empty the cart
+        $cart = Unico_Cart::get_instance();
+        if (!$cart->is_empty()) {
+            $cart->empty_cart();
+        }
     }
 
     /**
@@ -82,6 +110,7 @@ class Unico_Cart_Handlers {
 
         // Add to cart
         $cart = Unico_Cart::get_instance();
+        $cart->empty_cart(); // Clear existing cart items
         $cart_item_key = $cart->add_to_cart($product_id, $quantity);
 
         if ($cart_item_key) {
@@ -133,6 +162,7 @@ class Unico_Cart_Handlers {
         }
 
         $cart = Unico_Cart::get_instance();
+        $cart->empty_cart(); // Clear existing cart items
         $cart_item_key = $cart->add_to_cart($product_id, $quantity);
 
         if ($cart_item_key) {
