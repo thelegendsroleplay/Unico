@@ -207,28 +207,50 @@ class Unico_Security {
      */
     public function send_purchase_otp($user_id) {
         $user = get_userdata($user_id);
-        if (!$user) return false;
+        if (!$user) {
+            return new WP_Error('invalid_user', 'Invalid user.');
+        }
 
-        $otp = rand(100000, 999999);
+        $rate_limit_key = 'unico_purchase_otp_rate_' . $user_id;
+        if (get_transient($rate_limit_key)) {
+            return new WP_Error('otp_throttled', 'Please wait 60 seconds before requesting another code.');
+        }
+
+        $otp = random_int(100000, 999999);
         set_transient('unico_purchase_otp_' . $user_id, $otp, 10 * 60); // 10 minutes
+        set_transient($rate_limit_key, true, 60);
+        delete_transient('unico_purchase_otp_attempts_' . $user_id);
 
         $subject = 'Purchase Verification Code - ' . get_bloginfo('name');
         $message = "Your verification code is: $otp\n\nThis code expires in 10 minutes.";
-        
-        return wp_mail($user->user_email, $subject, $message);
+
+        if (!wp_mail($user->user_email, $subject, $message)) {
+            return new WP_Error('otp_send_failed', 'Unable to send verification code. Please try again.');
+        }
+
+        return true;
     }
 
     /**
      * Verify Purchase OTP
      */
     public function verify_purchase_otp($user_id, $code) {
+        $attempt_key = 'unico_purchase_otp_attempts_' . $user_id;
+        $attempts = (int) get_transient($attempt_key);
+        if ($attempts >= 5) {
+            return new WP_Error('otp_locked', 'Too many attempts. Please request a new code.');
+        }
+
         $stored_otp = get_transient('unico_purchase_otp_' . $user_id);
-        if ($stored_otp && $stored_otp == $code) {
+        if ($stored_otp && hash_equals((string) $stored_otp, (string) $code)) {
             delete_transient('unico_purchase_otp_' . $user_id);
+            delete_transient($attempt_key);
             // Use a short transient for the verified session (e.g., 30 mins)
             set_transient('unico_purchase_verified_' . $user_id, true, 30 * 60);
             return true;
         }
+
+        set_transient($attempt_key, $attempts + 1, 10 * 60);
         return false;
     }
     
