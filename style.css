@@ -3,21 +3,532 @@ Theme Name: Unico Blank
 Theme URI: https://yourdomain.com
 Author: Unico
 Author URI: https://yourdomain.com
-Description: Ultra lightweight blank starter theme
-Version: 1.0
-Text Domain: unico-blank
+Description: Custom voucher booking system for exam vouchers
+Version: 2.0
+Text Domain: unico
 */
 
+/* =====================================================
+   GLOBAL CSS VARIABLES
+   ===================================================== */
+
 :root {
-    --unicou-dark-azure: #194f68;
-    --unicou-vivid-red: #e95134;
-    --unicou-charcoal: #4a4a4a;
-    --unicou-background: #ffffff;
-    --unicou-grey: #9ca3af;
+    /* Primary Colors */
+    --unico-primary: #103e54;
+    --unico-primary-dark: #0b3045;
+    --unico-primary-light: #194f68;
+
+    /* Accent Colors */
+    --unico-accent: #f97316;
+    --unico-accent-hover: #ea580c;
+    --unico-vivid-red: #e95134;
+
+    /* Status Colors */
+    --unico-success: #16a34a;
+    --unico-success-bg: #d4edda;
+    --unico-success-border: #c3e6cb;
+    --unico-danger: #ef4444;
+    --unico-danger-bg: #fef2f2;
+    --unico-danger-border: #fecaca;
+    --unico-warning: #f59e0b;
+    --unico-warning-bg: #fff3cd;
+    --unico-warning-border: #ffeaa7;
+    --unico-info: #3b82f6;
+    --unico-info-bg: #e8f4fd;
+    --unico-info-border: #bcd4f5;
+
+    /* Neutrals */
+    --unico-text: #0f172a;
+    --unico-text-muted: #6b7280;
+    --unico-text-light: #9ca3af;
+    --unico-border: #e5e7eb;
+    --unico-border-dark: #d1d5db;
+    --unico-bg: #f5f7fb;
+    --unico-bg-muted: #f8fafc;
+    --unico-card-bg: #ffffff;
+
+    /* Spacing */
+    --unico-space-xs: 4px;
+    --unico-space-sm: 8px;
+    --unico-space-md: 16px;
+    --unico-space-lg: 24px;
+    --unico-space-xl: 32px;
+    --unico-space-2xl: 48px;
+
+    /* Border Radius */
+    --unico-radius-sm: 8px;
+    --unico-radius: 16px;
+    --unico-radius-lg: 24px;
+    --unico-radius-xl: 32px;
+    --unico-radius-full: 9999px;
+
+    /* Shadows */
+    --unico-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --unico-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --unico-shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+    --unico-shadow-xl: 0 18px 40px rgba(15, 23, 42, 0.12);
+
+    /* Typography */
+    --unico-font-sans: 'Inter', 'DejaVu Sans', Tahoma, ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --unico-font-mono: 'Courier New', monospace;
+
+    /* Z-index layers */
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal: 300;
+    --z-toast: 400;
+}
+
+/* =====================================================
+   CSS RESET & BASE STYLES
+   ===================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
 }
 
 body {
-    font-family: "DejaVu Sans", Tahoma, ui-sans-serif, system-ui;
-    color: var(--unicou-charcoal);
-    background-color: var(--unicou-background);
+    font-family: var(--unico-font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--unico-text);
+    background-color: var(--unico-bg);
+    min-height: 100vh;
+}
+
+/* =====================================================
+   TYPOGRAPHY
+   ===================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--unico-text);
+}
+
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.875rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+    margin-bottom: 1rem;
+}
+
+a {
+    color: var(--unico-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--unico-accent);
+}
+
+/* =====================================================
+   FORM ELEMENTS
+   ===================================================== */
+
+input, textarea, select, button {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+input[type="search"],
+textarea,
+select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--unico-border);
+    border-radius: var(--unico-radius-sm);
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--unico-primary);
+    box-shadow: 0 0 0 3px rgba(16, 62, 84, 0.1);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--unico-text-light);
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+/* Container */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--unico-space-md);
+}
+
+/* Text alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Display */
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-grid { display: grid; }
+
+/* Flex utilities */
+.flex-wrap { flex-wrap: wrap; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.items-center { align-items: center; }
+.gap-sm { gap: var(--unico-space-sm); }
+.gap-md { gap: var(--unico-space-md); }
+.gap-lg { gap: var(--unico-space-lg); }
+
+/* Spacing */
+.mb-0 { margin-bottom: 0; }
+.mb-sm { margin-bottom: var(--unico-space-sm); }
+.mb-md { margin-bottom: var(--unico-space-md); }
+.mb-lg { margin-bottom: var(--unico-space-lg); }
+.mb-xl { margin-bottom: var(--unico-space-xl); }
+
+.mt-0 { margin-top: 0; }
+.mt-sm { margin-top: var(--unico-space-sm); }
+.mt-md { margin-top: var(--unico-space-md); }
+.mt-lg { margin-top: var(--unico-space-lg); }
+
+/* =====================================================
+   BUTTONS
+   ===================================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: var(--unico-radius-full);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--unico-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--unico-primary-dark);
+    color: white;
+}
+
+.btn-accent {
+    background: var(--unico-accent);
+    color: white;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+.btn-accent:hover {
+    background: var(--unico-accent-hover);
+    transform: translateY(-1px);
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid var(--unico-primary);
+    color: var(--unico-primary);
+}
+
+.btn-outline:hover {
+    background: var(--unico-primary);
+    color: white;
+}
+
+/* =====================================================
+   CARDS
+   ===================================================== */
+
+.card {
+    background: var(--unico-card-bg);
+    border-radius: var(--unico-radius);
+    padding: var(--unico-space-lg);
+    border: 1px solid var(--unico-border);
+    box-shadow: var(--unico-shadow);
+}
+
+.card-elevated {
+    box-shadow: var(--unico-shadow-xl);
+}
+
+/* =====================================================
+   ALERTS
+   ===================================================== */
+
+.alert {
+    padding: var(--unico-space-md);
+    border-radius: var(--unico-radius-sm);
+    margin-bottom: var(--unico-space-md);
+}
+
+.alert-success {
+    background: var(--unico-success-bg);
+    border: 1px solid var(--unico-success-border);
+    color: #155724;
+}
+
+.alert-danger {
+    background: var(--unico-danger-bg);
+    border: 1px solid var(--unico-danger-border);
+    color: #991b1b;
+}
+
+.alert-warning {
+    background: var(--unico-warning-bg);
+    border: 1px solid var(--unico-warning-border);
+    color: #856404;
+}
+
+.alert-info {
+    background: var(--unico-info-bg);
+    border: 1px solid var(--unico-info-border);
+    color: #1e40af;
+}
+
+/* =====================================================
+   RESPONSIVE IMAGES
+   ===================================================== */
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* =====================================================
+   TABLES
+   ===================================================== */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--unico-border);
+}
+
+th {
+    font-weight: 600;
+    background: var(--unico-bg-muted);
+}
+
+/* =====================================================
+   FOOTER STYLES
+   ===================================================== */
+
+.unicou-footer {
+    background: var(--unico-primary);
+    color: white;
+    padding: 48px 0 24px;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+}
+
+.footer-col h4 {
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+}
+
+.footer-menu {
+    list-style: none;
+}
+
+.footer-menu li {
+    margin-bottom: 8px;
+}
+
+.footer-menu a {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.footer-menu a:hover {
+    color: white;
+}
+
+.footer-brand .brand-tagline {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+.footer-logo {
+    height: 48px;
+    width: auto;
+    filter: brightness(0) invert(1);
+    margin-bottom: 12px;
+}
+
+.office-list {
+    list-style: none;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.office-list li {
+    margin-bottom: 6px;
+}
+
+.office-list strong {
+    color: white;
+}
+
+.contact-email a {
+    color: var(--unico-accent);
+    font-weight: 600;
+}
+
+.footer-bottom {
+    max-width: 1200px;
+    margin: 32px auto 0;
+    padding: 16px 20px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* =====================================================
+   RESPONSIVE BREAKPOINTS
+   ===================================================== */
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    h1 { font-size: 2.75rem; }
+    h2 { font-size: 2.25rem; }
+    h3 { font-size: 1.75rem; }
+
+    .container {
+        padding: 0 var(--unico-space-lg);
+    }
+
+    .footer-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+    .footer-container {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+}
+
+/* =====================================================
+   ACCESSIBILITY
+   ===================================================== */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--unico-primary);
+    outline-offset: 2px;
+}
+
+/* Skip link for screen readers */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--unico-primary);
+    color: white;
+    padding: 8px 16px;
+    z-index: 1000;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* =====================================================
+   PRINT STYLES
+   ===================================================== */
+
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+
+    .site-header,
+    .unicou-footer,
+    .btn {
+        display: none;
+    }
+
+    a {
+        text-decoration: underline;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
 }

@@ -1,52 +1,170 @@
 /* =====================================================
-   UNICO – CHECKOUT PAGE FIXED LAYOUT (MOBILE FIRST)
+   UNICO CHECKOUT PAGE - FULLY CUSTOM STYLES
+   Mobile-First Responsive Design
    ===================================================== */
 
 /* ---------------------------------
-   CHECKOUT PAGE HEADER FIX (ONLY)
+   BASE RESET & VARIABLES
    --------------------------------- */
 
-.woocommerce-checkout header,
-.woocommerce-checkout .site-header {
-  padding: 12px 0 !important;
-  margin-bottom: 16px;
-}
-
-.woocommerce-checkout .site-header .container,
-.woocommerce-checkout header .container {
-  padding: 12px 24px !important;
-  border-radius: 16px !important;
-  box-shadow: none !important;
-}
-
-/* Logo scaling */
-.woocommerce-checkout .site-header img,
-.woocommerce-checkout header img {
-  max-height: 44px;
-}
-
-/* Navigation spacing */
-.woocommerce-checkout nav ul {
-  gap: 18px;
+:root {
+    --unico-primary: #103e54;
+    --unico-primary-dark: #0b3045;
+    --unico-accent: #f97316;
+    --unico-accent-hover: #ea580c;
+    --unico-success: #16a34a;
+    --unico-success-bg: #d4edda;
+    --unico-success-border: #c3e6cb;
+    --unico-danger: #ef4444;
+    --unico-danger-bg: #fef2f2;
+    --unico-danger-border: #fecaca;
+    --unico-info-bg: #e2e3e5;
+    --unico-info-border: #d6d8db;
+    --unico-text: #0f172a;
+    --unico-text-muted: #6b7280;
+    --unico-border: #e5e7eb;
+    --unico-bg: #f5f7fb;
+    --unico-card-bg: #ffffff;
+    --unico-radius: 16px;
+    --unico-radius-lg: 28px;
+    --unico-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
 }
 
 /* ---------------------------------
-   PAGE WRAPPER
+   PAGE WRAPPER & CONTAINER
    --------------------------------- */
 
 .unico-checkout-page-wrapper {
-  max-width: 100%;
-  margin: 0 auto 60px;
-  padding: 0 14px;
+    max-width: 100%;
+    margin: 0 auto 60px;
+    padding: 20px 14px 40px;
+    background: var(--unico-bg);
+    min-height: calc(100vh - 200px);
+}
+
+.unico-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0;
 }
 
 /* ---------------------------------
-   CHECKOUT NODE
+   PAGE TITLE
    --------------------------------- */
 
-.unico-checkout-node {
-  max-width: 100%;
-  margin: 12px auto 40px;
+.unico-page-title {
+    font-size: 28px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--unico-primary);
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* ---------------------------------
+   ALERTS & NOTICES
+   --------------------------------- */
+
+.unico-alert {
+    padding: 14px 18px;
+    border-radius: var(--unico-radius);
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.unico-alert p {
+    margin: 0 0 8px;
+}
+
+.unico-alert p:last-child {
+    margin-bottom: 0;
+}
+
+.unico-alert-danger {
+    background: var(--unico-danger-bg);
+    border: 2px solid var(--unico-danger-border);
+    color: #991b1b;
+}
+
+.unico-alert-info {
+    background: var(--unico-info-bg);
+    border: 2px solid var(--unico-info-border);
+    color: #383d41;
+}
+
+.unico-alert-success {
+    background: var(--unico-success-bg);
+    border: 2px solid var(--unico-success-border);
+    color: #155724;
+}
+
+/* ---------------------------------
+   EMPTY CART STATE
+   --------------------------------- */
+
+.unico-empty-cart {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--unico-card-bg);
+    border-radius: var(--unico-radius-lg);
+    box-shadow: var(--unico-shadow);
+}
+
+.unico-empty-cart p {
+    font-size: 18px;
+    color: var(--unico-text-muted);
+    margin-bottom: 20px;
+}
+
+.unico-empty-cart .unico-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    background: var(--unico-accent);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+.unico-empty-cart .unico-btn:hover {
+    background: var(--unico-accent-hover);
+    transform: translateY(-2px);
+}
+
+/* ---------------------------------
+   CHECKOUT FORM
+   --------------------------------- */
+
+.unico-checkout-form {
+    width: 100%;
+}
+
+/* ---------------------------------
+   CHECKOUT GRID (2-Column Layout)
+   --------------------------------- */
+
+.unico-checkout-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.unico-checkout-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.unico-checkout-sidebar {
+    width: 100%;
 }
 
 /* ---------------------------------
@@ -54,82 +172,148 @@
    --------------------------------- */
 
 .unico-checkout-card {
-  background: #ffffff;
-  border-radius: 28px;
-  padding: 22px 20px 26px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    background: var(--unico-card-bg);
+    border-radius: var(--unico-radius-lg);
+    padding: 22px 20px 26px;
+    border: 1px solid var(--unico-border);
+    box-shadow: var(--unico-shadow);
+    margin-bottom: 20px;
 }
 
 /* ---------------------------------
-   HEADER
+   CARD HEADER
    --------------------------------- */
 
 .unico-checkout-header {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .unico-checkout-label {
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #6b7280;
-  margin-bottom: 6px;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--unico-text-muted);
+    margin-bottom: 6px;
 }
 
 .unico-checkout-title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .unico-checkout-title {
-  font-size: 20px;
-  font-weight: 800;
-  text-transform: uppercase;
-  color: #103e54;
+    font-size: 20px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--unico-primary);
 }
 
 .unico-checkout-qty {
-  font-size: 12px;
-  color: #6b7280;
+    font-size: 12px;
+    color: var(--unico-text-muted);
 }
 
 /* ---------------------------------
-   FORM ROWS
+   FORM ROWS & FIELDS
    --------------------------------- */
 
 .unico-checkout-row {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
 }
 
 .unico-field {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .unico-field label {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6b7280;
-  margin-bottom: 6px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--unico-text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
 }
 
 .unico-field input[type="text"],
-.unico-field input[type="email"] {
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  padding: 12px 18px;
-  font-size: 14px;
-  outline: none;
+.unico-field input[type="email"],
+.unico-field input[type="tel"],
+.unico-field input[type="number"],
+.unico-field select,
+.unico-field textarea {
+    border-radius: 999px;
+    border: 1px solid var(--unico-border);
+    padding: 12px 18px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.unico-field input:focus {
-  border-color: #103e54;
+.unico-field textarea {
+    border-radius: var(--unico-radius);
+    min-height: 100px;
+    resize: vertical;
+}
+
+.unico-field input:focus,
+.unico-field select:focus,
+.unico-field textarea:focus {
+    border-color: var(--unico-primary);
+    box-shadow: 0 0 0 3px rgba(16, 62, 84, 0.1);
+}
+
+/* ---------------------------------
+   QUANTITY CONTROLS
+   --------------------------------- */
+
+.unico-qty-row {
+    margin-top: 4px;
+}
+
+.unico-qty-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.unico-qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--unico-border);
+    background: #f9fafb;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--unico-primary);
+}
+
+.unico-qty-btn:hover {
+    background: var(--unico-primary);
+    color: #fff;
+    border-color: var(--unico-primary);
+}
+
+.unico-qty-input {
+    width: 70px;
+    border-radius: 999px;
+    border: 1px solid var(--unico-border);
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
 }
 
 /* ---------------------------------
@@ -137,311 +321,49 @@
    --------------------------------- */
 
 .unico-checkout-methods {
-  margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
 }
 
 .unico-method-button {
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  color: #0f3b52;
+    border-radius: var(--unico-radius);
+    border: 2px solid var(--unico-border);
+    background: #f9fafb;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--unico-primary);
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 140px;
+}
+
+.unico-method-button:hover {
+    border-color: var(--unico-primary);
 }
 
 .unico-method-button.is-active {
-  background: #0f3b52;
-  border-color: #0f3b52;
-  color: #ffffff;
+    background: var(--unico-primary);
+    border-color: var(--unico-primary);
+    color: #ffffff;
 }
 
 .unico-method-note {
-  font-size: 11px;
-  opacity: 0.8;
-}
-
-/* ---------------------------------
-   UPLOAD FIELD
-   --------------------------------- */
-
-.unico-upload-field {
-  margin-bottom: 16px;
-}
-
-.unico-upload-shell {
-  position: relative;
-  border-radius: 18px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
-  padding: 14px;
-  text-align: center;
-}
-
-.unico-upload-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.unico-upload-placeholder {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: #9ca3af;
-}
-
-.unico-upload-error {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #ef4444;
-}
-
-.unico-qty-row {
-  margin-top: 4px;
-}
-
-.unico-qty-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.unico-qty-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.unico-qty-input {
-  width: 64px;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  padding: 6px 10px;
-  text-align: center;
-}
-
-/* ---------------------------------
-   CONFIRM CHECKBOX
-   --------------------------------- */
-
-.unico-confirm-row {
-  margin: 12px 0 16px;
-  font-size: 12px;
-  color: #0f3b52;
-}
-
-.unico-confirm-row input {
-  margin-right: 8px;
-}
-.unico-non-refundable {
-  color: #ef4444;          /* clean red */
-  font-weight: 800;
+    font-size: 11px;
+    opacity: 0.8;
+    font-weight: 500;
 }
 
 .unico-method-error {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #ef4444;
-}
-
-.woocommerce-checkout .woocommerce-error,
-.woocommerce-checkout .woocommerce-message,
-.woocommerce-checkout .woocommerce-info {
-  max-width: 600px;
-  margin: 16px auto 0;
-  padding: 12px 16px 12px 44px;
-  border-radius: 999px;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #991b1b;
-  font-size: 13px;
-  list-style: none;
-  position: relative;
-  box-sizing: border-box;
-}
-
-.woocommerce-checkout .woocommerce-error li,
-.woocommerce-checkout .woocommerce-message li,
-.woocommerce-checkout .woocommerce-info li {
-  list-style: none;
-}
-
-.woocommerce-checkout .woocommerce-error a,
-.woocommerce-checkout .woocommerce-message a,
-.woocommerce-checkout .woocommerce-info a {
-  color: #0f3b52;
-  font-weight: 600;
-  text-decoration: underline;
-}
-
-.woocommerce-checkout .woocommerce-error:before,
-.woocommerce-checkout .woocommerce-message:before,
-.woocommerce-checkout .woocommerce-info:before {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  background: #dc2626;
-  color: #ffffff;
-  line-height: 20px;
-  text-align: center;
-  font-size: 12px;
-}
-
-@media (max-width: 640px) {
-  .woocommerce-checkout .woocommerce-error,
-  .woocommerce-checkout .woocommerce-message,
-  .woocommerce-checkout .woocommerce-info {
-    max-width: 100%;
-    margin: 12px 10px 0;
-    padding: 10px 12px 10px 40px;
-    border-radius: 18px;
-    font-size: 12px;
-  }
-
-  .woocommerce-checkout .woocommerce-error:before,
-  .woocommerce-checkout .woocommerce-message:before,
-  .woocommerce-checkout .woocommerce-info:before {
-    left: 12px;
-  }
-}
-
-/* ---------------------------------
-   FOOTER
-   --------------------------------- */
-
-.unico-checkout-footer {
-  margin-top: 18px;
-  padding: 14px 16px;
-  border-radius: 22px;
-  background: #0f3b52;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* Total */
-
-.unico-total-label {
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #d1d5db;
-}
-
-.unico-total-value {
-  font-size: 20px;
-  font-weight: 800;
-  color: #ffffff;
-}
-
-.unico-total-symbol {
-  font-size: 16px;
-  margin-right: 4px;
-}
-
-.unico-total-currency {
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #9ca3af;
-  margin-left: 4px;
-}
-
-/* ---------------------------------
-   CONFIRM BUTTON
-   --------------------------------- */
-
-.unico-confirm-button {
-  width: 100%;
-  border: none;
-  border-radius: 9999px;
-  padding: 14px;
-  background: #f97316;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-}
-
-.unico-confirm-button:hover {
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
-  transform: translateY(-1px);
-}
-
-/* ---------------------------------
-   DESKTOP ENHANCEMENTS
-   --------------------------------- */
-
-@media (min-width: 768px) {
-
-  .unico-checkout-node {
-    max-width: 480px;
-    margin: 20px auto 48px;
-  }
-
-  .unico-checkout-card {
-    border-radius: 36px;
-    padding: 28px 28px 30px;
-  }
-
-  .unico-checkout-title-row {
-    flex-direction: row;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
-  .unico-checkout-row {
-    flex-direction: row;
-    gap: 16px;
-  }
-
-  .unico-checkout-footer {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    border-radius: 999px;
-    padding: 16px 20px;
-  }
-
-  .unico-confirm-button {
-    width: auto;
-    padding: 12px 28px;
-  }
-}
-
-/* ---------------------------------
-   WOOCOMMERCE CLEANUP
-   --------------------------------- */
-
-.woocommerce-checkout .woocommerce-billing-fields,
-.woocommerce-checkout .woocommerce-additional-fields,
-.woocommerce-checkout #order_review_heading,
-.woocommerce-checkout .woocommerce-checkout-review-order,
-.woocommerce-checkout .woocommerce-form-coupon-toggle,
-.woocommerce-checkout .woocommerce-form-login-toggle,
-.woocommerce-checkout .woocommerce-form-login,
-.woocommerce-checkout .woocommerce-form-coupon,
-.woocommerce-checkout #place_order {
-  display: none !important;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--unico-danger);
 }
 
 /* ---------------------------------
@@ -449,165 +371,441 @@
    --------------------------------- */
 
 .unico-bank-details {
-  margin: 20px 0;
+    margin: 20px 0;
 }
 
 .unico-bank-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  border: 2px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border: 2px solid #e2e8f0;
+    border-radius: var(--unico-radius);
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .unico-bank-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
 }
 
 .unico-bank-icon {
-  font-size: 28px;
-  line-height: 1;
+    font-size: 28px;
+    line-height: 1;
 }
 
 .unico-bank-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #194f68;
-  margin-bottom: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--unico-primary);
+    margin-bottom: 4px;
 }
 
 .unico-bank-subtitle {
-  font-size: 13px;
-  color: #64748b;
+    font-size: 13px;
+    color: #64748b;
 }
 
 .unico-bank-info {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.unico-bank-logo {
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.unico-bank-logo img {
-  max-width: 120px;
-  max-height: 60px;
-  object-fit: contain;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .unico-bank-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: #194f68;
-  text-align: center;
-  margin-bottom: 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--unico-primary);
+    text-align: center;
+    margin-bottom: 8px;
 }
 
 .unico-bank-field {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 12px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
 }
 
 .unico-bank-field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
 .unico-bank-value {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .unico-bank-value span {
-  font-size: 16px;
-  font-weight: 600;
-  color: #0f172a;
-  font-family: 'Courier New', monospace;
-  flex: 1;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--unico-text);
+    font-family: 'Courier New', monospace;
+    flex: 1;
+    word-break: break-all;
 }
 
 .unico-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #194f68;
-  background: #e8f4f8;
-  border: 1px solid #b8d4e0;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--unico-primary);
+    background: #e8f4f8;
+    border: 1px solid #b8d4e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .unico-copy-btn:hover {
-  background: #d1e8f0;
-  border-color: #9bc4d4;
-}
-
-.unico-copy-btn:active {
-  transform: scale(0.95);
+    background: #d1e8f0;
+    border-color: #9bc4d4;
 }
 
 .unico-copy-btn.copied {
-  background: #d4edda;
-  border-color: #c3e6cb;
-  color: #155724;
+    background: var(--unico-success-bg);
+    border-color: var(--unico-success-border);
+    color: #155724;
 }
 
-.unico-bank-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 20px;
-  padding: 14px;
-  background: #eff6ff;
-  border-left: 4px solid #2196f3;
-  border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #1e40af;
+/* ---------------------------------
+   FILE UPLOAD
+   --------------------------------- */
+
+.unico-upload-box {
+    position: relative;
+    border-radius: var(--unico-radius);
+    border: 2px dashed #d1d5db;
+    background: #f9fafb;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.2s ease;
 }
 
-.unico-bank-notice svg {
-  flex-shrink: 0;
-  margin-top: 2px;
+.unico-upload-box:hover {
+    border-color: var(--unico-primary);
+    background: #f0f7fa;
 }
 
-.unico-bank-notice strong {
-  font-weight: 700;
+.unico-upload-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
 }
 
-/* Responsive adjustments */
-@media (min-width: 480px) {
-  .unico-bank-card {
+.unico-upload-placeholder {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.unico-upload-error {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--unico-danger);
+}
+
+/* ---------------------------------
+   ORDER SUMMARY SIDEBAR
+   --------------------------------- */
+
+.unico-summary-card {
+    background: var(--unico-card-bg);
+    border-radius: var(--unico-radius-lg);
     padding: 24px;
-  }
+    border: 1px solid var(--unico-border);
+    box-shadow: var(--unico-shadow);
+    position: sticky;
+    top: 100px;
+}
 
-  .unico-bank-name {
-    font-size: 22px;
-  }
+.unico-summary-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--unico-primary);
+    margin: 0 0 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--unico-border);
+}
 
-  .unico-bank-value span {
-    font-size: 17px;
-  }
+.unico-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    font-size: 14px;
+    color: var(--unico-text-muted);
+}
+
+.unico-summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0 0;
+    margin-top: 12px;
+    border-top: 2px solid var(--unico-border);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--unico-text);
+}
+
+/* ---------------------------------
+   CHECKOUT FOOTER & TERMS
+   --------------------------------- */
+
+.unico-checkout-footer {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: var(--unico-radius-lg);
+    background: var(--unico-card-bg);
+    border: 1px solid var(--unico-border);
+    box-shadow: var(--unico-shadow);
+}
+
+.unico-terms-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--unico-text);
+    line-height: 1.5;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.unico-terms-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    accent-color: var(--unico-primary);
+}
+
+/* ---------------------------------
+   SUBMIT BUTTON
+   --------------------------------- */
+
+.unico-submit-btn {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 16px 28px;
+    background: var(--unico-accent);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 14px 30px rgba(249, 115, 22, 0.3);
+}
+
+.unico-submit-btn:hover {
+    background: var(--unico-accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(249, 115, 22, 0.4);
+}
+
+.unico-submit-btn:active {
+    transform: translateY(0);
+}
+
+.unico-submit-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ---------------------------------
+   VERIFICATION NOTICE & BADGE
+   --------------------------------- */
+
+.unico-verification-notice {
+    background: var(--unico-info-bg);
+    border: 2px solid var(--unico-info-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.unico-verification-badge {
+    background: var(--unico-success-bg);
+    border: 2px solid var(--unico-success-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+
+/* ---------------------------------
+   DESKTOP ENHANCEMENTS (768px+)
+   --------------------------------- */
+
+@media (min-width: 768px) {
+    .unico-checkout-page-wrapper {
+        padding: 30px 20px 60px;
+    }
+
+    .unico-page-title {
+        font-size: 36px;
+        text-align: left;
+    }
+
+    .unico-checkout-grid {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .unico-checkout-main {
+        flex: 1;
+    }
+
+    .unico-checkout-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+    }
+
+    .unico-checkout-card {
+        border-radius: 36px;
+        padding: 28px 28px 30px;
+    }
+
+    .unico-checkout-title-row {
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .unico-checkout-row {
+        flex-direction: row;
+        gap: 16px;
+    }
+
+    .unico-checkout-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .unico-submit-btn {
+        align-self: flex-end;
+        width: auto;
+        min-width: 200px;
+    }
+}
+
+/* ---------------------------------
+   LARGE DESKTOP (1024px+)
+   --------------------------------- */
+
+@media (min-width: 1024px) {
+    .unico-checkout-sidebar {
+        width: 360px;
+    }
+
+    .unico-checkout-card {
+        padding: 32px;
+    }
+}
+
+/* ---------------------------------
+   SMALL MOBILE (480px and below)
+   --------------------------------- */
+
+@media (max-width: 480px) {
+    .unico-checkout-page-wrapper {
+        padding: 16px 12px 40px;
+    }
+
+    .unico-page-title {
+        font-size: 24px;
+    }
+
+    .unico-checkout-card {
+        padding: 18px 16px 22px;
+        border-radius: 20px;
+    }
+
+    .unico-checkout-title {
+        font-size: 18px;
+    }
+
+    .unico-field input[type="text"],
+    .unico-field input[type="email"],
+    .unico-field input[type="tel"] {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .unico-method-button {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+
+    .unico-bank-card {
+        padding: 16px;
+    }
+
+    .unico-bank-title {
+        font-size: 16px;
+    }
+
+    .unico-bank-value span {
+        font-size: 14px;
+    }
+
+    .unico-summary-card {
+        padding: 20px;
+    }
+
+    .unico-submit-btn {
+        padding: 14px 20px;
+        font-size: 12px;
+    }
+}
+
+/* ---------------------------------
+   PRINT STYLES
+   --------------------------------- */
+
+@media print {
+    .unico-checkout-page-wrapper {
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .unico-checkout-card,
+    .unico-summary-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    .unico-submit-btn,
+    .unico-method-button,
+    .unico-qty-btn {
+        display: none;
+    }
 }
