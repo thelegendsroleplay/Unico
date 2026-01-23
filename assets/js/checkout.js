@@ -127,8 +127,18 @@ document.addEventListener('DOMContentLoaded', function () {
       fd.append('action', 'unico_upload_receipt');
       fd.append('voucher_payment_receipt', file);
 
+      // Add nonce if available
+      if (typeof unicoCheckout !== 'undefined' && unicoCheckout.nonce) {
+        fd.append('nonce', unicoCheckout.nonce);
+      }
+
       try {
-        const res = await fetch(wc_checkout_params.ajax_url, {
+        // Use wc_checkout_params if available, otherwise use localized unicoCheckout
+        var ajaxUrl = (typeof wc_checkout_params !== 'undefined' && wc_checkout_params.ajax_url)
+          ? wc_checkout_params.ajax_url
+          : (typeof unicoCheckout !== 'undefined' ? unicoCheckout.ajax_url : '/wp-admin/admin-ajax.php');
+
+        const res = await fetch(ajaxUrl, {
           method: 'POST',
           body: fd
         });
