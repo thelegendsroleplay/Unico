@@ -42,7 +42,12 @@ class Unico_Init {
             'class-voucher-system.php',
             'class-wallet.php',
             'class-pricing.php',
-            'class-application-form.php'
+            'class-application-form.php',
+            // Custom payment system (WooCommerce replacement)
+            'class-cart.php',
+            'class-order.php',
+            'class-checkout.php',
+            'class-cart-handlers.php',
         ];
 
         foreach ($classes as $class) {
@@ -83,13 +88,22 @@ class Unico_Init {
         $pricing = Unico_Pricing::get_instance();
         $application_form = Unico_Application_Form::get_instance();
 
+        // Initialize custom payment system
+        $cart = Unico_Cart::get_instance();
+        $checkout = Unico_Checkout::get_instance();
+        $cart_handlers = Unico_Cart_Handlers::get_instance();
+
         $db_version = get_option('unico_db_version');
-        if (!$db_version || version_compare($db_version, '1.2.0', '<')) {
+        if (!$db_version || version_compare($db_version, '1.3.0', '<')) {
             $database->create_tables();
             $user_roles->create_roles();
             $pricing->create_default_rules();
-            update_option('unico_db_version', '1.2.0');
+            update_option('unico_db_version', '1.3.0');
         }
+
+        // Add AJAX handlers for custom cart
+        add_action('wp_ajax_unico_update_cart_quantity_custom', [$this, 'ajax_update_cart_quantity']);
+        add_action('wp_ajax_nopriv_unico_update_cart_quantity_custom', [$this, 'ajax_update_cart_quantity']);
 
         // Register custom post types
         $this->register_post_types();
@@ -228,6 +242,36 @@ class Unico_Init {
                 }
             }
         });
+    }
+
+    /**
+     * AJAX: Update cart quantity (custom payment system)
+     */
+    public function ajax_update_cart_quantity() {
+        check_ajax_referer('unico_update_cart', 'nonce');
+
+        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
+        $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
+
+        if ($product_id < 1 || $quantity < 1) {
+            wp_send_json_error(['message' => 'Invalid product ID or quantity']);
+        }
+
+        $cart = Unico_Cart::get_instance();
+
+        // Find the cart item and update quantity
+        $cart_item_key = $cart->find_product_in_cart($product_id);
+
+        if ($cart_item_key) {
+            $cart->set_quantity($cart_item_key, $quantity);
+            wp_send_json_success([
+                'message' => 'Cart updated successfully',
+                'quantity' => $quantity,
+                'total' => $cart->get_total('edit')
+            ]);
+        } else {
+            wp_send_json_error(['message' => 'Product not found in cart']);
+        }
     }
 
     /**

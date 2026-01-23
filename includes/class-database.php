@@ -296,7 +296,86 @@ class Unico_Database {
         ) $charset_collate;";
         dbDelta($sql_bank_payments);
 
-        update_option('unico_db_version', '1.2.0');
+        // Table 14: Custom Orders System (replaces WooCommerce orders)
+        $table_orders = $wpdb->prefix . 'unico_orders';
+        $sql_orders = "CREATE TABLE $table_orders (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            order_number varchar(50) NOT NULL,
+            user_id bigint(20) NOT NULL,
+            customer_email varchar(255) NOT NULL,
+            customer_name varchar(255) NOT NULL,
+            customer_phone varchar(50) DEFAULT NULL,
+            order_status varchar(50) NOT NULL DEFAULT 'pending',
+            payment_method varchar(50) NOT NULL,
+            payment_status varchar(50) NOT NULL DEFAULT 'pending',
+            subtotal decimal(10,2) NOT NULL DEFAULT 0.00,
+            tax decimal(10,2) NOT NULL DEFAULT 0.00,
+            total decimal(10,2) NOT NULL DEFAULT 0.00,
+            currency varchar(10) NOT NULL DEFAULT 'USD',
+            payment_reference varchar(255) DEFAULT NULL,
+            payment_receipt_url text DEFAULT NULL,
+            payment_receipt_path text DEFAULT NULL,
+            selected_bank_id bigint(20) DEFAULT NULL,
+            bank_details longtext DEFAULT NULL,
+            verification_status varchar(50) DEFAULT NULL,
+            verified_by bigint(20) DEFAULT NULL,
+            verified_at datetime DEFAULT NULL,
+            rejection_reason text DEFAULT NULL,
+            vouchers_delivered tinyint(1) NOT NULL DEFAULT 0,
+            vouchers_delivered_at datetime DEFAULT NULL,
+            order_notes longtext DEFAULT NULL,
+            customer_ip varchar(45) DEFAULT NULL,
+            user_agent text DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY order_number (order_number),
+            KEY user_id (user_id),
+            KEY order_status (order_status),
+            KEY payment_status (payment_status),
+            KEY customer_email (customer_email),
+            KEY created_at (created_at)
+        ) $charset_collate;";
+        dbDelta($sql_orders);
+
+        // Table 15: Order Items (replaces WooCommerce order items)
+        $table_order_items = $wpdb->prefix . 'unico_order_items';
+        $sql_order_items = "CREATE TABLE $table_order_items (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            order_id bigint(20) NOT NULL,
+            product_id bigint(20) DEFAULT NULL,
+            product_name varchar(255) NOT NULL,
+            product_type varchar(100) DEFAULT NULL,
+            exam_name varchar(255) DEFAULT NULL,
+            quantity int(11) NOT NULL DEFAULT 1,
+            unit_price decimal(10,2) NOT NULL,
+            subtotal decimal(10,2) NOT NULL,
+            total decimal(10,2) NOT NULL,
+            tax decimal(10,2) NOT NULL DEFAULT 0.00,
+            meta_data longtext DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY order_id (order_id),
+            KEY product_id (product_id),
+            KEY exam_name (exam_name)
+        ) $charset_collate;";
+        dbDelta($sql_order_items);
+
+        // Table 16: Order Meta (for custom order metadata)
+        $table_order_meta = $wpdb->prefix . 'unico_order_meta';
+        $sql_order_meta = "CREATE TABLE $table_order_meta (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            order_id bigint(20) NOT NULL,
+            meta_key varchar(255) NOT NULL,
+            meta_value longtext DEFAULT NULL,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY order_id (order_id),
+            KEY meta_key (meta_key)
+        ) $charset_collate;";
+        dbDelta($sql_order_meta);
+
+        update_option('unico_db_version', '1.3.0');
 
         return true;
     }
@@ -320,7 +399,10 @@ class Unico_Database {
             'unico_pricing_rules',
             'unico_user_approvals',
             'unico_documents',
-            'unico_bank_payments'
+            'unico_bank_payments',
+            'unico_orders',
+            'unico_order_items',
+            'unico_order_meta'
         ];
 
         foreach ($tables as $table) {
