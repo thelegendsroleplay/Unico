@@ -270,10 +270,6 @@ class Unico_Checkout {
             unset($_SESSION['unico_checkout_bank_id']);
         }
 
-        if (isset($_SESSION['unico_checkout_bank_id'])) {
-            unset($_SESSION['unico_checkout_bank_id']);
-        }
-
         // Send admin notification email
         $this->send_admin_notification($order);
 

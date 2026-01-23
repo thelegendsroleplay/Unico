@@ -105,17 +105,17 @@ if ($bank_unavailable) {
 }
 
 .checkout-container {
-    max-width: 1140px;
+    max-width: 760px;
     margin: 0 auto;
 }
 
 .checkout-title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 800;
     color: #103e54;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
 }
 
 /* Alerts */
@@ -176,24 +176,20 @@ if ($bank_unavailable) {
 .checkout-grid {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
 }
 
 .checkout-main {
     flex: 1;
 }
 
-.checkout-sidebar {
-    width: 100%;
-}
-
 /* Cards */
 .checkout-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 24px 20px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
 }
 
 /* Verification Notice */
@@ -201,16 +197,16 @@ if ($bank_unavailable) {
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    padding: 18px 20px;
-    background: #f3f4f6;
-    border: 2px solid #d1d5db;
-    border-radius: 14px;
+    padding: 16px 18px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
     margin-bottom: 20px;
 }
 
 .verification-box.verified {
-    background: #d1fae5;
-    border-color: #a7f3d0;
+    background: #ecfdf3;
+    border-color: #bbf7d0;
 }
 
 .verification-icon {
@@ -311,30 +307,33 @@ if ($bank_unavailable) {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: #9ca3af;
+    color: #94a3b8;
     margin-bottom: 6px;
 }
 
 .card-title {
     font-size: 20px;
     font-weight: 800;
-    color: #103e54;
+    color: #0f172a;
     text-transform: uppercase;
     margin-bottom: 4px;
 }
 
 .card-qty {
-    font-size: 14px;
-    color: #6b7280;
-    font-weight: 600;
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 999px;
+    font-weight: 700;
 }
 
 /* Form Fields */
 .form-row {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .form-group {
@@ -343,27 +342,28 @@ if ($bank_unavailable) {
 
 .form-label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: #6b7280;
+    letter-spacing: 0.18em;
+    color: #94a3b8;
     margin-bottom: 8px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .form-input {
     width: 100%;
     padding: 14px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
-    font-size: 15px;
-    transition: border-color 0.2s;
-    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f8fafc;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #103e54;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
 /* Quantity Controls */
@@ -408,30 +408,34 @@ if ($bank_unavailable) {
 /* Payment Methods */
 .payment-methods {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
     margin-bottom: 20px;
 }
 
 .payment-option {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 18px;
-    border-radius: 14px;
-    border: 2px solid #e2e8f0;
-    background: #fff;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
     color: #0f172a;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    min-height: 80px;
+    justify-content: center;
 }
 
 .payment-option.is-active {
-    border-color: #0f766e;
-    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
+    border-color: #0f4c5c;
+    background: #0f4c5c;
+    color: #fff;
 }
 
 .payment-option.is-disabled {
     opacity: 0.6;
-    background: #f8fafc;
+    background: #f1f5f9;
 }
 
 .payment-option input {
@@ -439,14 +443,86 @@ if ($bank_unavailable) {
 }
 
 .payment-option-title {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .payment-option-note {
-    font-size: 12px;
+    font-size: 11px;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.payment-option-badge {
+    display: none;
+}
+
+/* OTP Modal */
+.otp-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.otp-modal.is-open {
+    display: flex;
+}
+
+.otp-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.otp-modal-card {
+    position: relative;
+    z-index: 2;
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px;
+    width: min(420px, 90vw);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.otp-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.otp-modal-text {
+    font-size: 14px;
+    color: #475569;
+    margin-bottom: 18px;
+}
+
+.otp-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
     color: #64748b;
-    margin-top: 4px;
+}
+
+.otp-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.otp-modal .otp-input {
+    flex: 1;
+    min-width: 160px;
 }
 
 .payment-option-badge {
@@ -531,20 +607,20 @@ if ($bank_unavailable) {
 
 /* Bank Card */
 .bank-card {
-    background: linear-gradient(135deg, #f8fafc, #fff);
-    border: 2px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
 }
 
 .bank-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .bank-icon {
@@ -563,19 +639,19 @@ if ($bank_unavailable) {
 }
 
 .bank-name {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
-    color: #103e54;
-    text-align: center;
-    margin-bottom: 16px;
+    color: #0f172a;
+    text-align: left;
+    margin-bottom: 12px;
 }
 
 .bank-field {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 12px;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
 }
 
 .bank-field:last-child {
@@ -626,11 +702,11 @@ if ($bank_unavailable) {
 /* File Upload */
 .upload-box {
     position: relative;
-    border: 2px dashed #d1d5db;
+    border: 1px dashed #cbd5f5;
     border-radius: 14px;
-    padding: 30px 20px;
+    padding: 20px;
     text-align: center;
-    background: #f9fafb;
+    background: #f8fafc;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -666,8 +742,8 @@ if ($bank_unavailable) {
 }
 
 .upload-hint {
-    font-size: 12px;
-    color: #9ca3af;
+    font-size: 11px;
+    color: #94a3b8;
     margin-top: 6px;
 }
 
@@ -682,64 +758,27 @@ if ($bank_unavailable) {
     font-weight: 500;
 }
 
-/* Order Summary */
-.summary-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 24px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    position: sticky;
-    top: 100px;
-}
-
-.summary-title {
-    font-size: 16px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #103e54;
-    margin-bottom: 20px;
-    padding-bottom: 14px;
-    border-bottom: 2px solid #e5e7eb;
-}
-
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    font-size: 14px;
-    color: #6b7280;
-}
-
-.summary-total {
-    display: flex;
-    justify-content: space-between;
-    padding: 16px 0 0;
-    margin-top: 12px;
-    border-top: 2px solid #e5e7eb;
-    font-size: 20px;
-    font-weight: 700;
-    color: #0f172a;
-}
-
 /* Terms & Submit */
 .checkout-footer {
-    background: #fff;
-    border-radius: 20px;
-    padding: 24px;
+    background: #0f4c5c;
+    border-radius: 24px;
+    padding: 18px;
     margin-top: 20px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    box-shadow: 0 16px 30px rgba(15, 76, 92, 0.25);
 }
 
 .terms-label {
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    font-size: 14px;
-    color: #374151;
+    font-size: 12px;
+    color: #1f2937;
     line-height: 1.5;
     cursor: pointer;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 12px 14px;
 }
 
 .terms-label input[type="checkbox"] {
@@ -752,24 +791,50 @@ if ($bank_unavailable) {
 
 .submit-btn {
     width: 100%;
-    padding: 18px 32px;
+    padding: 16px;
     background: #f97316;
     color: #fff;
     border: none;
-    border-radius: 14px;
-    font-size: 15px;
-    font-weight: 700;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.35);
+    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.35);
 }
 
 .submit-btn:hover {
     background: #ea580c;
     transform: translateY(-2px);
     box-shadow: 0 12px 30px rgba(249, 115, 22, 0.4);
+}
+
+.checkout-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.checkout-total span {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    opacity: 0.7;
+}
+
+.checkout-total strong {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.checkout-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 /* Desktop Styles */
@@ -779,22 +844,17 @@ if ($bank_unavailable) {
     }
 
     .checkout-title {
-        font-size: 36px;
+        font-size: 28px;
     }
 
     .checkout-grid {
-        flex-direction: row;
-        align-items: flex-start;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .checkout-main {
         flex: 1;
         min-width: 0;
-    }
-
-    .checkout-sidebar {
-        width: 340px;
-        flex-shrink: 0;
     }
 
     .checkout-card {
@@ -803,30 +863,36 @@ if ($bank_unavailable) {
     }
 
     .form-row {
-        flex-direction: row;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .submit-btn {
-        width: auto;
+        width: 50%;
         min-width: 220px;
-        float: right;
+        align-self: flex-end;
+    }
+
+    .checkout-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .checkout-total {
+        margin-bottom: 0;
     }
 }
 
 @media (min-width: 1024px) {
-    .checkout-sidebar {
-        width: 380px;
-    }
-
     .checkout-card {
-        padding: 32px;
+        padding: 28px;
     }
 }
 </style>
 
 <div class="checkout-wrapper">
     <div class="checkout-container">
-        <h1 class="checkout-title">Checkout</h1>
+        <h1 class="checkout-title">Checkout Node</h1>
 
         <?php if (!empty($errors)): ?>
             <div class="checkout-alert checkout-alert-error">
@@ -886,9 +952,9 @@ if ($bank_unavailable) {
                         <!-- Cart Items -->
                         <?php foreach ($cart_items as $key => $item): ?>
                             <div class="checkout-card">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                                     <div>
-                                        <div class="card-label">Voucher</div>
+                                        <div class="card-label">Checkout Node</div>
                                         <div class="card-title"><?php echo esc_html($item['product_name']); ?></div>
                                     </div>
                                     <div class="card-qty">x<?php echo esc_html($item['quantity']); ?></div>
@@ -914,7 +980,7 @@ if ($bank_unavailable) {
                                                value="<?php echo esc_attr($current_user->display_name ?: $current_user->user_login); ?>" required>
                                     </div>
                                     <div class="form-group">
-                                        <label class="form-label">Email Address</label>
+                                        <label class="form-label">Registered Email ID</label>
                                         <input type="email" name="voucher_buyer_email" class="form-input"
                                                value="<?php echo esc_attr($current_user->user_email); ?>" required>
                                     </div>
@@ -927,7 +993,7 @@ if ($bank_unavailable) {
                                             <div class="payment-option-title">
                                                 Bank Transfer
                                             </div>
-                                            <div class="payment-option-note">Limit 10 units per order · Manual verification</div>
+                                            <div class="payment-option-note">Limit 10 units</div>
                                         </div>
                                         <span class="payment-option-badge">Enabled</span>
                                     </label>
@@ -936,7 +1002,7 @@ if ($bank_unavailable) {
                                             <div class="payment-option-title">
                                                 Card Payment
                                             </div>
-                                            <div class="payment-option-note">Coming soon · Disabled for now</div>
+                                            <div class="payment-option-note">Limit 3 units</div>
                                         </div>
                                         <span class="payment-option-badge">Disabled</span>
                                     </label>
@@ -1034,29 +1100,16 @@ if ($bank_unavailable) {
                         <div class="checkout-footer">
                             <label class="terms-label">
                                 <input type="checkbox" name="voucher_terms_confirmed" value="1" required>
-                                <span>I confirm that the details provided are accurate and I agree to the non-refundable terms.</span>
+                                <span>I confirm accuracy. Items are <strong>non-refundable</strong> and cannot be exchanged once fulfillment begins.</span>
                             </label>
-                            <button type="submit" class="submit-btn" <?php echo $bank_unavailable ? 'disabled' : ''; ?>>
-                                <?php echo $bank_unavailable ? 'Bank Unavailable' : 'Place Order'; ?>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Sidebar -->
-                    <div class="checkout-sidebar">
-                        <div class="summary-card">
-                            <h3 class="summary-title">Order Summary</h3>
-
-                            <?php foreach ($cart_items as $item): ?>
-                                <div class="summary-row">
-                                    <span><?php echo esc_html($item['product_name']); ?> × <?php echo esc_html($item['quantity']); ?></span>
-                                    <span>$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></span>
+                            <div class="checkout-actions">
+                                <div class="checkout-total">
+                                    <span>Total settlement</span>
+                                    <strong><?php echo $cart->get_total('display'); ?></strong>
                                 </div>
-                            <?php endforeach; ?>
-
-                            <div class="summary-total">
-                                <span>Total</span>
-                                <span><?php echo $cart->get_total('display'); ?></span>
+                                <button type="submit" class="submit-btn" <?php echo $bank_unavailable ? 'disabled' : ''; ?>>
+                                    <?php echo $bank_unavailable ? 'Bank Unavailable' : 'Confirm Order'; ?>
+                                </button>
                             </div>
                         </div>
                     </div>
