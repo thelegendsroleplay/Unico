@@ -48,6 +48,7 @@ class Unico_Init {
             'class-order.php',
             'class-checkout.php',
             'class-cart-handlers.php',
+            'class-admin-orders.php',
         ];
 
         foreach ($classes as $class) {
@@ -62,11 +63,12 @@ class Unico_Init {
      * Setup theme support
      */
     public function setup_theme() {
-        // Add WooCommerce support
-        add_theme_support('woocommerce');
-        add_theme_support('wc-product-gallery-zoom');
-        add_theme_support('wc-product-gallery-lightbox');
-        add_theme_support('wc-product-gallery-slider');
+        // WooCommerce support (optional - only needed if WooCommerce is still installed)
+        // Commented out as custom payment system now handles checkout/orders
+        // add_theme_support('woocommerce');
+        // add_theme_support('wc-product-gallery-zoom');
+        // add_theme_support('wc-product-gallery-lightbox');
+        // add_theme_support('wc-product-gallery-slider');
 
         // Add title tag support
         add_theme_support('title-tag');
@@ -92,6 +94,11 @@ class Unico_Init {
         $cart = Unico_Cart::get_instance();
         $checkout = Unico_Checkout::get_instance();
         $cart_handlers = Unico_Cart_Handlers::get_instance();
+
+        // Initialize admin interface
+        if (is_admin()) {
+            $admin_orders = Unico_Admin_Orders::get_instance();
+        }
 
         $db_version = get_option('unico_db_version');
         if (!$db_version || version_compare($db_version, '1.3.0', '<')) {

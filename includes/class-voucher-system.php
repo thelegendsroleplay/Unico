@@ -21,6 +21,10 @@ class Unico_Voucher_System {
 
     public function __construct() {
         add_action('woocommerce_check_cart_items', [$this, 'enforce_sales_lock']);
+
+        // Hook into custom order system
+        add_action('unico_payment_approved', [$this, 'handle_payment_approved'], 10, 2);
+        add_action('unico_order_status_processing', [$this, 'auto_deliver_vouchers_custom'], 10, 2);
     }
 
     public static function get_system_flags() {
@@ -549,5 +553,259 @@ class Unico_Voucher_System {
         }
 
         return $wpdb->get_results("SELECT * FROM $table $where ORDER BY created_at DESC");
+    }
+
+    /**
+     * Handle payment approval for custom orders
+     */
+    public function handle_payment_approved($order_id, $order) {
+        error_log("Unico: Payment approved for custom order #{$order_id}, triggering voucher delivery");
+        $this->auto_deliver_vouchers_custom($order_id, $order);
+    }
+
+    /**
+     * Auto-deliver vouchers for custom orders (replaces WooCommerce version)
+     */
+    public function auto_deliver_vouchers_custom($order_id, $order = null) {
+        if (!$order) {
+            $order = new Unico_Order($order_id);
+        }
+
+        if (!$order->get_id()) {
+            error_log("Unico: Order #{$order_id} not found for voucher delivery");
+            return;
+        }
+
+        // Check if already delivered
+        $order_data = $order->get_data();
+        if ($order_data['vouchers_delivered']) {
+            error_log("Unico: Vouchers already delivered for order #{$order_id}");
+            return;
+        }
+
+        $items = $order->get_items();
+        $vouchers_delivered = [];
+
+        foreach ($items as $item) {
+            $quantity = $item['quantity'];
+            $exam_name = $item['exam_name'];
+
+            if (!$exam_name) {
+                error_log("Unico: No exam name found for order item #{$item['id']}");
+                continue;
+            }
+
+            // Assign and deliver vouchers for each quantity
+            for ($i = 0; $i < $quantity; $i++) {
+                $voucher = $this->get_available_voucher($exam_name, array_column($vouchers_delivered, 'id'));
+
+                if ($voucher) {
+                    $assigned = $this->assign_voucher_to_order($voucher->id, $order_id, $order->get_user_id());
+
+                    if ($assigned) {
+                        $delivered = $this->deliver_voucher_custom($voucher->id, $order_id, $order, 'automatic');
+
+                        if (!is_wp_error($delivered)) {
+                            $vouchers_delivered[] = [
+                                'id' => $voucher->id,
+                                'code' => $voucher->voucher_code,
+                                'exam' => $exam_name
+                            ];
+                        }
+                    }
+                } else {
+                    // No voucher available - notify admin
+                    $order->add_note(
+                        sprintf('⚠️ No available voucher for %s (Quantity: %d)', $exam_name, $quantity - $i)
+                    );
+
+                    // Send admin notification
+                    $this->notify_admin_low_stock($exam_name, $order_id);
+                }
+            }
+        }
+
+        if (!empty($vouchers_delivered)) {
+            // Update order
+            $order->update_meta('_vouchers_delivered', $vouchers_delivered);
+            $order->update_meta('_vouchers_delivered_at', current_time('mysql'));
+
+            // Update order data via direct SQL (since meta is not in main table)
+            global $wpdb;
+            $wpdb->update(
+                $wpdb->prefix . 'unico_orders',
+                [
+                    'vouchers_delivered' => 1,
+                    'vouchers_delivered_at' => current_time('mysql')
+                ],
+                ['id' => $order_id]
+            );
+
+            $order->add_note(
+                sprintf('✅ %d voucher(s) automatically delivered', count($vouchers_delivered))
+            );
+
+            // Update order status to completed
+            $order->update_status('completed', 'All vouchers delivered successfully');
+
+            error_log("Unico: Delivered " . count($vouchers_delivered) . " vouchers for order #{$order_id}");
+        }
+    }
+
+    /**
+     * Deliver voucher via email for custom orders
+     */
+    private function deliver_voucher_custom($voucher_id, $order_id, $order, $delivery_method = 'automatic') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'unico_vouchers';
+
+        $voucher = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE id = %d",
+            $voucher_id
+        ));
+
+        if (!$voucher) {
+            return new WP_Error('voucher_not_found', 'Voucher not found.');
+        }
+
+        // Decrypt voucher code
+        $security = Unico_Security::get_instance();
+        $voucher_code = $security->decrypt_data($voucher->voucher_code);
+
+        // Get customer email
+        $customer_email = $order->get_customer_email();
+        $customer_name = $order->get_customer_name();
+
+        // Send email with voucher
+        $subject = 'Your ' . $voucher->exam_name . ' Voucher - Order #' . $order->get_order_number();
+        $message = $this->get_voucher_email_template_custom($voucher, $voucher_code, $order, $customer_name);
+
+        $headers = ['Content-Type: text/html; charset=UTF-8'];
+        $email_sent = wp_mail($customer_email, $subject, $message, $headers);
+
+        if ($email_sent) {
+            // Update voucher status
+            $wpdb->update($table, [
+                'voucher_status' => 'delivered',
+                'delivered_at' => current_time('mysql'),
+                'delivered_via' => $delivery_method,
+                'updated_at' => current_time('mysql')
+            ], ['id' => $voucher_id]);
+
+            // Add order note
+            $order->add_note(
+                sprintf('Voucher delivered: %s (ID: %d)', $voucher_code, $voucher_id)
+            );
+
+            // Log activity
+            $security->log_activity($order->get_user_id(), 'voucher_delivered', "Voucher delivered to {$customer_email}", [
+                'voucher_id' => $voucher_id,
+                'order_id' => $order_id,
+                'delivery_method' => $delivery_method
+            ]);
+
+            return true;
+        }
+
+        return new WP_Error('email_failed', 'Failed to send voucher email.');
+    }
+
+    /**
+     * Get voucher email template for custom orders
+     */
+    private function get_voucher_email_template_custom($voucher, $voucher_code, $order, $customer_name) {
+        $order_date = date('F j, Y', strtotime($order->get_date_created()));
+        $expiry_text = $voucher->expiry_date ? date('F j, Y', strtotime($voucher->expiry_date)) : 'No expiry';
+
+        ob_start();
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Your Voucher</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #4a4a4a; background-color: #f5f5f5; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+                <!-- Header -->
+                <div style="background-color: #103e54; color: white; padding: 30px 20px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 28px;"><?php echo get_bloginfo('name'); ?></h1>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Digital Voucher</p>
+                </div>
+
+                <!-- Body -->
+                <div style="padding: 40px 30px;">
+                    <h2 style="color: #103e54; margin-top: 0;">Hello <?php echo esc_html($customer_name); ?>!</h2>
+
+                    <p>Thank you for your purchase! Your <?php echo esc_html($voucher->exam_name); ?> voucher is ready.</p>
+
+                    <!-- Voucher Card -->
+                    <div style="background: linear-gradient(135deg, #e95134 0%, #103e54 100%); border-radius: 8px; padding: 30px; margin: 30px 0; text-align: center; color: white;">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">
+                            <?php echo esc_html($voucher->exam_name); ?> Voucher
+                        </div>
+                        <div style="font-size: 32px; font-weight: bold; letter-spacing: 2px; margin: 15px 0; font-family: 'Courier New', monospace; background-color: rgba(255,255,255,0.2); padding: 15px; border-radius: 5px;">
+                            <?php echo esc_html($voucher_code); ?>
+                        </div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-top: 10px;">
+                            Order #<?php echo $order->get_order_number(); ?> | <?php echo $order_date; ?>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div style="background-color: #f8f9fa; border-left: 4px solid #e95134; padding: 20px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #103e54; font-size: 16px;">Voucher Details</h3>
+                        <table style="width: 100%; font-size: 14px;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Exam:</td>
+                                <td style="padding: 8px 0; font-weight: bold;"><?php echo esc_html($voucher->exam_name); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Voucher Code:</td>
+                                <td style="padding: 8px 0; font-weight: bold; font-family: 'Courier New', monospace;"><?php echo esc_html($voucher_code); ?></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #666;">Valid Until:</td>
+                                <td style="padding: 8px 0; font-weight: bold;"><?php echo $expiry_text; ?></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Instructions -->
+                    <div style="margin: 30px 0;">
+                        <h3 style="color: #103e54; font-size: 16px;">How to Use Your Voucher</h3>
+                        <ol style="padding-left: 20px; line-height: 1.8;">
+                            <li>Visit the official exam booking website</li>
+                            <li>Select your test date and location</li>
+                            <li>Enter your voucher code at checkout</li>
+                            <li>Complete your booking</li>
+                        </ol>
+                    </div>
+
+                    <!-- Support -->
+                    <div style="background-color: #fff3e0; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                        <p style="margin: 0; font-size: 14px;">
+                            <strong>Need help?</strong> Our support team is available 24/7 to assist you.
+                            <br><a href="<?php echo home_url('/support'); ?>" style="color: #e95134;">Contact Support</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                    <p style="margin: 0 0 10px 0; color: #666; font-size: 12px;">
+                        This voucher was purchased on <?php echo $order_date; ?>
+                    </p>
+                    <p style="margin: 0; color: #999; font-size: 11px;">
+                        © <?php echo date('Y'); ?> <?php echo get_bloginfo('name'); ?>. All rights reserved.
+                    </p>
+                </div>
+
+            </div>
+        </body>
+        </html>
+        <?php
+        return ob_get_clean();
     }
 }

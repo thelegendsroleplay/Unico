@@ -20,10 +20,13 @@ class Unico_Pricing {
     }
 
     public function __construct() {
-        // Hook into WooCommerce pricing
-        add_filter('woocommerce_product_get_price', [$this, 'apply_dynamic_pricing'], 99, 2);
-        add_filter('woocommerce_product_get_regular_price', [$this, 'apply_dynamic_pricing'], 99, 2);
-        add_filter('woocommerce_cart_item_price', [$this, 'display_cart_item_price'], 10, 3);
+        // Hook into WooCommerce pricing (optional - only if WooCommerce is active)
+        // Custom cart system uses get_product_price() method which applies pricing rules directly
+        if (class_exists('WooCommerce')) {
+            add_filter('woocommerce_product_get_price', [$this, 'apply_dynamic_pricing'], 99, 2);
+            add_filter('woocommerce_product_get_regular_price', [$this, 'apply_dynamic_pricing'], 99, 2);
+            add_filter('woocommerce_cart_item_price', [$this, 'display_cart_item_price'], 10, 3);
+        }
     }
 
     /**

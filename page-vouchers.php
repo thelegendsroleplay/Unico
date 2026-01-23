@@ -361,7 +361,8 @@ get_header();
     <div class="vouchers-grid">
         <?php if ($voucher_products->have_posts()): ?>
             <?php
-            $currency_code = get_woocommerce_currency();
+            // Get currency (default to USD if WooCommerce not active)
+            $currency_code = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : 'USD';
             $taglines = [
                 'ielts'        => 'British Council/IDP Official.',
                 'pte'          => 'Pearson Official Standard.',
@@ -439,11 +440,11 @@ get_header();
                     <?php
                         if ($is_logged_in) {
                             $button_label = 'Secure Checkout →';
-                            if (function_exists('wc_get_checkout_url')) {
-                                $button_url = add_query_arg('add-to-cart', $product_id, wc_get_checkout_url());
-                            } else {
-                                $button_url = $product->add_to_cart_url();
-                            }
+                            // Use custom add-to-cart with nonce
+                            $button_url = add_query_arg([
+                                'add-to-cart' => $product_id,
+                                'unico_add_to_cart_nonce' => wp_create_nonce('unico_add_to_cart')
+                            ], home_url('/'));
                         } else {
                             $button_label = 'Authorize Procurement';
                             $button_url = home_url('/login');
