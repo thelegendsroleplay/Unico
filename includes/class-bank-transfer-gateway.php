@@ -74,9 +74,23 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
      * AJAX: upload receipt BEFORE checkout
      */
     public function ajax_upload_receipt() {
+        error_log('Unico AJAX: Upload receipt called');
 
         if (empty($_FILES['voucher_payment_receipt'])) {
+            error_log('Unico AJAX: No file received');
             wp_send_json_error('No file received');
+        }
+
+        // Ensure WooCommerce is initialized
+        if (!function_exists('WC') || !WC()) {
+            error_log('Unico AJAX: WooCommerce not initialized');
+            wp_send_json_error('WooCommerce not available');
+        }
+
+        // Initialize WooCommerce session if not already initialized
+        if (!WC()->session || !WC()->session->has_session()) {
+            WC()->session->set_customer_session_cookie(true);
+            error_log('Unico AJAX: WC session initialized');
         }
 
         require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -86,13 +100,23 @@ class Unico_Bank_Transfer_Gateway extends WC_Payment_Gateway {
         ]);
 
         if (isset($upload['error'])) {
+            error_log('Unico AJAX: Upload error - ' . $upload['error']);
             wp_send_json_error($upload['error']);
         }
 
+        error_log('Unico AJAX: File uploaded successfully to ' . $upload['file']);
+
+        // Store in WooCommerce session
         WC()->session->set('unico_receipt_upload', $upload);
 
+        // Verify it was saved
+        $verify = WC()->session->get('unico_receipt_upload');
+        error_log('Unico AJAX: Session data saved and verified: ' . print_r($verify, true));
+
         wp_send_json_success([
-            'url' => $upload['url']
+            'url' => $upload['url'],
+            'file' => basename($upload['file']),
+            'session_verified' => !empty($verify)
         ]);
     }
 

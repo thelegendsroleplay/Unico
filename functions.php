@@ -915,13 +915,23 @@ add_action('woocommerce_checkout_process', function () {
 
         // NEW VALIDATION: Check if receipt was uploaded via AJAX and stored in session
         error_log('Unico Checkout: Checking for receipt in WooCommerce session');
+        error_log('Unico Checkout: WC() available: ' . (function_exists('WC') ? 'yes' : 'no'));
+        error_log('Unico Checkout: WC()->session available: ' . (WC() && WC()->session ? 'yes' : 'no'));
 
-        $receipt_in_session = WC()->session ? WC()->session->get('unico_receipt_upload') : null;
+        if (!WC() || !WC()->session) {
+            error_log('Unico Checkout: CRITICAL - WooCommerce session not available');
+            wc_add_notice('❌ Session Error: Please refresh the page and try again.', 'error');
+            throw new Exception('WooCommerce session not available.');
+        }
+
+        $receipt_in_session = WC()->session->get('unico_receipt_upload');
 
         error_log('Unico Checkout: Receipt in session: ' . print_r($receipt_in_session, true));
+        error_log('Unico Checkout: Session ID: ' . (WC()->session->get_customer_id() ?: 'none'));
 
         if (!$receipt_in_session || empty($receipt_in_session['url']) || empty($receipt_in_session['file'])) {
             error_log('Unico Checkout: Payment receipt NOT found in session');
+            error_log('Unico Checkout: All session data: ' . print_r(WC()->session->get_session_data(), true));
             wc_add_notice('❌ Payment Receipt Required: Please upload your bank transfer receipt before placing the order.', 'error');
             throw new Exception('Payment receipt upload required for bank transfer.');
         }

@@ -138,13 +138,19 @@ document.addEventListener('DOMContentLoaded', function () {
           ? wc_checkout_params.ajax_url
           : (typeof unicoCheckout !== 'undefined' ? unicoCheckout.ajax_url : '/wp-admin/admin-ajax.php');
 
+        console.log('Unico Checkout: Uploading receipt to', ajaxUrl);
+
         const res = await fetch(ajaxUrl, {
           method: 'POST',
-          body: fd
+          body: fd,
+          credentials: 'same-origin' // CRITICAL: Ensure cookies are sent with request
         });
         const data = await res.json();
 
+        console.log('Unico Checkout: Upload response:', data);
+
         if (!data.success) {
+          console.error('Unico Checkout: Upload failed:', data.data);
           uploadError.textContent = data.data || 'Upload failed.';
           uploadInput.value = '';
           return;
@@ -153,8 +159,10 @@ document.addEventListener('DOMContentLoaded', function () {
         receiptUploaded = true;
         uploadError.textContent = 'Receipt uploaded successfully ✔';
         if (uploadPlaceholder) uploadPlaceholder.textContent = file.name;
+        console.log('Unico Checkout: Receipt uploaded successfully, session verified:', data.data.session_verified);
 
       } catch (e) {
+        console.error('Unico Checkout: Upload exception:', e);
         uploadError.textContent = 'Upload error. Please try again.';
         uploadInput.value = '';
       }
