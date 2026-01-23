@@ -1,97 +1,13 @@
+/**
+ * Unico Custom Checkout JavaScript
+ * Works with custom shop system (no WooCommerce)
+ */
+
 document.addEventListener('DOMContentLoaded', function () {
-  var card = document.querySelector('.unico-checkout-card');
-  if (!card) {
-    return;
-  }
+  console.log('Unico Custom Checkout: Initialized');
 
   /* ------------------------------
-     Quantity handling (UNCHANGED)
-  -------------------------------*/
-  var qtyInput = document.querySelector('.unico-qty-input');
-  var qtyDisplay = card.querySelector('.unico-checkout-qty');
-  var qty = 1;
-
-  function parseQty() {
-    var value = 1;
-    if (qtyInput) {
-      var parsed = parseInt(qtyInput.value, 10);
-      if (parsed && parsed > 0) value = parsed;
-    } else {
-      var attr = card.getAttribute('data-voucher-qty');
-      var parsedAttr = parseInt(attr, 10);
-      if (parsedAttr && parsedAttr > 0) {
-        value = parsedAttr;
-      } else if (qtyDisplay) {
-        var parsedText = parseInt(qtyDisplay.textContent.replace(/[^0-9]/g, ''), 10);
-        if (parsedText && parsedText > 0) value = parsedText;
-      }
-    }
-    return value;
-  }
-
-  function syncQty() {
-    qty = parseQty();
-    if (qtyInput) qtyInput.value = qty;
-    if (qtyDisplay) qtyDisplay.textContent = 'x' + qty;
-  }
-
-  syncQty();
-
-  /* ------------------------------
-     Payment method logic
-  -------------------------------*/
-  var methodButtons = document.querySelectorAll('.unico-method-button');
-  var modeInput = document.querySelector('input[name="voucher_payment_mode"]');
-  var methodsRow = document.querySelector('.unico-checkout-methods');
-  var errorEl = null;
-
-  if (methodsRow) {
-    errorEl = document.createElement('div');
-    errorEl.className = 'unico-method-error';
-    methodsRow.appendChild(errorEl);
-  }
-
-  function setError(message) {
-    if (errorEl) errorEl.textContent = message || '';
-  }
-
-  function getLabel(btn) {
-    var span = btn.querySelector('span');
-    return span && span.textContent ? span.textContent.trim() : '';
-  }
-
-  function validateMethod(btn) {
-    var limit = parseInt(btn.getAttribute('data-limit'), 10);
-    if (limit && qty > limit) {
-      setError(
-        'You can purchase up to ' + limit + ' units with ' + getLabel(btn) +
-        '. Current quantity is ' + qty + '.'
-      );
-      return false;
-    }
-    return true;
-  }
-
-  if (qtyInput) {
-    qtyInput.addEventListener('change', function () {
-      syncQty();
-    });
-    qtyInput.addEventListener('input', syncQty);
-  }
-
-  document.querySelectorAll('.unico-qty-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      if (!qtyInput) return;
-      var current = parseQty();
-      current += btn.getAttribute('data-direction') === 'minus' ? -1 : 1;
-      if (current < 1) current = 1;
-      qtyInput.value = current;
-      syncQty();
-    });
-  });
-
-  /* ------------------------------
-     Receipt upload (NEW FIX)
+     Receipt Upload Handler
   -------------------------------*/
   var uploadInput = document.querySelector('.unico-upload-input');
   var uploadPlaceholder = document.querySelector('.unico-upload-placeholder');
@@ -127,23 +43,21 @@ document.addEventListener('DOMContentLoaded', function () {
       fd.append('action', 'unico_upload_receipt');
       fd.append('voucher_payment_receipt', file);
 
-      // Add nonce if available
       if (typeof unicoCheckout !== 'undefined' && unicoCheckout.nonce) {
         fd.append('nonce', unicoCheckout.nonce);
       }
 
       try {
-        // Use wc_checkout_params if available, otherwise use localized unicoCheckout
-        var ajaxUrl = (typeof wc_checkout_params !== 'undefined' && wc_checkout_params.ajax_url)
-          ? wc_checkout_params.ajax_url
-          : (typeof unicoCheckout !== 'undefined' ? unicoCheckout.ajax_url : '/wp-admin/admin-ajax.php');
+        var ajaxUrl = (typeof unicoCheckout !== 'undefined' && unicoCheckout.ajax_url)
+          ? unicoCheckout.ajax_url
+          : '/wp-admin/admin-ajax.php';
 
         console.log('Unico Checkout: Uploading receipt to', ajaxUrl);
 
         const res = await fetch(ajaxUrl, {
           method: 'POST',
           body: fd,
-          credentials: 'same-origin' // CRITICAL: Ensure cookies are sent with request
+          credentials: 'same-origin'
         });
         const data = await res.json();
 
@@ -157,9 +71,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         receiptUploaded = true;
-        uploadError.textContent = 'Receipt uploaded successfully ✔';
+        uploadError.textContent = '✓ Receipt uploaded successfully';
+        uploadError.style.color = '#4caf50';
         if (uploadPlaceholder) uploadPlaceholder.textContent = file.name;
-        console.log('Unico Checkout: Receipt uploaded successfully, session verified:', data.data.session_verified);
+        console.log('Unico Checkout: Receipt uploaded successfully');
 
       } catch (e) {
         console.error('Unico Checkout: Upload exception:', e);
@@ -170,45 +85,118 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ------------------------------
-     Method selection
+     Payment Method Selection
   -------------------------------*/
+  var methodButtons = document.querySelectorAll('.unico-method-button');
+  var modeInput = document.querySelector('input[name="voucher_payment_mode"]');
+  var selectedMethod = null;
+
   methodButtons.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      syncQty();
-      if (!validateMethod(btn)) return;
-
-      setError('');
       methodButtons.forEach(b => b.classList.remove('is-active'));
       btn.classList.add('is-active');
-      if (modeInput) modeInput.value = btn.getAttribute('data-method');
+      selectedMethod = btn.getAttribute('data-method');
 
+      if (modeInput) modeInput.value = selectedMethod;
+
+      // Show/hide bank transfer details
       var bankDetails = document.getElementById('bank-transfer-details');
       if (bankDetails) {
-        bankDetails.style.display =
-          btn.getAttribute('data-method') === 'bank_transfer'
-            ? 'block'
-            : 'none';
+        bankDetails.style.display = (selectedMethod === 'bank_transfer') ? 'block' : 'none';
       }
     });
   });
 
   /* ------------------------------
-     BLOCK CHECKOUT if missing receipt
+     Confirm Order Button
   -------------------------------*/
-  jQuery(document.body).on('checkout_place_order', function () {
-    var active = document.querySelector('.unico-method-button.is-active');
-    if (active && active.getAttribute('data-method') === 'bank_transfer') {
-      if (!receiptUploaded) {
-        alert('Please upload your bank transfer receipt before placing the order.');
-        return false;
+  var confirmBtn = document.getElementById('unico-confirm-order-btn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', async function (e) {
+      e.preventDefault();
+
+      console.log('Unico Checkout: Confirm order clicked');
+
+      // Validate
+      if (!selectedMethod) {
+        alert('Please select a payment method');
+        return;
       }
-    }
-    return true;
-  });
+
+      if (selectedMethod === 'bank_transfer' && !receiptUploaded) {
+        alert('Please upload your payment receipt before placing the order');
+        return;
+      }
+
+      var transactionId = document.querySelector('input[name="voucher_payment_reference"]');
+      if (selectedMethod === 'bank_transfer' && (!transactionId || !transactionId.value.trim())) {
+        alert('Please enter the transaction ID');
+        return;
+      }
+
+      var termsCheckbox = document.querySelector('input[name="voucher_terms_confirmed"]');
+      if (!termsCheckbox || !termsCheckbox.checked) {
+        alert('Please confirm the terms and conditions');
+        return;
+      }
+
+      // Disable button
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Processing...';
+
+      // Prepare form data
+      var formData = new FormData();
+      formData.append('action', 'unico_place_order');
+      formData.append('nonce', unicoCheckout.nonce);
+      formData.append('buyer_name', document.querySelector('input[name="voucher_buyer_full_name"]').value);
+      formData.append('buyer_email', document.querySelector('input[name="voucher_buyer_email"]').value);
+      formData.append('payment_mode', selectedMethod);
+
+      if (transactionId) {
+        formData.append('payment_reference', transactionId.value);
+      }
+
+      var bankSelect = document.querySelector('select[name="selected_bank_id"]');
+      if (bankSelect) {
+        formData.append('bank_id', bankSelect.value);
+      }
+
+      formData.append('terms_confirmed', termsCheckbox.checked ? '1' : '0');
+
+      try {
+        const res = await fetch(unicoCheckout.ajax_url, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin'
+        });
+
+        const data = await res.json();
+
+        console.log('Unico Checkout: Order response:', data);
+
+        if (!data.success) {
+          alert('Error: ' + (data.data || 'Failed to place order'));
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'CONFIRM ORDER';
+          return;
+        }
+
+        // Success! Redirect to confirmation page
+        console.log('Unico Checkout: Order placed successfully');
+        window.location.href = data.data.redirect;
+
+      } catch (e) {
+        console.error('Unico Checkout: Order exception:', e);
+        alert('An error occurred. Please try again.');
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'CONFIRM ORDER';
+      }
+    });
+  }
 });
 
 /* ------------------------------
-   Copy to clipboard (UNCHANGED)
+   Copy to clipboard
 -------------------------------*/
 function copyToClipboard(elementId, button) {
   var element = document.getElementById(elementId);
@@ -223,7 +211,16 @@ function copyToClipboard(elementId, button) {
 
   try {
     document.execCommand('copy');
-  } catch (e) {}
+    if (button) {
+      var originalText = button.textContent;
+      button.textContent = 'Copied!';
+      setTimeout(function() {
+        button.textContent = originalText;
+      }, 2000);
+    }
+  } catch (e) {
+    console.error('Copy failed:', e);
+  }
 
   document.body.removeChild(textarea);
 }

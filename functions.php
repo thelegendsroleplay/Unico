@@ -43,6 +43,9 @@ require_once get_template_directory() . '/includes/class-bank-accounts.php';
 // Include Custom Payment Gateway
 require_once get_template_directory() . '/includes/class-bank-transfer-gateway.php';
 
+// Include Custom Shop System (replaces WooCommerce)
+require_once get_template_directory() . '/includes/class-unico-custom-shop.php';
+
 // Initialize Bank Accounts System
 add_action('init', function() {
     if (class_exists('Unico_Bank_Accounts')) {
