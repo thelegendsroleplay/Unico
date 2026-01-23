@@ -125,56 +125,27 @@ class Unico_Checkout {
 
         // Validate bank transfer fields
         if ($_POST['voucher_payment_mode'] === 'bank_transfer') {
+            if (empty($_POST['selected_bank_id'])) {
+                $this->add_error('Bank selection is missing. Please reload the page to get account details.');
+                return false;
+            }
+
+            if (class_exists('Unico_Bank_Accounts')) {
+                $bank_system = Unico_Bank_Accounts::get_instance();
+                $bank = $bank_system->get_bank(intval($_POST['selected_bank_id']));
+                if (!$bank || (int) $bank->is_active !== 1) {
+                    $this->add_error('Selected bank is no longer available. Please reload to get a new account.');
+                    return false;
+                }
+            }
+
             if (empty($_POST['voucher_payment_reference'])) {
                 $this->add_error('Transaction ID is required for bank transfer.');
                 return false;
             }
 
-            // Check for receipt - first in session (AJAX upload), then in form upload
-            if (!session_id()) {
-                session_start();
-            }
-
-            $receipt_in_session = isset($_SESSION['unico_receipt_upload']) ? $_SESSION['unico_receipt_upload'] : null;
-            $has_valid_receipt = false;
-
-            // Check session first (AJAX uploaded receipt)
-            if ($receipt_in_session && !empty($receipt_in_session['url']) && !empty($receipt_in_session['file'])) {
-                if (file_exists($receipt_in_session['file'])) {
-                    $has_valid_receipt = true;
-                }
-            }
-
-            // If no session receipt, check for form-uploaded file
-            if (!$has_valid_receipt && !empty($_FILES['voucher_payment_receipt']['name'])) {
-                if ($_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK) {
-                    // Process form upload
-                    require_once ABSPATH . 'wp-admin/includes/file.php';
-
-                    $upload = wp_handle_upload($_FILES['voucher_payment_receipt'], [
-                        'test_form' => false,
-                        'mimes' => [
-                            'jpg' => 'image/jpeg',
-                            'jpeg' => 'image/jpeg',
-                            'png' => 'image/png',
-                            'gif' => 'image/gif',
-                            'webp' => 'image/webp',
-                            'pdf' => 'application/pdf',
-                        ],
-                    ]);
-
-                    if (!isset($upload['error'])) {
-                        $_SESSION['unico_receipt_upload'] = $upload;
-                        $has_valid_receipt = true;
-                    } else {
-                        $this->add_error('Error uploading receipt: ' . $upload['error']);
-                        return false;
-                    }
-                }
-            }
-
-            if (!$has_valid_receipt) {
-                $this->add_error('Payment receipt is required. Please upload your bank transfer receipt.');
+            if (empty($_FILES['voucher_payment_receipt']['name']) || $_FILES['voucher_payment_receipt']['error'] !== UPLOAD_ERR_OK) {
+                $this->add_error('Payment receipt is required. Please upload your bank transfer screenshot.');
                 return false;
             }
         }
@@ -210,11 +181,37 @@ class Unico_Checkout {
         $payment_reference = isset($_POST['voucher_payment_reference']) ? sanitize_text_field($_POST['voucher_payment_reference']) : '';
         $selected_bank_id = isset($_POST['selected_bank_id']) ? intval($_POST['selected_bank_id']) : null;
 
-        // Get receipt from session
-        if (!session_id()) {
-            session_start();
+        $receipt_upload = null;
+        if (!empty($_FILES['voucher_payment_receipt']['name']) && $_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['voucher_payment_receipt'];
+            if ($file['size'] > 5 * 1024 * 1024) {
+                $this->add_error('Receipt must be under 5MB.');
+                return false;
+            }
+
+            $image_info = @getimagesize($file['tmp_name']);
+            if ($image_info === false) {
+                $this->add_error('Invalid image file. Please upload a real screenshot.');
+                return false;
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+
+            $receipt_upload = wp_handle_upload($file, [
+                'test_form' => false,
+                'mimes' => [
+                    'jpg' => 'image/jpeg',
+                    'jpeg' => 'image/jpeg',
+                    'png' => 'image/png',
+                    'webp' => 'image/webp',
+                ],
+            ]);
+
+            if (isset($receipt_upload['error'])) {
+                $this->add_error('Error uploading receipt: ' . $receipt_upload['error']);
+                return false;
+            }
         }
-        $receipt_in_session = isset($_SESSION['unico_receipt_upload']) ? $_SESSION['unico_receipt_upload'] : null;
 
         // Get bank details
         $bank_details = null;
@@ -247,8 +244,8 @@ class Unico_Checkout {
             'total' => $cart->get_cart_total(),
             'currency' => 'USD',
             'payment_reference' => $payment_reference,
-            'payment_receipt_url' => $receipt_in_session ? $receipt_in_session['url'] : null,
-            'payment_receipt_path' => $receipt_in_session ? $receipt_in_session['file'] : null,
+            'payment_receipt_url' => $receipt_upload ? $receipt_upload['url'] : null,
+            'payment_receipt_path' => $receipt_upload ? $receipt_upload['file'] : null,
             'selected_bank_id' => $selected_bank_id,
             'bank_details' => $bank_details,
             'verification_status' => 'pending'
@@ -276,9 +273,12 @@ class Unico_Checkout {
         // Add order note
         $order->add_note('Order created via custom checkout. Pending payment verification.');
 
-        // Clear receipt from session
-        if (isset($_SESSION['unico_receipt_upload'])) {
-            unset($_SESSION['unico_receipt_upload']);
+        if ($selected_bank_id) {
+            update_user_meta($user_id, 'unico_last_bank_id', $selected_bank_id);
+        }
+
+        if (isset($_SESSION['unico_checkout_bank_id'])) {
+            unset($_SESSION['unico_checkout_bank_id']);
         }
 
         // Send admin notification email
@@ -294,38 +294,7 @@ class Unico_Checkout {
      * AJAX: Upload payment receipt
      */
     public function ajax_upload_receipt() {
-        if (empty($_FILES['voucher_payment_receipt'])) {
-            wp_send_json_error(['message' => 'No file received']);
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-
-        $upload = wp_handle_upload($_FILES['voucher_payment_receipt'], [
-            'test_form' => false,
-            'mimes' => [
-                'jpg' => 'image/jpeg',
-                'jpeg' => 'image/jpeg',
-                'png' => 'image/png',
-                'gif' => 'image/gif',
-                'webp' => 'image/webp',
-                'pdf' => 'application/pdf',
-            ],
-        ]);
-
-        if (isset($upload['error'])) {
-            wp_send_json_error(['message' => $upload['error']]);
-        }
-
-        // Store in session
-        if (!session_id()) {
-            session_start();
-        }
-        $_SESSION['unico_receipt_upload'] = $upload;
-
-        wp_send_json_success([
-            'url' => $upload['url'],
-            'file' => $upload['file']
-        ]);
+        wp_send_json_error(['message' => 'Receipt uploads are handled during checkout submission.']);
     }
 
     /**

@@ -34,59 +34,6 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
     define('UNICO_SOFT_LOCK_MINUTES', 15);
 }
 
-/**
- * Register Product Post Type and Taxonomy (Replacing WooCommerce)
- */
-function unico_register_product_post_type() {
-    register_post_type('product', [
-        'labels' => [
-            'name' => 'Products',
-            'singular_name' => 'Product',
-            'add_new' => 'Add New',
-            'add_new_item' => 'Add New Product',
-            'edit_item' => 'Edit Product',
-            'new_item' => 'New Product',
-            'view_item' => 'View Product',
-            'search_items' => 'Search Products',
-            'not_found' => 'No products found',
-            'not_found_in_trash' => 'No products found in Trash',
-        ],
-        'public' => true,
-        'has_archive' => true,
-        'publicly_queryable' => true,
-        'show_ui' => true,
-        'show_in_menu' => true,
-        'query_var' => true,
-        'rewrite' => ['slug' => 'product'],
-        'capability_type' => 'post',
-        'supports' => ['title', 'editor', 'thumbnail', 'custom-fields', 'excerpt'],
-        'menu_icon' => 'dashicons-cart',
-    ]);
-
-    register_taxonomy('product_cat', 'product', [
-        'labels' => [
-            'name' => 'Product Categories',
-            'singular_name' => 'Product Category',
-            'search_items' => 'Search Categories',
-            'all_items' => 'All Categories',
-            'parent_item' => 'Parent Category',
-            'parent_item_colon' => 'Parent Category:',
-            'edit_item' => 'Edit Category',
-            'update_item' => 'Update Category',
-            'add_new_item' => 'Add New Category',
-            'new_item_name' => 'New Category Name',
-            'menu_name' => 'Categories',
-        ],
-        'hierarchical' => true,
-        'public' => true,
-        'show_ui' => true,
-        'show_admin_column' => true,
-        'query_var' => true,
-        'rewrite' => ['slug' => 'product-category'],
-    ]);
-}
-add_action('init', 'unico_register_product_post_type');
-
 // Include Mail Settings
 require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
 
@@ -526,11 +473,16 @@ add_action('wp_ajax_unico_send_purchase_otp', function() {
     
     if (class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
-        if ($security->send_purchase_otp($user_id)) {
-            wp_send_json_success(['message' => 'Verification code sent to your email']);
-        } else {
-            wp_send_json_error(['message' => 'Failed to send verification code']);
+        $result = $security->send_purchase_otp($user_id);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
         }
+
+        if ($result) {
+            wp_send_json_success(['message' => 'Verification code sent to your email']);
+        }
+
+        wp_send_json_error(['message' => 'Failed to send verification code']);
     }
     wp_send_json_error(['message' => 'Security system not available']);
 });
@@ -550,11 +502,16 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
     
     if (class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
-        if ($security->verify_purchase_otp($user_id, $code)) {
-            wp_send_json_success(['message' => 'Identity verified successfully']);
-        } else {
-            wp_send_json_error(['message' => 'Invalid or expired verification code']);
+        $result = $security->verify_purchase_otp($user_id, $code);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
         }
+
+        if ($result) {
+            wp_send_json_success(['message' => 'Identity verified successfully']);
+        }
+
+        wp_send_json_error(['message' => 'Invalid or expired verification code']);
     }
     wp_send_json_error(['message' => 'Security system not available']);
 });
@@ -1220,7 +1177,7 @@ add_action('unico_order_status_pending-verification', function($order_id, $order
 
     // Send admin email notification
     $admin_email = get_option('admin_email');
-    $receipt_url = $order->get_meta('_payment_receipt_url');
+    $receipt_url = $order->get_payment_receipt_url();
 
     $subject = sprintf('[%s] New Order Awaiting Payment Verification (#%s)', get_bloginfo('name'), $order->get_order_number());
 
