@@ -36,7 +36,7 @@ class Unico_Wallet {
             $wpdb->insert($table, [
                 'user_id' => $user_id,
                 'balance' => 0.00,
-                'currency' => get_woocommerce_currency(),
+                'currency' => 'USD', // Default to USD in custom system
                 'created_at' => current_time('mysql')
             ]);
 
@@ -189,12 +189,12 @@ class Unico_Wallet {
      * Process refund to wallet
      */
     public function process_refund($order_id, $amount = null) {
-        $order = wc_get_order($order_id);
-        if (!$order) {
+        $order = class_exists('Unico_Order') ? new Unico_Order($order_id) : false;
+        if (!$order || !$order->get_id()) {
             return new WP_Error('invalid_order', 'Order not found.');
         }
 
-        $user_id = $order->get_customer_id();
+        $user_id = $order->get_user_id();
         if (!$user_id) {
             return new WP_Error('invalid_customer', 'Customer not found.');
         }
@@ -220,8 +220,8 @@ class Unico_Wallet {
         }
 
         // Add order note
-        $order->add_order_note(
-            sprintf('Refund of %s processed to customer wallet', wc_price($amount))
+        $order->add_note(
+            sprintf('Refund of %s processed to customer wallet', unico_format_price($amount))
         );
 
         // Update order status
@@ -295,6 +295,6 @@ class Unico_Wallet {
      */
     public function format_balance($user_id) {
         $balance = $this->get_balance($user_id);
-        return wc_price($balance);
+        return unico_format_price($balance);
     }
 }

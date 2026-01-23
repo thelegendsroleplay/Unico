@@ -19,7 +19,7 @@ if (!array_key_exists($active_exam_slug, $exam_filters)) {
 }
 $active_exam_meta = $exam_filters[$active_exam_slug]['meta'];
 
-// Get available voucher products from WooCommerce
+// Get available voucher products
 $args = [
     'post_type'      => 'product',
     'posts_per_page' => -1,
@@ -361,8 +361,8 @@ get_header();
     <div class="vouchers-grid">
         <?php if ($voucher_products->have_posts()): ?>
             <?php
-            // Get currency (default to USD if WooCommerce not active)
-            $currency_code = function_exists('get_woocommerce_currency') ? get_woocommerce_currency() : 'USD';
+            // Get currency (default to USD)
+            $currency_code = 'USD';
             $taglines = [
                 'ielts'        => 'British Council/IDP Official.',
                 'pte'          => 'Pearson Official Standard.',
@@ -375,7 +375,6 @@ get_header();
             ];
             ?>
             <?php while ($voucher_products->have_posts()): $voucher_products->the_post();
-                global $product;
                 $product_id = get_the_ID();
                 $exam_family = get_post_meta($product_id, 'exam_name', true) ?: get_the_title();
                 $exam_key = strtolower($exam_family);
@@ -392,7 +391,11 @@ get_header();
                 }
                 $scope_label = strtoupper(str_replace(' ', '-', $scope));
 
-                $raw_price = (float) $product->get_price();
+                $raw_price = (float) get_post_meta($product_id, '_price', true);
+                if (!$raw_price) {
+                     $raw_price = (float) get_post_meta($product_id, '_regular_price', true);
+                }
+                
                 $display_price = $raw_price > 0 ? number_format($raw_price, 0) : number_format($raw_price, 2);
                 $currency_for_label = $currency_code;
                 $symbol = '$';
@@ -404,6 +407,9 @@ get_header();
 
                 $brand_label = strtoupper($exam_family);
                 $title = get_the_title();
+                
+                $stock_status = get_post_meta($product_id, '_stock_status', true);
+                $is_in_stock = ($stock_status === 'instock');
             ?>
             <div class="voucher-card">
                 <div class="voucher-card-inner">
@@ -436,7 +442,7 @@ get_header();
                         </div>
                     </div>
 
-                    <?php if ($product->is_in_stock()): ?>
+                    <?php if ($is_in_stock): ?>
                     <?php
                         if ($is_logged_in) {
                             $button_label = 'Secure Checkout →';

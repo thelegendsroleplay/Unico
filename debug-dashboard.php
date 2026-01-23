@@ -26,18 +26,18 @@ echo "<p>Unico_Voucher_System exists: " . (class_exists('Unico_Voucher_System') 
 echo "<p>Unico_Wallet exists: " . (class_exists('Unico_Wallet') ? '✓' : '✗') . "</p>";
 echo "<p>Unico_Security exists: " . (class_exists('Unico_Security') ? '✓' : '✗') . "</p>";
 
-// Test 3: Check if WooCommerce is active
-echo "<h2>Test 3: WooCommerce</h2>";
-if (function_exists('wc_get_orders')) {
-    echo "<p>✓ WooCommerce is active</p>";
+// Test 3: Check if Unico Order System is active
+echo "<h2>Test 3: Unico Order System</h2>";
+if (class_exists('Unico_Order')) {
+    echo "<p>✓ Unico_Order class exists</p>";
     try {
-        $test_orders = wc_get_orders(['limit' => 1]);
+        $test_orders = Unico_Order::get_orders(['limit' => 1]);
         echo "<p>✓ Can query orders</p>";
     } catch (Exception $e) {
         echo "<p>✗ Error querying orders: " . $e->getMessage() . "</p>";
     }
 } else {
-    echo "<p>✗ WooCommerce NOT active</p>";
+    echo "<p>✗ Unico_Order class NOT found</p>";
 }
 
 // Test 4: Check database tables

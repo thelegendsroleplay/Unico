@@ -536,6 +536,7 @@ class Unico_Order {
         $defaults = [
             'user_id' => null,
             'status' => null,
+            'date_created' => null,
             'limit' => 20,
             'offset' => 0,
             'orderby' => 'created_at',
@@ -553,15 +554,48 @@ class Unico_Order {
         }
 
         if ($args['status']) {
-            $where[] = 'order_status = %s';
-            $where_values[] = $args['status'];
+            if (is_array($args['status'])) {
+                $placeholders = implode(',', array_fill(0, count($args['status']), '%s'));
+                $where[] = "order_status IN ($placeholders)";
+                $where_values = array_merge($where_values, $args['status']);
+            } else {
+                $where[] = 'order_status = %s';
+                $where_values[] = $args['status'];
+            }
+        }
+
+        if ($args['date_created']) {
+            if (strpos($args['date_created'], '...') !== false) {
+                // Range query
+                $dates = explode('...', $args['date_created']);
+                if (count($dates) === 2) {
+                    $start_date = date('Y-m-d 00:00:00', strtotime($dates[0]));
+                    $end_date = date('Y-m-d 23:59:59', strtotime($dates[1]));
+                    $where[] = 'created_at BETWEEN %s AND %s';
+                    $where_values[] = $start_date;
+                    $where_values[] = $end_date;
+                }
+            } else {
+                // Single date query
+                $date = date('Y-m-d', strtotime($args['date_created']));
+                $where[] = 'DATE(created_at) = %s';
+                $where_values[] = $date;
+            }
         }
 
         $where_sql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+        
+        $limit_sql = '';
+        if ($args['limit'] != -1) {
+            $limit_sql = 'LIMIT %d OFFSET %d';
+        }
 
-        $query = "SELECT * FROM $table $where_sql ORDER BY {$args['orderby']} {$args['order']} LIMIT %d OFFSET %d";
-        $where_values[] = $args['limit'];
-        $where_values[] = $args['offset'];
+        $query = "SELECT * FROM $table $where_sql ORDER BY {$args['orderby']} {$args['order']} $limit_sql";
+        
+        if ($args['limit'] != -1) {
+            $where_values[] = $args['limit'];
+            $where_values[] = $args['offset'];
+        }
 
         if (!empty($where_values)) {
             $query = $wpdb->prepare($query, $where_values);

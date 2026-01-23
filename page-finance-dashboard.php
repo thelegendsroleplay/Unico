@@ -27,10 +27,10 @@ $start_date = isset($_GET['start_date']) ? sanitize_text_field($_GET['start_date
 $end_date = isset($_GET['end_date']) ? sanitize_text_field($_GET['end_date']) : date('Y-m-d');
 
 // Get orders in date range
-$orders = wc_get_orders([
+$orders = Unico_Order::get_orders([
     'date_created' => $start_date . '...' . $end_date,
     'limit' => -1,
-    'status' => ['completed', 'processing']
+    'status' => ['completed', 'processing', 'refunded']
 ]);
 
 // Calculate totals
@@ -39,8 +39,11 @@ $total_orders = count($orders);
 $total_refunds = 0;
 
 foreach ($orders as $order) {
-    $total_revenue += $order->get_total();
-    $total_refunds += $order->get_total_refunded();
+    if ($order->get_status() !== 'refunded') {
+        $total_revenue += $order->get_total();
+    } else {
+        $total_refunds += $order->get_total();
+    }
 }
 
 $net_revenue = $total_revenue - $total_refunds;
@@ -101,11 +104,11 @@ get_header();
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Total Revenue</div>
-            <div class="stat-value"><?php echo wc_price($total_revenue); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($total_revenue); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Net Revenue</div>
-            <div class="stat-value"><?php echo wc_price($net_revenue); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($net_revenue); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Total Orders</div>
@@ -113,19 +116,19 @@ get_header();
         </div>
         <div class="stat-card">
             <div class="stat-label">Refunds</div>
-            <div class="stat-value"><?php echo wc_price($total_refunds); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($total_refunds); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Commissions Paid</div>
-            <div class="stat-value"><?php echo wc_price($total_commissions ?: 0); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($total_commissions ?: 0); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Pending Commissions</div>
-            <div class="stat-value"><?php echo wc_price($pending_commissions ?: 0); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($pending_commissions ?: 0); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Total Wallet Balance</div>
-            <div class="stat-value"><?php echo wc_price($total_wallet_balance ?: 0); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($total_wallet_balance ?: 0); ?></div>
         </div>
     </div>
 
@@ -147,10 +150,10 @@ get_header();
                     <?php foreach (array_slice($orders, 0, 20) as $order): ?>
                     <tr>
                         <td><strong>#<?php echo $order->get_id(); ?></strong></td>
-                        <td><?php echo $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(); ?></td>
-                        <td><?php echo $order->get_date_created()->format('M j, Y'); ?></td>
-                        <td><?php echo $order->get_formatted_order_total(); ?></td>
-                        <td><?php echo $order->get_status(); ?></td>
+                        <td><?php echo $order->get_customer_name(); ?></td>
+                        <td><?php echo date_i18n('M j, Y', strtotime($order->get_date_created())); ?></td>
+                        <td><?php echo $order->get_formatted_total(); ?></td>
+                        <td><?php echo ucfirst($order->get_status()); ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

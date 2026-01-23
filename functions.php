@@ -34,16 +34,64 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
     define('UNICO_SOFT_LOCK_MINUTES', 15);
 }
 
+/**
+ * Register Product Post Type and Taxonomy (Replacing WooCommerce)
+ */
+function unico_register_product_post_type() {
+    register_post_type('product', [
+        'labels' => [
+            'name' => 'Products',
+            'singular_name' => 'Product',
+            'add_new' => 'Add New',
+            'add_new_item' => 'Add New Product',
+            'edit_item' => 'Edit Product',
+            'new_item' => 'New Product',
+            'view_item' => 'View Product',
+            'search_items' => 'Search Products',
+            'not_found' => 'No products found',
+            'not_found_in_trash' => 'No products found in Trash',
+        ],
+        'public' => true,
+        'has_archive' => true,
+        'publicly_queryable' => true,
+        'show_ui' => true,
+        'show_in_menu' => true,
+        'query_var' => true,
+        'rewrite' => ['slug' => 'product'],
+        'capability_type' => 'post',
+        'supports' => ['title', 'editor', 'thumbnail', 'custom-fields', 'excerpt'],
+        'menu_icon' => 'dashicons-cart',
+    ]);
+
+    register_taxonomy('product_cat', 'product', [
+        'labels' => [
+            'name' => 'Product Categories',
+            'singular_name' => 'Product Category',
+            'search_items' => 'Search Categories',
+            'all_items' => 'All Categories',
+            'parent_item' => 'Parent Category',
+            'parent_item_colon' => 'Parent Category:',
+            'edit_item' => 'Edit Category',
+            'update_item' => 'Update Category',
+            'add_new_item' => 'Add New Category',
+            'new_item_name' => 'New Category Name',
+            'menu_name' => 'Categories',
+        ],
+        'hierarchical' => true,
+        'public' => true,
+        'show_ui' => true,
+        'show_admin_column' => true,
+        'query_var' => true,
+        'rewrite' => ['slug' => 'product-category'],
+    ]);
+}
+add_action('init', 'unico_register_product_post_type');
+
 // Include Mail Settings
 require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
 
 // Include Bank Accounts Management
 require_once get_template_directory() . '/includes/class-bank-accounts.php';
-
-// Include Custom Payment Gateway (only if WooCommerce is active)
-if (class_exists('WooCommerce')) {
-    require_once get_template_directory() . '/includes/class-bank-transfer-gateway.php';
-}
 
 // Initialize Bank Accounts System
 add_action('init', function() {
@@ -52,157 +100,27 @@ add_action('init', function() {
     }
 }, 5);
 
-// Register Custom Payment Gateway (only if WooCommerce is active)
-if (class_exists('WooCommerce')) {
-    add_filter('woocommerce_payment_gateways', function($gateways) {
-        $gateways[] = 'Unico_Bank_Transfer_Gateway';
-        error_log('Unico: Payment gateway registered');
-        return $gateways;
-    });
-}
-
-// Ensure gateway is available for voucher orders
-add_filter('woocommerce_available_payment_gateways', function($available_gateways) {
-    if (!unico_cart_has_voucher_items()) {
-        return $available_gateways;
-    }
-
-    // For voucher orders, ONLY show unico_bank_transfer
-    $filtered_gateways = array();
-
-    if (isset($available_gateways['unico_bank_transfer'])) {
-        $filtered_gateways['unico_bank_transfer'] = $available_gateways['unico_bank_transfer'];
-        error_log('Unico: Bank transfer gateway is available for voucher checkout');
-    } else {
-        error_log('Unico: ERROR - Bank transfer gateway NOT available!');
-        error_log('Unico: Available gateways: ' . implode(', ', array_keys($available_gateways)));
-    }
-
-    return $filtered_gateways;
-});
-
-// Auto-fill billing fields for voucher orders
-add_filter('woocommerce_checkout_get_value', function($value, $input) {
-    if (!unico_cart_has_voucher_items() || !is_user_logged_in()) {
-        return $value;
-    }
-
-    $user = wp_get_current_user();
-
-    // Auto-fill billing fields from user data
-    $field_mappings = array(
-        'billing_first_name' => $user->first_name ?: 'Customer',
-        'billing_last_name' => $user->last_name ?: 'User',
-        'billing_email' => $user->user_email,
-        'billing_phone' => get_user_meta($user->ID, 'billing_phone', true) ?: '0000000000',
-        'billing_country' => 'US',
-        'billing_address_1' => 'N/A',
-        'billing_city' => 'N/A',
-        'billing_state' => 'N/A',
-        'billing_postcode' => '00000',
-    );
-
-    if (isset($field_mappings[$input])) {
-        return $field_mappings[$input];
-    }
-
-    return $value;
-}, 10, 2);
-
-// Make billing fields not required for voucher orders
-add_filter('woocommerce_checkout_fields', function($fields) {
-    if (!unico_cart_has_voucher_items()) {
-        return $fields;
-    }
-
-    // Only email is required for voucher orders
-    $required_fields = array('billing_email');
-
-    foreach ($fields['billing'] as $key => $field) {
-        if (!in_array($key, $required_fields)) {
-            $fields['billing'][$key]['required'] = false;
-        }
-    }
-
-    return $fields;
-});
-
-// Register Custom Order Status: Pending Verification
+// Handle Add to Cart Action
 add_action('init', function() {
-    register_post_status('wc-pending-verification', array(
-        'label' => _x('Pending Verification', 'Order status', 'unico'),
-        'public' => true,
-        'exclude_from_search' => false,
-        'show_in_admin_all_list' => true,
-        'show_in_admin_status_list' => true,
-        'label_count' => _n_noop(
-            'Pending verification <span class="count">(%s)</span>',
-            'Pending verification <span class="count">(%s)</span>',
-            'unico'
-        )
-    ));
-});
+    if (isset($_GET['unico_add_to_cart']) && isset($_GET['unico_add_to_cart_nonce'])) {
+        $product_id = intval($_GET['unico_add_to_cart']);
+        $nonce = $_GET['unico_add_to_cart_nonce'];
 
-// Add Custom Order Status to WooCommerce Order Statuses
-add_filter('wc_order_statuses', function($order_statuses) {
-    $new_statuses = array();
+        if (!wp_verify_nonce($nonce, 'unico_add_to_cart')) {
+            return;
+        }
 
-    // Add custom status after pending
-    foreach ($order_statuses as $key => $status) {
-        $new_statuses[$key] = $status;
-        if ('wc-pending' === $key) {
-            $new_statuses['wc-pending-verification'] = _x('Pending Verification', 'Order status', 'unico');
+        if (class_exists('Unico_Cart')) {
+            $cart = Unico_Cart::get_instance();
+            $cart->add_to_cart($product_id);
+            
+            // Redirect to checkout
+            wp_redirect(home_url('/checkout'));
+            exit;
         }
     }
-
-    return $new_statuses;
 });
 
-// Fix WooCommerce Checkout Page (runs once)
-add_action('admin_init', function() {
-    // Check if already fixed
-    if (get_option('unico_checkout_page_fixed')) {
-        return;
-    }
-
-    // Only run if WooCommerce is active
-    if (!function_exists('WC')) {
-        return;
-    }
-
-    // Find the checkout page with correct template
-    $checkout_page = get_page_by_path('checkout');
-
-    if ($checkout_page) {
-        // Update WooCommerce setting
-        update_option('woocommerce_checkout_page_id', $checkout_page->ID);
-        error_log('Unico: Fixed WooCommerce checkout page to use /checkout (ID: ' . $checkout_page->ID . ')');
-    } else {
-        // Create checkout page if it doesn't exist
-        $page_id = wp_insert_post([
-            'post_title' => 'Checkout',
-            'post_name' => 'checkout',
-            'post_status' => 'publish',
-            'post_type' => 'page',
-            'post_content' => '',
-        ]);
-
-        if ($page_id && !is_wp_error($page_id)) {
-            update_post_meta($page_id, '_wp_page_template', 'page-checkout.php');
-            update_option('woocommerce_checkout_page_id', $page_id);
-            error_log('Unico: Created and configured checkout page (ID: ' . $page_id . ')');
-        }
-    }
-
-    // Mark as fixed so this doesn't run again
-    update_option('unico_checkout_page_fixed', true);
-});
-
-if (defined('WC_PLUGIN_FILE') && !defined('WC_ADMIN_ABSPATH')) {
-    define('WC_ADMIN_ABSPATH', plugin_dir_path(WC_PLUGIN_FILE));
-}
-
-add_filter('woocommerce_enable_myaccount_registration', '__return_false');
 
 function unico_get_required_pages() {
     return array(
@@ -289,18 +207,18 @@ function unico_get_home_page_id() {
 }
 
 function unico_get_required_plugins() {
-    return array(
-        array(
-            'slug' => 'woocommerce',
-            'file' => 'woocommerce/woocommerce.php',
-            'name' => 'WooCommerce'
-        ),
-        array(
-            'slug' => 'woo-razorpay',
-            'file' => 'woo-razorpay/woo-razorpay.php',
-            'name' => 'Razorpay for WooCommerce'
-        )
-    );
+    return array();
+}
+
+/**
+ * Format price with currency symbol
+ */
+function unico_format_price($amount, $currency = 'USD') {
+    $symbol = '$';
+    if ($currency === 'GBP') $symbol = '£';
+    if ($currency === 'EUR') $symbol = '€';
+    
+    return $symbol . number_format((float)$amount, 2);
 }
 
 function unico_get_voucher_catalog_definitions() {
@@ -508,39 +426,34 @@ function unico_get_voucher_catalog_definitions() {
 
 function unico_get_voucher_exam_options() {
     $options = [];
-    if (function_exists('WC')) {
-        $products = new WP_Query([
-            'post_type'      => 'product',
-            'posts_per_page' => -1,
-            'tax_query'      => [
-                [
-                    'taxonomy' => 'product_cat',
-                    'field'    => 'slug',
-                    'terms'    => 'vouchers',
-                ],
+    $products = new WP_Query([
+        'post_type'      => 'product',
+        'posts_per_page' => -1,
+        'tax_query'      => [
+            [
+                'taxonomy' => 'product_cat',
+                'field'    => 'slug',
+                'terms'    => 'vouchers',
             ],
-            'orderby'        => 'title',
-            'order'          => 'ASC',
-        ]);
-        if ($products->have_posts()) {
-            while ($products->have_posts()) {
-                $products->the_post();
-                $product = wc_get_product(get_the_ID());
-                if (!$product) {
-                    continue;
-                }
-                $exam_key = $product->get_meta('exam_name');
-                if (!$exam_key) {
-                    $exam_key = $product->get_name();
-                }
-                if (!$exam_key) {
-                    continue;
-                }
-                $label = $product->get_name();
-                $options[$exam_key] = $label;
+        ],
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+    ]);
+    if ($products->have_posts()) {
+        while ($products->have_posts()) {
+            $products->the_post();
+            $product_id = get_the_ID();
+            $exam_key = get_post_meta($product_id, 'exam_name', true);
+            if (!$exam_key) {
+                $exam_key = get_the_title();
             }
-            wp_reset_postdata();
+            if (!$exam_key) {
+                continue;
+            }
+            $label = get_the_title();
+            $options[$exam_key] = $label;
         }
+        wp_reset_postdata();
     }
 
     asort($options);
@@ -560,9 +473,7 @@ function unico_sync_voucher_products() {
     if (!is_admin()) {
         return;
     }
-    if (!function_exists('WC')) {
-        return;
-    }
+    
     $catalog = unico_get_voucher_catalog_definitions();
     $term = get_term_by('slug', 'vouchers', 'product_cat');
     if ($term && !is_wp_error($term)) {
@@ -594,173 +505,35 @@ function unico_sync_voucher_products() {
                 continue;
             }
         }
-        $product = wc_get_product($product_id);
-        if (!$product) {
-            continue;
-        }
+        
+        // Update meta data
         if ($price !== null) {
-            $product->set_regular_price($price);
-            $product->set_price($price);
+            update_post_meta($product_id, '_regular_price', $price);
+            update_post_meta($product_id, '_price', $price);
         }
-        $product->set_virtual(true);
-        $product->set_downloadable(false);
-        $product->set_catalog_visibility('visible');
-        $product->set_status('publish');
-        $product->set_manage_stock(false);
-        if ($stock_status) {
-            $product->set_stock_status($stock_status);
-        }
-        $product->save();
+        
         if (!empty($term_id)) {
-            wp_set_object_terms($product->get_id(), [$term_id], 'product_cat', true);
+            wp_set_object_terms($product_id, [$term_id], 'product_cat', true);
         }
-        update_post_meta($product->get_id(), 'exam_name', $exam_family);
+        update_post_meta($product_id, 'exam_name', $exam_family);
         if ($currency) {
-            update_post_meta($product->get_id(), 'price_currency', $currency);
+            update_post_meta($product_id, 'price_currency', $currency);
         }
         if ($price_nature) {
-            update_post_meta($product->get_id(), 'price_nature', $price_nature);
+            update_post_meta($product_id, 'price_nature', $price_nature);
         }
+        update_post_meta($product_id, 'is_voucher', 'yes');
     }
 }
 
 add_action('admin_init', 'unico_sync_voucher_products');
 
 function unico_cart_has_voucher_items() {
-    if (!function_exists('WC')) {
-        return false;
-    }
-    $cart = WC()->cart;
-    if (!$cart || $cart->is_empty()) {
-        return false;
-    }
-    foreach ($cart->get_cart() as $cart_item) {
-        if (!isset($cart_item['data'])) {
-            continue;
-        }
-        $product = $cart_item['data'];
-        if (!$product) {
-            continue;
-        }
-        $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
-        if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
-            return true;
-        }
+    if (class_exists('Unico_Cart')) {
+        return Unico_Cart::get_instance()->cart_has_voucher_items();
     }
     return false;
 }
-
-// CRITICAL: Force disable AJAX checkout when vouchers in cart (required for file uploads)
-
-// Enable file uploads in WooCommerce checkout form
-add_filter('woocommerce_checkout_posted_data', function($data) {
-    // Ensure files are included in checkout data
-    if (isset($_FILES['voucher_payment_receipt'])) {
-        $data['voucher_payment_receipt_uploaded'] = !empty($_FILES['voucher_payment_receipt']['name']);
-    }
-    return $data;
-});
-add_action('woocommerce_before_checkout_form', function () {
-    ?>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var form = document.querySelector('form.checkout');
-            if (form) {
-                form.setAttribute('enctype', 'multipart/form-data');
-                console.log('Unico: enctype set on checkout form');
-            }
-        });
-    </script>
-    <?php
-}, 1);
-
-add_filter('woocommerce_add_to_cart_redirect', function ($url) {
-    if (!isset($_REQUEST['add-to-cart'])) {
-        return $url;
-    }
-    $product_id = (int) $_REQUEST['add-to-cart'];
-    if (!$product_id || !function_exists('WC')) {
-        return $url;
-    }
-    $product = wc_get_product($product_id);
-    if (!$product) {
-        return $url;
-    }
-    $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
-    $is_voucher = in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes';
-
-    if ($is_voucher) {
-        // Check if user is logged in
-        if (!is_user_logged_in()) {
-            wc_add_notice('Please log in to purchase vouchers.', 'error');
-            return home_url('/login');
-        }
-
-        // Allow user to proceed to checkout
-        // Email verification will be required on checkout page
-        return wc_get_checkout_url();
-    }
-    return $url;
-}, 10, 1);
-
-add_action('woocommerce_checkout_before_order_review', function () {
-    if (!unico_cart_has_voucher_items()) {
-        return;
-    }
-    if (!function_exists('WC')) {
-        return;
-    }
-    if (!is_user_logged_in()) {
-        wc_add_notice('Please log in to purchase exam vouchers.', 'error');
-        wp_redirect(home_url('/login'));
-        exit;
-    }
-    // Email verification will be shown on checkout page UI
-    // No redirect - allow user to see checkout page
-    $cart = WC()->cart;
-    if (!$cart || $cart->is_empty()) {
-        return;
-    }
-    $voucher_item = null;
-    $voucher_qty = 0;
-    foreach ($cart->get_cart() as $cart_item) {
-        if (!isset($cart_item['data'])) {
-            continue;
-        }
-        $product = $cart_item['data'];
-        if (!$product) {
-            continue;
-        }
-        $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
-        if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
-            $voucher_item = $product;
-            $voucher_qty += isset($cart_item['quantity']) ? (int) $cart_item['quantity'] : 1;
-        }
-    }
-    if (!$voucher_item) {
-        return;
-    }
-    $current_user = wp_get_current_user();
-    $buyer_name = $current_user && $current_user->exists() ? $current_user->display_name : '';
-    $buyer_email = $current_user && $current_user->exists() ? $current_user->user_email : '';
-    $title = $voucher_item->get_name();
-    $unit_price = (float) $voucher_item->get_price();
-    $total = $cart->get_total('edit');
-    $currency = get_woocommerce_currency();
-    $symbol = '$';
-    if ($currency === 'GBP') {
-        $symbol = '£';
-    } elseif ($currency === 'EUR') {
-        $symbol = '€';
-    }
-    $total_numeric = (float) $total;
-    $total_display = $total_numeric > 0 ? number_format($total_numeric, 2) : number_format(0, 2);
-    $product_id = $voucher_item->get_id();
-    $template = get_template_directory() . '/checkout-voucher-card.php';
-    if (file_exists($template)) {
-        include $template;
-    }
-});
 
 // Add AJAX handlers for Purchase Verification
 add_action('wp_ajax_unico_send_purchase_otp', function() {
@@ -817,418 +590,27 @@ add_action('wp_ajax_unico_update_cart_quantity', function() {
         wp_send_json_error(['message' => 'Invalid product ID or quantity']);
     }
 
-    if (!function_exists('WC')) {
-        wp_send_json_error(['message' => 'WooCommerce not available']);
+    if (!class_exists('Unico_Cart')) {
+        wp_send_json_error(['message' => 'Cart system not available']);
     }
 
-    $cart = WC()->cart;
-    if (!$cart) {
-        wp_send_json_error(['message' => 'Cart not available']);
-    }
-
-    // Find the cart item and update quantity
-    $updated = false;
-    foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
-        if ($cart_item['product_id'] == $product_id) {
-            $cart->set_quantity($cart_item_key, $quantity);
-            $updated = true;
-            break;
-        }
-    }
-
-    if ($updated) {
-        $cart->calculate_totals();
+    $cart = Unico_Cart::get_instance();
+    
+    // Find the cart item key by product ID
+    $cart_item_key = $cart->find_product_in_cart($product_id);
+    
+    if ($cart_item_key) {
+        $cart->set_quantity($cart_item_key, $quantity);
+        
         wp_send_json_success([
             'message' => 'Cart updated successfully',
             'quantity' => $quantity,
-            'total' => $cart->get_total('edit')
+            'total' => $cart->get_total('display')
         ]);
     } else {
         wp_send_json_error(['message' => 'Product not found in cart']);
     }
 });
-
-add_action('woocommerce_checkout_process', function () {
-    error_log('=== Unico Checkout Process Started ===');
-    error_log('POST data: ' . print_r($_POST, true));
-    error_log('FILES data: ' . print_r($_FILES, true));
-
-    if (!unico_cart_has_voucher_items()) {
-        error_log('Unico: No voucher items in cart, skipping custom validation');
-        return;
-    }
-
-    error_log('Unico: Voucher items detected, running validation');
-
-    if (!is_user_logged_in()) {
-        error_log('Unico: User not logged in');
-        wc_add_notice('You must be logged in to purchase exam vouchers.', 'error');
-        throw new Exception('User not logged in.');
-    }
-    $user_id = get_current_user_id();
-    error_log('Unico: User ID: ' . $user_id);
-    if ($user_id && class_exists('Unico_Security')) {
-        $security = Unico_Security::get_instance();
-
-        // Only check purchase OTP verification (simplified flow)
-        if (!$security->is_purchase_verified($user_id)) {
-            wc_add_notice('❌ Purchase verification required. Please verify using the code sent to your email.', 'error');
-            throw new Exception('Purchase verification required before checkout.');
-        }
-    }
-    if (isset($_POST['voucher_cart_quantity'])) {
-        $requested_qty = (int) $_POST['voucher_cart_quantity'];
-        if ($requested_qty < 1) {
-            $requested_qty = 1;
-        }
-        $current_qty = unico_get_voucher_cart_quantity();
-        if ($requested_qty !== $current_qty && function_exists('WC')) {
-            $cart = WC()->cart;
-            if ($cart && !$cart->is_empty()) {
-                foreach ($cart->get_cart() as $cart_key => $cart_item) {
-                    if (!isset($cart_item['data'])) {
-                        continue;
-                    }
-                    $product = $cart_item['data'];
-                    if (!$product) {
-                        continue;
-                    }
-                    $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
-                    if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
-                        $cart->set_quantity($cart_key, $requested_qty, true);
-                        break;
-                    }
-                }
-                $cart->calculate_totals();
-            }
-        }
-    }
-    if (empty($_POST['voucher_terms_confirmed'])) {
-        wc_add_notice('Please confirm accuracy and non-refundable terms before placing your order.', 'error');
-        throw new Exception('Terms confirmation required.');
-    }
-    $mode = isset($_POST['voucher_payment_mode']) ? sanitize_text_field(wp_unslash($_POST['voucher_payment_mode'])) : '';
-    $qty = unico_get_voucher_cart_quantity();
-
-    // Validate payment details based on payment mode
-    if ($mode === 'bank_transfer') {
-        if (empty($_POST['voucher_payment_reference'])) {
-            wc_add_notice('❌ Transaction ID is required for bank transfer.', 'error');
-            throw new Exception('Transaction ID required.');
-        }
-
-        // NEW VALIDATION: Check if receipt was uploaded via AJAX and stored in session
-        error_log('Unico Checkout: Checking for receipt in WooCommerce session');
-
-        $receipt_in_session = WC()->session ? WC()->session->get('unico_receipt_upload') : null;
-
-        error_log('Unico Checkout: Receipt in session: ' . print_r($receipt_in_session, true));
-
-        if (!$receipt_in_session || empty($receipt_in_session['url']) || empty($receipt_in_session['file'])) {
-            error_log('Unico Checkout: Payment receipt NOT found in session');
-            wc_add_notice('❌ Payment Receipt Required: Please upload your bank transfer receipt before placing the order.', 'error');
-            throw new Exception('Payment receipt upload required for bank transfer.');
-        }
-
-        // Verify file still exists
-        if (!file_exists($receipt_in_session['file'])) {
-            error_log('Unico Checkout: Receipt file no longer exists at: ' . $receipt_in_session['file']);
-            wc_add_notice('❌ Payment Receipt Error: The uploaded file is no longer available. Please upload again.', 'error');
-            throw new Exception('Payment receipt file missing.');
-        }
-
-        error_log('Unico Checkout: Receipt validation passed - ' . $receipt_in_session['url']);
-    }
-    if ($mode === 'card_payment' && $qty > 3) {
-        wc_add_notice('Card Payment is limited to 3 units. Reduce quantity or choose Bank Transfer.', 'error');
-        throw new Exception('Card payment quantity limit exceeded.');
-    }
-    if ($mode === 'bank_transfer' && $qty > 10) {
-        wc_add_notice('Bank Transfer is limited to 10 units. Reduce quantity before placing the order.', 'error');
-    }
-});
-
-function unico_handle_voucher_receipt_upload($field_name, $order_id) {
-    if (!isset($_FILES[$field_name]) || empty($_FILES[$field_name]['name'])) {
-        return new WP_Error('unico_no_file', 'No file uploaded');
-    }
-    if (!function_exists('wp_handle_upload')) {
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-    }
-    $file = $_FILES[$field_name];
-    if (!empty($file['error'])) {
-        return new WP_Error('unico_upload_error', 'Error uploading file');
-    }
-    $overrides = [
-        'test_form' => false,
-        'mimes' => [
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'gif' => 'image/gif',
-            'webp' => 'image/webp',
-        ],
-    ];
-    $uploaded = wp_handle_upload($file, $overrides);
-    if (isset($uploaded['error'])) {
-        return new WP_Error('unico_upload_error', $uploaded['error']);
-    }
-    $filetype = wp_check_filetype($uploaded['file'], null);
-    $attachment = [
-        'post_mime_type' => $filetype['type'],
-        'post_title' => 'Voucher payment receipt for order ' . $order_id,
-        'post_content' => '',
-        'post_status' => 'private',
-    ];
-    $attachment_id = wp_insert_attachment($attachment, $uploaded['file'], $order_id);
-    if (!$attachment_id || is_wp_error($attachment_id)) {
-        return new WP_Error('unico_attachment_error', 'Could not save receipt attachment');
-    }
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-    $attach_data = wp_generate_attachment_metadata($attachment_id, $uploaded['file']);
-    wp_update_attachment_metadata($attachment_id, $attach_data);
-    return [
-        'attachment_id' => $attachment_id,
-        'url' => $uploaded['url'],
-    ];
-}
-
-add_action('woocommerce_checkout_update_order_meta', function ($order_id) {
-    if (!unico_cart_has_voucher_items()) {
-        return;
-    }
-    $fields = [
-        'voucher_buyer_full_name',
-        'voucher_buyer_email',
-        'voucher_payment_mode',
-        'voucher_payment_reference',
-        'voucher_upload_receipt_note',
-        'voucher_terms_confirmed',
-        'selected_bank_id',
-    ];
-    foreach ($fields as $field) {
-        if (isset($_POST[$field])) {
-            update_post_meta($order_id, $field, sanitize_text_field(wp_unslash($_POST[$field])));
-        }
-    }
-
-    // Save bank details if bank transfer was selected
-    if (isset($_POST['selected_bank_id']) && !empty($_POST['selected_bank_id'])) {
-        $bank_system = Unico_Bank_Accounts::get_instance();
-        $bank = $bank_system->get_bank(intval($_POST['selected_bank_id']));
-        if ($bank) {
-            update_post_meta($order_id, '_bank_name', $bank->bank_name);
-            update_post_meta($order_id, '_bank_account_holder', $bank->account_holder);
-            update_post_meta($order_id, '_bank_account_number', $bank->account_number);
-            update_post_meta($order_id, '_bank_ifsc_code', $bank->ifsc_code);
-            update_post_meta($order_id, '_bank_swift_code', $bank->swift_code);
-            update_post_meta($order_id, '_bank_branch', $bank->branch_name);
-
-            // Add order note with bank details
-            if (function_exists('wc_get_order')) {
-                $order = wc_get_order($order_id);
-                if ($order) {
-                    $order->add_order_note(sprintf(
-                        'Bank Transfer Details: %s - Account: %s (%s)',
-                        $bank->bank_name,
-                        $bank->account_number,
-                        $bank->account_holder
-                    ));
-                }
-            }
-        }
-    }
-
-    // Get receipt from session (uploaded via AJAX)
-    $receipt_in_session = WC()->session ? WC()->session->get('unico_receipt_upload') : null;
-
-    if ($receipt_in_session && !empty($receipt_in_session['url']) && !empty($receipt_in_session['file'])) {
-        // Create WordPress attachment from the uploaded file
-        $filetype = wp_check_filetype($receipt_in_session['file'], null);
-        $attachment = [
-            'post_mime_type' => $filetype['type'],
-            'post_title' => 'Voucher payment receipt for order ' . $order_id,
-            'post_content' => '',
-            'post_status' => 'private',
-        ];
-        $attachment_id = wp_insert_attachment($attachment, $receipt_in_session['file'], $order_id);
-
-        if ($attachment_id && !is_wp_error($attachment_id)) {
-            require_once ABSPATH . 'wp-admin/includes/image.php';
-            $attach_data = wp_generate_attachment_metadata($attachment_id, $receipt_in_session['file']);
-            wp_update_attachment_metadata($attachment_id, $attach_data);
-
-            update_post_meta($order_id, '_voucher_payment_receipt_id', $attachment_id);
-            update_post_meta($order_id, '_voucher_payment_receipt_url', $receipt_in_session['url']);
-
-            if (function_exists('wc_get_order')) {
-                $order = wc_get_order($order_id);
-                if ($order) {
-                    $order->add_order_note('Payment receipt uploaded and saved (Attachment ID: ' . $attachment_id . ')');
-                }
-            }
-        }
-    }
-    update_post_meta($order_id, '_voucher_verification_status', 'pending');
-    if (function_exists('wc_get_order')) {
-        $order = wc_get_order($order_id);
-        if ($order) {
-            $order->add_order_note('Voucher order marked as pending payment verification.');
-        }
-    }
-});
-
-// Clear purchase verification after order
-add_action('woocommerce_thankyou', function($order_id) {
-    if (is_user_logged_in() && class_exists('Unico_Security')) {
-        $security = Unico_Security::get_instance();
-        $security->clear_purchase_verification(get_current_user_id());
-    }
-});
-
-function unico_get_voucher_cart_quantity() {
-    if (!function_exists('WC')) {
-        return 0;
-    }
-    $cart = WC()->cart;
-    if (!$cart || $cart->is_empty()) {
-        return 0;
-    }
-    $qty = 0;
-    foreach ($cart->get_cart() as $cart_item) {
-        if (!isset($cart_item['data'])) {
-            continue;
-        }
-        $product = $cart_item['data'];
-        if (!$product) {
-            continue;
-        }
-        $categories = wp_get_post_terms($product->get_id(), 'product_cat', ['fields' => 'slugs']);
-        if (in_array('vouchers', $categories) || $product->get_meta('is_voucher') === 'yes') {
-            $qty += isset($cart_item['quantity']) ? (int) $cart_item['quantity'] : 0;
-        }
-    }
-    return $qty;
-}
-
-add_filter('woocommerce_billing_fields', function ($fields) {
-    if (!unico_cart_has_voucher_items()) {
-        return $fields;
-    }
-    $keys = [
-        'billing_first_name',
-        'billing_last_name',
-        'billing_address_1',
-        'billing_city',
-        'billing_postcode',
-        'billing_country',
-        'billing_state',
-    ];
-    foreach ($keys as $key) {
-        if (isset($fields[$key])) {
-            $fields[$key]['required'] = false;
-        }
-    }
-    return $fields;
-});
-
-add_filter('woocommerce_checkout_fields', function ($fields) {
-    if (!unico_cart_has_voucher_items()) {
-        return $fields;
-    }
-    $keys = [
-        'billing_first_name',
-        'billing_last_name',
-        'billing_address_1',
-        'billing_city',
-        'billing_postcode',
-        'billing_country',
-        'billing_state',
-    ];
-    foreach ($keys as $key) {
-        if (isset($fields['billing'][$key])) {
-            $fields['billing'][$key]['required'] = false;
-        }
-    }
-    return $fields;
-});
-
-add_filter('woocommerce_checkout_posted_data', function ($data) {
-    if (!unico_cart_has_voucher_items()) {
-        return $data;
-    }
-    if (!empty($_POST['voucher_buyer_full_name'])) {
-        $full_name = sanitize_text_field(wp_unslash($_POST['voucher_buyer_full_name']));
-        $parts = preg_split('/\s+/', $full_name, 2);
-        $data['billing_first_name'] = $parts[0];
-        $data['billing_last_name'] = isset($parts[1]) ? $parts[1] : '';
-    }
-    if (!empty($_POST['voucher_buyer_email'])) {
-        $data['billing_email'] = sanitize_email(wp_unslash($_POST['voucher_buyer_email']));
-    }
-    return $data;
-});
-
-function unico_is_checkout_request_path() {
-    $request_path = trim(parse_url(add_query_arg(array()), PHP_URL_PATH), '/');
-    return $request_path === 'checkout';
-}
-
-add_filter('woocommerce_is_checkout', function ($is_checkout) {
-    if ($is_checkout) {
-        return true;
-    }
-    if (unico_is_checkout_request_path()) {
-        return true;
-    }
-    return $is_checkout;
-});
-
-add_filter('the_content', function ($content) {
-    $is_checkout_request = false;
-    if (function_exists('is_checkout') && is_checkout()) {
-        $is_checkout_request = true;
-    } elseif (unico_is_checkout_request_path()) {
-        $is_checkout_request = true;
-    }
-    if ($is_checkout_request) {
-        if (has_shortcode($content, 'woocommerce_checkout')) {
-            return $content;
-        }
-        if (function_exists('woocommerce_checkout')) {
-            ob_start();
-            woocommerce_checkout();
-            return ob_get_clean();
-        }
-        return do_shortcode('[woocommerce_checkout]');
-    }
-    return $content;
-});
-
-function unico_ensure_plugin_installed_and_active($slug, $file) {
-    if (is_plugin_active($file)) {
-        return true;
-    }
-    if (!file_exists(WP_PLUGIN_DIR . '/' . $file)) {
-        $api = plugins_api('plugin_information', array('slug' => $slug, 'fields' => array('sections' => false)));
-        if (is_wp_error($api)) {
-            return $api;
-        }
-        if (empty($api->download_link)) {
-            return new WP_Error('unico_missing_download_link', 'Missing plugin download link');
-        }
-        $upgrader = new Plugin_Upgrader(new Automatic_Upgrader_Skin());
-        $result = $upgrader->install($api->download_link);
-        if (is_wp_error($result)) {
-            return $result;
-        }
-    }
-    $activate = activate_plugin($file);
-    if (is_wp_error($activate)) {
-        return $activate;
-    }
-    return true;
-}
 
 function unico_dev_sync_required_pages() {
     if (!UNICO_DEV_MODE) {
@@ -1300,29 +682,15 @@ function unico_force_dashboard_templates() {
 add_action('template_redirect', 'unico_force_dashboard_templates', 0);
 
 /* --------------------------------------------------
- * PLUGIN DEPENDENCY CHECK & PAGE MANAGEMENT
+ * PAGE MANAGEMENT
  * -------------------------------------------------- */
 // Run on theme activation and admin pages
-add_action('after_switch_theme', 'unico_check_dependencies_and_pages');
-add_action('admin_init', 'unico_check_dependencies_and_pages');
+add_action('after_switch_theme', 'unico_check_pages');
+add_action('admin_init', 'unico_check_pages');
 
-function unico_check_dependencies_and_pages() {
-    require_once ABSPATH . 'wp-admin/includes/plugin.php';
+function unico_check_pages() {
     $current = current_filter();
-    $missing = array();
-    $errors = array();
-    $required_plugins = unico_get_required_plugins();
     if ($current === 'after_switch_theme') {
-        require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/misc.php';
-        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-        foreach ($required_plugins as $plugin) {
-            $result = unico_ensure_plugin_installed_and_active($plugin['slug'], $plugin['file']);
-            if (is_wp_error($result)) {
-                $errors[] = $plugin['name'];
-            }
-        }
         unico_sync_required_pages();
         $home_id = unico_get_home_page_id();
         if ($home_id > 0) {
@@ -1331,40 +699,6 @@ function unico_check_dependencies_and_pages() {
         }
     } elseif ($current === 'admin_init') {
         unico_sync_required_pages();
-    }
-    foreach ($required_plugins as $plugin) {
-        if (!is_plugin_active($plugin['file'])) {
-            $missing[] = $plugin['name'];
-        }
-    }
-    if (is_plugin_active('woocommerce/woocommerce.php')) {
-        if (!function_exists('WC')) {
-            require_once WP_PLUGIN_DIR . '/woocommerce/woocommerce.php';
-        }
-        if (function_exists('WC')) {
-            WC();
-            $gateways = WC()->payment_gateways->payment_gateways();
-            if (!isset($gateways['razorpay']) || $gateways['razorpay']->enabled !== 'yes') {
-                $missing[] = 'Razorpay payment gateway (enable in WooCommerce → Settings → Payments)';
-            }
-        }
-        if (!is_plugin_active('woo-razorpay/woo-razorpay.php')) {
-            $missing[] = 'Razorpay for WooCommerce (install from WordPress plugin directory)';
-        }
-    } else {
-        $missing[] = 'WooCommerce';
-    }
-    if (!empty($missing) || !empty($errors)) {
-        add_action('admin_notices', function () use ($missing, $errors) {
-            $messages = array();
-            if (!empty($missing)) {
-                $messages[] = 'Unico Theme requires the following plugins or settings: <strong>' . implode(', ', $missing) . '</strong>. Please install and activate them.';
-            }
-            if (!empty($errors)) {
-                $messages[] = 'Automatic installation or activation failed for: <strong>' . implode(', ', $errors) . '</strong>. Please install or activate them manually.';
-            }
-            echo '<div class="error"><p>' . implode(' ', $messages) . '</p></div>';
-        });
     }
 }
 
@@ -1440,7 +774,7 @@ add_action('wp_enqueue_scripts', function () {
         wp_enqueue_script(
             'unico-checkout-js',
             get_template_directory_uri() . '/assets/js/checkout.js',
-            ['jquery', 'wc-checkout'],
+            ['jquery'],
             '1.0',
             true
         );
@@ -1461,22 +795,7 @@ add_action('wp_enqueue_scripts', function () {
     }
 });
 
-add_filter('woocommerce_available_payment_gateways', function ($gateways) {
-    if (is_admin()) {
-        return $gateways;
-    }
-    $user = wp_get_current_user();
-    if (!$user || empty($user->roles) || !in_array('unico_reseller', (array) $user->roles, true)) {
-        return $gateways;
-    }
-    $allowed = ['razorpay'];
-    foreach ($gateways as $id => $gateway) {
-        if (!in_array($id, $allowed, true)) {
-            unset($gateways[$id]);
-        }
-    }
-    return $gateways;
-}, 20);
+
 
 
 /* --------------------------------------------------
@@ -1886,243 +1205,15 @@ function unico_get_ticket_details_ajax() {
 
 add_action('wp_ajax_get_ticket_details', 'unico_get_ticket_details_ajax');
 
-// ============================================================================
-// PAYMENT RECEIPT VERIFICATION - ADMIN INTERFACE
-// ============================================================================
-
-/**
- * Add Payment Receipt Meta Box to Order Edit Screen
- */
-add_action('add_meta_boxes', function() {
-    add_meta_box(
-        'unico_payment_receipt',
-        __('Payment Receipt Verification', 'unico'),
-        'unico_payment_receipt_meta_box',
-        'shop_order',
-        'side',
-        'high'
-    );
-});
-
-/**
- * Display Payment Receipt Meta Box
- */
-function unico_payment_receipt_meta_box($post) {
-    $order = wc_get_order($post->ID);
-
-    if (!$order) {
-        return;
-    }
-
-    $payment_method = $order->get_payment_method();
-    $verification_status = $order->get_meta('_voucher_verification_status');
-    $receipt_url = $order->get_meta('_payment_receipt_url');
-    $receipt_uploaded = $order->get_meta('_payment_receipt_uploaded');
-
-    ?>
-    <div class="unico-payment-verification-box">
-        <?php if ($payment_method === 'unico_bank_transfer'): ?>
-
-            <?php if ($receipt_uploaded === 'yes' && $receipt_url): ?>
-                <div style="margin-bottom: 15px;">
-                    <strong>Payment Receipt:</strong><br>
-                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" style="color: #0073aa;">
-                        View Receipt →
-                    </a>
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <img src="<?php echo esc_url($receipt_url); ?>"
-                         alt="Payment Receipt"
-                         style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <strong>Verification Status:</strong><br>
-                    <?php
-                    $status_colors = array(
-                        'pending' => '#ff9800',
-                        'approved' => '#4caf50',
-                        'rejected' => '#f44336'
-                    );
-                    $status_color = isset($status_colors[$verification_status]) ? $status_colors[$verification_status] : '#999';
-                    ?>
-                    <span style="display: inline-block; padding: 4px 12px; background: <?php echo $status_color; ?>; color: white; border-radius: 3px; font-size: 12px; margin-top: 5px;">
-                        <?php echo esc_html(ucfirst($verification_status)); ?>
-                    </span>
-                </div>
-
-                <?php if ($verification_status === 'pending'): ?>
-                    <div style="margin-top: 15px;">
-                        <button type="button"
-                                class="button button-primary"
-                                onclick="unicoApprovePayment(<?php echo $post->ID; ?>)"
-                                style="width: 100%; margin-bottom: 8px;">
-                            ✓ Approve Payment
-                        </button>
-                        <button type="button"
-                                class="button"
-                                onclick="unicoRejectPayment(<?php echo $post->ID; ?>)"
-                                style="width: 100%;">
-                            ✗ Reject Payment
-                        </button>
-                    </div>
-                <?php endif; ?>
-
-            <?php else: ?>
-                <p style="color: #999; font-style: italic;">No payment receipt uploaded.</p>
-            <?php endif; ?>
-
-        <?php else: ?>
-            <p style="color: #999; font-style: italic;">This order does not use bank transfer payment.</p>
-        <?php endif; ?>
-    </div>
-
-    <script>
-    function unicoApprovePayment(orderId) {
-        if (!confirm('Are you sure you want to approve this payment?')) {
-            return;
-        }
-
-        jQuery.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'unico_verify_payment',
-                order_id: orderId,
-                status: 'approved',
-                nonce: '<?php echo wp_create_nonce('unico_verify_payment'); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert('✓ Payment approved successfully!');
-                    location.reload();
-                } else {
-                    alert('Error: ' + response.data.message);
-                }
-            },
-            error: function() {
-                alert('Failed to approve payment. Please try again.');
-            }
-        });
-    }
-
-    function unicoRejectPayment(orderId) {
-        var reason = prompt('Please enter reason for rejection:');
-        if (!reason) {
-            return;
-        }
-
-        jQuery.ajax({
-            url: ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'unico_verify_payment',
-                order_id: orderId,
-                status: 'rejected',
-                reason: reason,
-                nonce: '<?php echo wp_create_nonce('unico_verify_payment'); ?>'
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert('✓ Payment rejected.');
-                    location.reload();
-                } else {
-                    alert('Error: ' + response.data.message);
-                }
-            },
-            error: function() {
-                alert('Failed to reject payment. Please try again.');
-            }
-        });
-    }
-    </script>
-    <?php
-}
-
-/**
- * AJAX Handler: Verify Payment (Approve/Reject)
- */
-add_action('wp_ajax_unico_verify_payment', function() {
-    check_ajax_referer('unico_verify_payment', 'nonce');
-
-    if (!current_user_can('manage_woocommerce')) {
-        wp_send_json_error(array('message' => 'Insufficient permissions.'));
-        return;
-    }
-
-    $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
-    $status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
-    $reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : '';
-
-    if (!$order_id || !in_array($status, array('approved', 'rejected'))) {
-        wp_send_json_error(array('message' => 'Invalid parameters.'));
-        return;
-    }
-
-    $order = wc_get_order($order_id);
-
-    if (!$order) {
-        wp_send_json_error(array('message' => 'Order not found.'));
-        return;
-    }
-
-    // Update verification status
-    $order->update_meta_data('_voucher_verification_status', $status);
-
-    if ($status === 'approved') {
-        // Change order status to processing
-        $order->update_status('processing', __('Payment receipt approved and verified.', 'unico'));
-
-        // Add order note
-        $order->add_order_note(__('Payment receipt has been verified and approved by admin.', 'unico'), false, true);
-
-        error_log("Unico: Payment approved for order #{$order_id}");
-
-    } else {
-        // Change order status to failed
-        $order->update_status('failed', __('Payment receipt rejected: ' . $reason, 'unico'));
-
-        // Add order note with reason
-        $order->add_order_note(__('Payment receipt rejected. Reason: ' . $reason, 'unico'), false, true);
-
-        // Store rejection reason
-        $order->update_meta_data('_payment_rejection_reason', $reason);
-
-        error_log("Unico: Payment rejected for order #{$order_id}. Reason: {$reason}");
-    }
-
-    $order->save();
-
-    // Send customer notification email
-    $mailer = WC()->mailer();
-    $emails = $mailer->get_emails();
-
-    if ($status === 'approved' && isset($emails['WC_Email_Customer_Processing_Order'])) {
-        // Trigger processing order email
-        $emails['WC_Email_Customer_Processing_Order']->trigger($order_id);
-        error_log("Unico: Sent processing order email to customer for order #{$order_id}");
-    } elseif ($status === 'rejected' && isset($emails['WC_Email_Customer_Refunded_Order'])) {
-        // Trigger failed order email notification
-        do_action('woocommerce_order_status_failed', $order_id, $order);
-        error_log("Unico: Sent failed order notification for order #{$order_id}");
-    }
-
-    wp_send_json_success(array(
-        'message' => $status === 'approved' ? 'Payment approved.' : 'Payment rejected.',
-        'status' => $status
-    ));
-});
-
 /**
  * Send Admin Notification When Order Requires Verification
  */
-add_action('woocommerce_order_status_pending-verification', function($order_id, $order = null) {
-    if (!$order) {
-        $order = wc_get_order($order_id);
+add_action('unico_order_status_pending-verification', function($order_id, $order = null) {
+    if (!$order && class_exists('Unico_Order')) {
+        $order = new Unico_Order($order_id);
     }
 
-    if (!$order) {
+    if (!$order || !method_exists($order, 'get_id') || !$order->get_id()) {
         return;
     }
 
@@ -2139,13 +1230,12 @@ add_action('woocommerce_order_status_pending-verification', function($order_id, 
         "Email: %s\n" .
         "Total: %s\n\n" .
         "Payment Receipt: %s\n\n" .
-        "Please review and approve the payment receipt in the admin panel:\n%s",
+        "Please review and approve the payment receipt in the Management Dashboard.",
         $order->get_order_number(),
-        $order->get_billing_first_name() . ' ' . $order->get_billing_last_name(),
-        $order->get_billing_email(),
-        $order->get_formatted_order_total(),
-        $receipt_url ? $receipt_url : 'Not uploaded',
-        admin_url('post.php?post=' . $order_id . '&action=edit')
+        $order->get_customer_name(),
+        $order->get_customer_email(),
+        $order->get_formatted_total(),
+        $receipt_url ? $receipt_url : 'Not uploaded'
     );
 
     wp_mail($admin_email, $subject, $message);

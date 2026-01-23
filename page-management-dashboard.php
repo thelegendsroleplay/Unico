@@ -41,11 +41,6 @@ if (isset($_POST['unico_add_exam_definition']) && isset($_POST['exam_definition_
             'type' => 'error',
             'message' => 'Exam product name is required.'
         ];
-    } elseif (!function_exists('WC')) {
-        $mgmt_notices[] = [
-            'type' => 'error',
-            'message' => 'WooCommerce is required to manage exams.'
-        ];
     } else {
         $slug = sanitize_title($exam_product_name);
         $product_post = get_page_by_path($slug, OBJECT, 'product');
@@ -67,48 +62,39 @@ if (isset($_POST['unico_add_exam_definition']) && isset($_POST['exam_definition_
                 'message' => 'Failed to create exam product.'
             ];
         } else {
-            $product = wc_get_product($product_id);
-            if ($product) {
-                if ($exam_price !== null && $exam_price >= 0) {
-                    $product->set_regular_price($exam_price);
-                    $product->set_price($exam_price);
-                }
-                $product->set_virtual(true);
-                $product->set_downloadable(false);
-                $product->set_catalog_visibility('visible');
-                $product->set_status('publish');
-                $product->set_manage_stock(false);
-                $product->save();
-
-                $term = get_term_by('slug', 'vouchers', 'product_cat');
-                if ($term && !is_wp_error($term)) {
-                    wp_set_object_terms($product->get_id(), [(int) $term->term_id], 'product_cat', true);
-                } else {
-                    $inserted = wp_insert_term('Vouchers', 'product_cat', ['slug' => 'vouchers']);
-                    if (!is_wp_error($inserted) && isset($inserted['term_id'])) {
-                        wp_set_object_terms($product->get_id(), [(int) $inserted['term_id']], 'product_cat', true);
-                    }
-                }
-
-                $exam_meta = $exam_family ? $exam_family : $exam_product_name;
-                update_post_meta($product->get_id(), 'exam_name', $exam_meta);
-                if ($exam_currency) {
-                    update_post_meta($product->get_id(), 'price_currency', $exam_currency);
-                }
-                if ($exam_price_nature) {
-                    update_post_meta($product->get_id(), 'price_nature', $exam_price_nature);
-                }
-
-                $mgmt_notices[] = [
-                    'type' => 'success',
-                    'message' => 'Exam added to catalog.'
-                ];
-            } else {
-                $mgmt_notices[] = [
-                    'type' => 'error',
-                    'message' => 'Failed to load created exam product.'
-                ];
+            if ($exam_price !== null && $exam_price >= 0) {
+                update_post_meta($product_id, '_regular_price', $exam_price);
+                update_post_meta($product_id, '_price', $exam_price);
             }
+            update_post_meta($product_id, '_virtual', 'yes');
+            update_post_meta($product_id, '_downloadable', 'no');
+            update_post_meta($product_id, '_manage_stock', 'no');
+            update_post_meta($product_id, '_stock_status', 'instock');
+
+            $term = get_term_by('slug', 'vouchers', 'product_cat');
+            if ($term && !is_wp_error($term)) {
+                wp_set_object_terms($product_id, [(int) $term->term_id], 'product_cat', true);
+            } else {
+                $inserted = wp_insert_term('Vouchers', 'product_cat', ['slug' => 'vouchers']);
+                if (!is_wp_error($inserted) && isset($inserted['term_id'])) {
+                    wp_set_object_terms($product_id, [(int) $inserted['term_id']], 'product_cat', true);
+                }
+            }
+
+            $exam_meta = $exam_family ? $exam_family : $exam_product_name;
+            update_post_meta($product_id, 'exam_name', $exam_meta);
+            if ($exam_currency) {
+                update_post_meta($product_id, 'price_currency', $exam_currency);
+            }
+            if ($exam_price_nature) {
+                update_post_meta($product_id, 'price_nature', $exam_price_nature);
+            }
+            update_post_meta($product_id, 'is_voucher', 'yes');
+
+            $mgmt_notices[] = [
+                'type' => 'success',
+                'message' => 'Exam added to catalog.'
+            ];
         }
     }
 }
@@ -160,22 +146,17 @@ if (isset($_POST['unico_add_product_stock']) && isset($_POST['voucher_stock_nonc
             'type' => 'error',
             'message' => 'Select a voucher and enter a valid stock quantity.'
         ];
-    } elseif (!function_exists('wc_get_product')) {
-        $mgmt_notices[] = [
-            'type' => 'error',
-            'message' => 'WooCommerce is required to manage voucher stock.'
-        ];
     } else {
-        $product = wc_get_product($product_id);
-        if (!$product) {
+        $product = get_post($product_id);
+        if (!$product || $product->post_type !== 'product') {
             $mgmt_notices[] = [
                 'type' => 'error',
                 'message' => 'Unable to load selected voucher product.'
             ];
         } else {
-            $exam_name = $product->get_meta('exam_name');
+            $exam_name = get_post_meta($product_id, 'exam_name', true);
             if (!$exam_name) {
-                $exam_name = $product->get_name();
+                $exam_name = $product->post_title;
             }
             if (!$exam_name) {
                 $mgmt_notices[] = [
@@ -239,22 +220,17 @@ if (isset($_POST['unico_remove_product_stock']) && isset($_POST['voucher_stock_n
             'type' => 'error',
             'message' => 'Select a voucher and enter a valid stock quantity to remove.'
         ];
-    } elseif (!function_exists('wc_get_product')) {
-        $mgmt_notices[] = [
-            'type' => 'error',
-            'message' => 'WooCommerce is required to manage voucher stock.'
-        ];
     } else {
-        $product = wc_get_product($product_id);
-        if (!$product) {
+        $product = get_post($product_id);
+        if (!$product || $product->post_type !== 'product') {
             $mgmt_notices[] = [
                 'type' => 'error',
                 'message' => 'Unable to load selected voucher product.'
             ];
         } else {
-            $exam_name = $product->get_meta('exam_name');
+            $exam_name = get_post_meta($product_id, 'exam_name', true);
             if (!$exam_name) {
-                $exam_name = $product->get_name();
+                $exam_name = $product->post_title;
             }
             if (!$exam_name) {
                 $mgmt_notices[] = [
@@ -453,10 +429,10 @@ if (isset($_POST['unico_delete_voucher']) && isset($_POST['voucher_delete_nonce'
 if (isset($_POST['unico_request_payment_proof']) && isset($_POST['order_management_nonce']) && wp_verify_nonce($_POST['order_management_nonce'], 'unico_update_order_status')) {
     $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
     if ($order_id > 0) {
-        $order = wc_get_order($order_id);
-        if ($order) {
+        $order = new Unico_Order($order_id);
+        if ($order->get_id()) {
             $message = 'Please provide payment proof screenshot or transaction receipt for verification.';
-            $order->add_order_note($message, true);
+            $order->add_note($message);
             $mgmt_notices[] = [
                 'type' => 'success',
                 'message' => 'Payment proof requested from customer for order #' . $order->get_order_number() . '.'
@@ -467,13 +443,15 @@ if (isset($_POST['unico_request_payment_proof']) && isset($_POST['order_manageme
 
 if (isset($_POST['unico_verify_and_deliver']) && isset($_POST['order_management_nonce']) && wp_verify_nonce($_POST['order_management_nonce'], 'unico_update_order_status')) {
     $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
-    if ($order_id > 0 && function_exists('wc_get_order')) {
-        $order = wc_get_order($order_id);
-        if ($order) {
-            update_post_meta($order_id, '_voucher_verification_status', 'verified');
-            $order->add_order_note('Management verified payment for voucher order. Triggering voucher delivery.');
-            $voucher_system->auto_deliver_vouchers($order_id);
-            $order = wc_get_order($order_id);
+    if ($order_id > 0) {
+        $order = new Unico_Order($order_id);
+        if ($order->get_id()) {
+            $order->update_meta('_voucher_verification_status', 'verified');
+            $order->add_note('Management verified payment for voucher order. Triggering voucher delivery.');
+            $voucher_system->auto_deliver_vouchers($order_id, $order);
+            
+            // Reload order to check status
+            $order = new Unico_Order($order_id);
             if ($order && $order->get_meta('_vouchers_delivered')) {
                 $mgmt_notices[] = [
                     'type' => 'success',
@@ -494,12 +472,13 @@ if (isset($_POST['unico_update_order_status']) && isset($_POST['order_management
     $new_status = isset($_POST['new_status']) ? sanitize_text_field($_POST['new_status']) : '';
     $order_note = isset($_POST['order_note']) ? sanitize_textarea_field($_POST['order_note']) : '';
     if ($order_id > 0 && $new_status) {
-        $order = wc_get_order($order_id);
-        if ($order) {
-            $valid_statuses = array_keys(wc_get_order_statuses());
+        $order = new Unico_Order($order_id);
+        if ($order->get_id()) {
+            // Simple validation of status
+            $valid_statuses = ['pending', 'processing', 'completed', 'cancelled', 'refunded', 'failed', 'pending-verification'];
             if (in_array($new_status, $valid_statuses, true)) {
                 if ($order_note !== '') {
-                    $order->add_order_note($order_note);
+                    $order->add_note($order_note);
                 }
                 $order->update_status($new_status);
                 $mgmt_notices[] = [
@@ -695,7 +674,7 @@ $agent_count = count(get_users(['role' => 'unico_agent']));
 $reseller_count = count(get_users(['role' => 'unico_reseller']));
 
 // Get order stats (last 30 days)
-$orders_30days = wc_get_orders([
+$orders_30days = Unico_Order::get_orders([
     'date_created' => date('Y-m-d', strtotime('-30 days')) . '...' . date('Y-m-d'),
     'limit' => -1
 ]);
@@ -721,7 +700,7 @@ $active_users_30days = $wpdb->get_var($wpdb->prepare(
 ));
 
 // Global order stats
-$orders_completed_all = wc_get_orders([
+$orders_completed_all = Unico_Order::get_orders([
     'status' => ['processing', 'completed'],
     'limit' => -1
 ]);
@@ -731,7 +710,7 @@ $total_revenue_all = array_sum(array_map(function($order) {
     return $order->get_total();
 }, $orders_completed_all));
 
-$orders_today = wc_get_orders([
+$orders_today = Unico_Order::get_orders([
     'date_created' => date('Y-m-d') . '...' . date('Y-m-d'),
     'status' => ['processing', 'completed'],
     'limit' => -1
@@ -773,9 +752,9 @@ $vouchers_table = $wpdb->prefix . 'unico_vouchers';
 $recent_vouchers = $wpdb->get_results("SELECT * FROM $vouchers_table ORDER BY created_at DESC LIMIT 25");
 
 // Recent orders
-$recent_orders = wc_get_orders([
+$recent_orders = Unico_Order::get_orders([
     'limit' => 20,
-    'orderby' => 'date',
+    'orderby' => 'created_at',
     'order' => 'DESC'
 ]);
 
@@ -798,7 +777,7 @@ get_header();
         <div class="mgmt-header-meta">
             <span><?php echo esc_html(date_i18n('M j, Y H:i')); ?></span>
             <span>Total orders: <?php echo intval($total_orders_all); ?></span>
-            <span>Total revenue: <?php echo wc_price($total_revenue_all); ?></span>
+            <span>Total revenue: <?php echo unico_format_price($total_revenue_all); ?></span>
         </div>
     </div>
 
@@ -828,7 +807,7 @@ get_header();
                 <div class="mgmt-stat-icon">📅</div>
                 <div class="mgmt-stat-label">Today Orders</div>
                 <div class="mgmt-stat-value"><?php echo intval($today_orders_count); ?></div>
-                <div class="mgmt-stat-sub">Today revenue: <?php echo wc_price($today_revenue); ?></div>
+                <div class="mgmt-stat-sub">Today revenue: <?php echo unico_format_price($today_revenue); ?></div>
             </div>
             <div class="mgmt-stat-card">
                 <div class="mgmt-stat-icon">📦</div>
@@ -839,7 +818,7 @@ get_header();
             <div class="mgmt-stat-card">
                 <div class="mgmt-stat-icon">💰</div>
                 <div class="mgmt-stat-label">Revenue (30 Days)</div>
-                <div class="mgmt-stat-value"><?php echo wc_price($revenue_30days); ?></div>
+                <div class="mgmt-stat-value"><?php echo unico_format_price($revenue_30days); ?></div>
                 <div class="mgmt-stat-sub">Processing + completed</div>
             </div>
             <div class="mgmt-stat-card">
@@ -1277,20 +1256,18 @@ get_header();
                                     <?php
                                     $voucher_system_local = Unico_Voucher_System::get_instance();
                                     while ($voucher_products_admin->have_posts()): $voucher_products_admin->the_post();
-                                        $product = wc_get_product(get_the_ID());
-                                        $product_id = $product ? $product->get_id() : get_the_ID();
+                                        $product_id = get_the_ID();
                                         $official_meta = get_post_meta($product_id, '_voucher_official_price', true);
                                         if ($official_meta === '') {
                                             $official_meta = get_post_meta($product_id, '_regular_price', true);
                                         }
                                         $agent_meta = get_post_meta($product_id, '_voucher_agent_price', true);
-                                        $exam_label = '';
-                                        if ($product) {
-                                            $exam_label = $product->get_meta('exam_name');
-                                            if (!$exam_label) {
-                                                $exam_label = $product->get_name();
-                                            }
+                                        
+                                        $exam_label = get_post_meta($product_id, 'exam_name', true);
+                                        if (!$exam_label) {
+                                            $exam_label = get_the_title();
                                         }
+                                        
                                         $available_stock = 0;
                                         if ($exam_label && method_exists($voucher_system_local, 'get_vouchers_by_exam')) {
                                             $available = $voucher_system_local->get_vouchers_by_exam($exam_label, 'available');
@@ -1367,8 +1344,8 @@ get_header();
                                                 <?php echo esc_html(ucfirst($voucher->voucher_status)); ?>
                                             </span>
                                         </td>
-                                        <td><?php echo wc_price($voucher->purchase_price); ?></td>
-                                        <td><?php echo wc_price($voucher->selling_price); ?></td>
+                                        <td><?php echo unico_format_price($voucher->purchase_price); ?></td>
+                                        <td><?php echo unico_format_price($voucher->selling_price); ?></td>
                                         <td><?php echo esc_html(date_i18n('M j, Y H:i', strtotime($voucher->created_at))); ?></td>
                                         <td>
                                             <?php if ($voucher->voucher_status === 'available'): ?>
@@ -1418,26 +1395,26 @@ get_header();
                                 <?php foreach ($recent_orders as $order): ?>
                                     <?php
                                     $order_id = $order->get_id();
-                                    $billing_name = trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
-                                    $billing_email = $order->get_billing_email();
-                                    $status_key = 'wc-' . $order->get_status();
-                                    $transaction_id = $order->get_transaction_id();
-                                    $payment_method = $order->get_payment_method_title();
+                                    $billing_name = $order->get_customer_name();
+                                    $billing_email = $order->get_customer_email();
+                                    $status_key = $order->get_status();
+                                    $transaction_id = $order->get_payment_reference();
+                                    $payment_method = ucfirst($order->get_payment_method());
                                     $verification_status = get_post_meta($order_id, '_voucher_verification_status', true);
                                     ?>
                                     <tr>
                                         <td>#<?php echo esc_html($order->get_order_number()); ?></td>
-                                        <td><?php echo esc_html($order->get_date_created() ? $order->get_date_created()->date_i18n('M j, Y H:i') : ''); ?></td>
+                                        <td><?php echo esc_html($order->get_date_created() ? date_i18n('M j, Y H:i', strtotime($order->get_date_created())) : ''); ?></td>
                                         <td>
                                             <?php echo esc_html($billing_name ?: 'Guest'); ?>
                                             <?php if ($billing_email): ?>
                                                 <div class="mgmt-muted-text"><?php echo esc_html($billing_email); ?></div>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?php echo wc_price($order->get_total()); ?></td>
+                                        <td><?php echo unico_format_price($order->get_total()); ?></td>
                                         <td>
                                             <span class="mgmt-status-pill <?php echo $order->get_status() === 'completed' ? 'approved' : ($order->get_status() === 'processing' ? 'pending' : 'rejected'); ?>">
-                                                <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
+                                                <?php echo esc_html(ucfirst($order->get_status())); ?>
                                             </span>
                                         </td>
                                         <td>
@@ -1454,7 +1431,17 @@ get_header();
                                         <td>
                                             <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px;max-width:260px;">
                                                 <select name="new_status">
-                                                    <?php foreach (wc_get_order_statuses() as $status_slug => $status_label): ?>
+                                                    <?php 
+                                                    $statuses = [
+                                                        'pending' => 'Pending',
+                                                        'processing' => 'Processing', 
+                                                        'completed' => 'Completed',
+                                                        'cancelled' => 'Cancelled',
+                                                        'refunded' => 'Refunded',
+                                                        'failed' => 'Failed',
+                                                        'on-hold' => 'On Hold'
+                                                    ];
+                                                    foreach ($statuses as $status_slug => $status_label): ?>
                                                         <option value="<?php echo esc_attr($status_slug); ?>" <?php selected($status_slug, $status_key); ?>>
                                                             <?php echo esc_html($status_label); ?>
                                                         </option>
@@ -1519,7 +1506,7 @@ get_header();
                             </div>
                             <div class="mgmt-info-item">
                                 <h4>Total Revenue</h4>
-                                <div class="mgmt-kpi"><?php echo wc_price($total_revenue_all); ?></div>
+                                <div class="mgmt-kpi"><?php echo unico_format_price($total_revenue_all); ?></div>
                             </div>
                             <div class="mgmt-info-item">
                                 <h4>30 Day Average Orders</h4>
@@ -1535,7 +1522,7 @@ get_header();
                                 <div class="mgmt-kpi muted">
                                     <?php
                                     $avg_revenue = $revenue_30days ? round($revenue_30days / 30, 2) : 0;
-                                    echo wc_price($avg_revenue);
+                                    echo unico_format_price($avg_revenue);
                                     ?>
                                 </div>
                             </div>

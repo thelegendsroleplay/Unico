@@ -14,11 +14,11 @@ $user_id = $current_user->ID;
 
 // Fetch recent orders
 $student_orders = [];
-if (function_exists('wc_get_orders')) {
-    $student_orders = wc_get_orders([
-        'customer_id' => $user_id,
+if (class_exists('Unico_Order')) {
+    $student_orders = Unico_Order::get_orders([
+        'user_id' => $user_id,
         'limit' => 5,
-        'orderby' => 'date',
+        'orderby' => 'created_at',
         'order' => 'DESC'
     ]);
 }
@@ -248,18 +248,21 @@ get_header();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($student_orders as $order): ?>
+                        <?php foreach ($student_orders as $order): 
+                            $date_created = $order->get_date_created();
+                            $date_formatted = $date_created ? date('M j, Y', strtotime($date_created)) : '-';
+                        ?>
                         <tr>
-                            <td><strong>#<?php echo $order->get_id(); ?></strong></td>
-                            <td><?php echo $order->get_date_created()->format('M j, Y'); ?></td>
-                            <td><?php echo $order->get_formatted_order_total(); ?></td>
+                            <td><strong><?php echo $order->get_order_number(); ?></strong></td>
+                            <td><?php echo $date_formatted; ?></td>
+                            <td><?php echo $order->get_formatted_total(); ?></td>
                             <td>
                                 <span class="status-badge status-<?php echo esc_attr($order->get_status()); ?>">
-                                    <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
+                                    <?php echo esc_html(ucfirst(str_replace('-', ' ', $order->get_status()))); ?>
                                 </span>
                             </td>
                             <td>
-                                <a href="<?php echo $order->get_view_order_url(); ?>" class="action-btn" style="padding: 5px 10px; font-size: 12px;">View</a>
+                                <a href="<?php echo home_url('/view-order?id=' . $order->get_id()); ?>" class="action-btn" style="padding: 5px 10px; font-size: 12px;">View</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>

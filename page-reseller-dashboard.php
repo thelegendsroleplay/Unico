@@ -25,10 +25,10 @@ $pricing = Unico_Pricing::get_instance();
 $voucher_system = Unico_Voucher_System::get_instance();
 
 // Get reseller's orders
-$reseller_orders = wc_get_orders([
-    'customer_id' => $user_id,
+$reseller_orders = Unico_Order::get_orders([
+    'user_id' => $user_id,
     'limit' => 50,
-    'orderby' => 'date',
+    'orderby' => 'created_at',
     'order' => 'DESC'
 ]);
 
@@ -356,7 +356,7 @@ get_header();
             <div class="header-stats">
                 <div class="header-stat">
                     <div class="header-stat-label">Total Commission</div>
-                    <div class="header-stat-value"><?php echo wc_price($total_commission ?: 0); ?></div>
+                    <div class="header-stat-value"><?php echo unico_format_price($total_commission ?: 0); ?></div>
                 </div>
             </div>
         </div>
@@ -383,19 +383,19 @@ get_header();
         <div class="stat-card">
             <div class="stat-icon">💰</div>
             <div class="stat-label">Total Spent</div>
-            <div class="stat-value"><?php echo wc_price($total_spent); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($total_spent); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">⏳</div>
             <div class="stat-label">Pending Commission</div>
-            <div class="stat-value"><?php echo wc_price($pending_commission ?: 0); ?></div>
+            <div class="stat-value"><?php echo unico_format_price($pending_commission ?: 0); ?></div>
         </div>
     </div>
 
     <!-- Quick Actions -->
     <div style="margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
-        <a href="<?php echo home_url('/shop'); ?>" class="btn btn-primary">Browse Vouchers</a>
-        <a href="<?php echo home_url('/my-account'); ?>" class="btn btn-outline">My Account</a>
+        <a href="<?php echo home_url('/vouchers'); ?>" class="btn btn-primary">Browse Vouchers</a>
+        <a href="<?php echo home_url('/dashboard'); ?>" class="btn btn-outline">My Dashboard</a>
         <a href="<?php echo home_url('/support'); ?>" class="btn btn-outline">Contact Support</a>
     </div>
 
@@ -454,7 +454,7 @@ get_header();
                                 if ($rule->discount_type === 'percentage') {
                                     echo $rule->discount_value . '%';
                                 } else {
-                                    echo wc_price($rule->discount_value);
+                                    echo unico_format_price($rule->discount_value);
                                 }
                                 ?>
                             </span>
@@ -489,7 +489,6 @@ get_header();
                         <th>Date</th>
                         <th>Items</th>
                         <th>Total</th>
-                        <th>Discount</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -497,18 +496,17 @@ get_header();
                 <tbody>
                     <?php foreach (array_slice($reseller_orders, 0, 10) as $order): ?>
                     <tr>
-                        <td><strong>#<?php echo $order->get_id(); ?></strong></td>
-                        <td><?php echo $order->get_date_created()->format('M j, Y'); ?></td>
-                        <td><?php echo $order->get_item_count(); ?> items</td>
-                        <td><?php echo $order->get_formatted_order_total(); ?></td>
-                        <td><strong style="color: #28a745;"><?php echo wc_price($order->get_discount_total()); ?></strong></td>
+                        <td><strong>#<?php echo $order->get_order_number(); ?></strong></td>
+                        <td><?php echo date('M j, Y', strtotime($order->get_date_created())); ?></td>
+                        <td><?php echo count($order->get_items()); ?> items</td>
+                        <td><?php echo $order->get_formatted_total(); ?></td>
                         <td>
                             <span class="status-badge status-<?php echo esc_attr($order->get_status()); ?>">
-                                <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
+                                <?php echo esc_html(ucfirst($order->get_status())); ?>
                             </span>
                         </td>
                         <td>
-                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
+                            <a href="<?php echo home_url('/order-details?id=' . $order->get_id()); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -519,7 +517,7 @@ get_header();
                 <div class="empty-state-icon">📦</div>
                 <h3>No Orders Yet</h3>
                 <p>Start purchasing vouchers to see your order history here.</p>
-                <a href="<?php echo home_url('/shop'); ?>" class="btn btn-primary" style="margin-top: 20px;">Browse Vouchers</a>
+                <a href="<?php echo home_url('/vouchers'); ?>" class="btn btn-primary" style="margin-top: 20px;">Browse Vouchers</a>
             </div>
             <?php endif; ?>
         </div>

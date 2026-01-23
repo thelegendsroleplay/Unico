@@ -29,53 +29,48 @@ This document details the complete voucher purchase flow from the vouchers page 
 **File**: `page-vouchers.php`
 
 **Features**:
-- Display voucher products from WooCommerce
+- Display voucher products from Unico System
 - Filter by exam type (IELTS, PTE, TOEFL, etc.)
 - Show pricing based on user role (Customer, Agent, Reseller)
 - Purchase button logic
 
-**Button Logic** (lines 438-460):
+**Button Logic**:
 ```php
 if ($is_logged_in) {
     $button_label = 'Secure Checkout →';
-    $button_url = add_query_arg('add-to-cart', $product_id, wc_get_checkout_url());
+    $button_url = add_query_arg([
+        'unico_add_to_cart' => $product_id,
+        'unico_add_to_cart_nonce' => wp_create_nonce('unico_add_to_cart')
+    ], home_url('/'));
 } else {
     $button_label = 'Authorize Procurement';
     $button_url = home_url('/login');
 }
 ```
 
-**URL Format**: `/checkout?add-to-cart=123`
+**URL Format**: `/?unico_add_to_cart=123&unico_add_to_cart_nonce=...`
 
 ---
 
-### Step 2: Add to Cart Redirect Filter
-**File**: `functions.php` (lines 588-624)
-**Hook**: `woocommerce_add_to_cart_redirect`
+### Step 2: Add to Cart Handler
+**File**: `functions.php`
+**Hook**: `init`
 
 **Security Checks**:
 
-1. **Verify Product** (lines 592-601):
+1. **Verify Product**:
    - Check if product exists
    - Verify it's a voucher product
 
-2. **Check Login** (lines 604-608):
-   ```php
-   if (!is_user_logged_in()) {
-       wc_add_notice('Please log in to purchase vouchers.', 'error');
-       return home_url('/login');
-   }
-   ```
+2. **Check Login**:
+   - If not logged in, redirect to login page
 
-3. **Check Email Verification** (lines 611-619):
-   ```php
-   if (!$security->is_email_verified($user_id)) {
-       wc_add_notice('Email verification required...', 'error');
-       return home_url('/email-verification?redirect=checkout');
-   }
-   ```
+3. **Check Email Verification**:
+   - If email not verified, redirect to email verification page
 
-4. **Success**: Redirect to checkout (line 621)
+4. **Success**:
+   - Add item to `Unico_Cart`
+   - Redirect to `/checkout`
 
 ---
 
@@ -84,21 +79,21 @@ if ($is_logged_in) {
 
 **Scenarios Handled**:
 
-1. **User clicked verification link** (lines 10-15, 58-104):
+1. **User clicked verification link**:
    - Verify token
    - Show success/error message
    - Provide "Continue to Checkout" button
 
-2. **User already verified** (lines 39-49, 106-125):
+2. **User already verified**:
    - Show "Already Verified" message
    - Provide "Continue to Checkout" button
 
-3. **User needs to verify** (lines 127-170):
+3. **User needs to verify**:
    - Show "Verify Email" form
    - Send verification email button
    - User checks email → clicks link → verified
 
-4. **User not logged in** (lines 172-186):
+4. **User not logged in**:
    - Show "Login Required" message
    - Links to login/register
 
@@ -112,60 +107,50 @@ if ($is_logged_in) {
 **Structure**:
 ```php
 get_header();
-// Render WooCommerce checkout
-woocommerce_checkout();
+// Render Custom Checkout
+$checkout = Unico_Checkout::get_instance();
+$checkout->render_checkout();
 get_footer();
 ```
-
-**Hooks Triggered**:
-- `woocommerce_checkout_before_order_review` → Custom voucher card
 
 ---
 
 ### Step 5: Custom Checkout Card
-**File**: `checkout-voucher-card.php`
-**Hook**: `woocommerce_checkout_before_order_review` (functions.php:626-694)
-
-**Rendering Logic** (functions.php:653-693):
-1. Get cart items
-2. Extract voucher product
-3. Calculate quantity and total
-4. Prepare buyer information
-5. Include checkout card template
+**File**: `templates/checkout-form.php` (Rendered by `Unico_Checkout`)
 
 **Components**:
 
-#### A. Email Verification Status (lines 22-52)
+#### A. Email Verification Status
 - If NOT verified: Show warning banner
 - If verified: Show green badge with email
 
-#### B. Purchase OTP Verification (lines 54-164)
+#### B. Purchase OTP Verification
 - If NOT verified: Show OTP form
 - If verified: Show green badge
 
 **OTP Flow**:
-1. User clicks "Send Verification Code" (line 68)
-2. AJAX: `unico_send_purchase_otp` (line 94)
+1. User clicks "Send Verification Code"
+2. AJAX: `unico_send_purchase_otp`
 3. Backend sends 6-digit OTP to email
-4. User enters code (line 74)
-5. User clicks "Verify Code" (line 75)
-6. AJAX: `unico_verify_purchase_otp` (line 129)
+4. User enters code
+5. User clicks "Verify Code"
+6. AJAX: `unico_verify_purchase_otp`
 7. Backend validates code
 8. Page reloads → shows "Identity Verified"
 
-#### C. Voucher Details (lines 167-189)
+#### C. Voucher Details
 - Voucher title and quantity
 - Quantity controls (+/- buttons)
 
-#### D. Buyer Information (lines 192-200)
+#### D. Buyer Information
 - Full name (pre-filled)
 - Email (pre-filled)
 
-#### E. Payment Method Selection (lines 207-219)
+#### E. Payment Method Selection
 - **Bank Transfer** (limit: 10 units)
 - **Card Payment** (limit: 3 units, optional)
 
-#### F. Bank Transfer Details (lines 230-337)
+#### F. Bank Transfer Details
 - Random active bank account
 - Account holder name
 - Account number (with copy button)
@@ -173,14 +158,14 @@ get_footer();
 - SWIFT code (with copy button)
 - Branch name
 
-#### G. Payment Information (lines 338-348)
+#### G. Payment Information
 - Payment reference number (transaction ID)
 - Receipt upload (image only)
 
-#### H. Terms Confirmation (lines 349-354)
+#### H. Terms Confirmation
 - Checkbox: "NON-REFUNDABLE" terms
 
-#### I. Submit Button (lines 365-373)
+#### I. Submit Button
 - Disabled if email not verified
 - Shows "Confirm Order" or "Verify Email to Purchase"
 
@@ -189,7 +174,7 @@ get_footer();
 ### Step 6: AJAX Handlers
 **File**: `functions.php`
 
-#### A. Send Purchase OTP (lines 697-714)
+#### A. Send Purchase OTP
 ```php
 add_action('wp_ajax_unico_send_purchase_otp', function() {
     // Verify nonce
@@ -199,7 +184,7 @@ add_action('wp_ajax_unico_send_purchase_otp', function() {
 });
 ```
 
-#### B. Verify Purchase OTP (lines 716-738)
+#### B. Verify Purchase OTP
 ```php
 add_action('wp_ajax_unico_verify_purchase_otp', function() {
     // Verify nonce
@@ -212,96 +197,71 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
 
 ---
 
-### Step 7: Checkout Validation
-**File**: `functions.php` (lines 740-809)
-**Hook**: `woocommerce_checkout_process`
+### Step 7: Checkout Validation & Processing
+**File**: `includes/class-checkout.php`
+**Method**: `process_checkout()`
 
 **Validation Checks**:
 
-1. **User logged in** (lines 744-747)
-2. **Email verified** (lines 750-758):
-   ```php
-   if (!$security->is_email_verified($user_id)) {
-       wc_add_notice('Email verification required...', 'error');
-       throw new Exception('Email verification required');
-   }
-   ```
-
-3. **Purchase OTP verified** (lines 760-763):
-   ```php
-   if (!$security->is_purchase_verified($user_id)) {
-       wc_add_notice('Identity verification required...', 'error');
-       throw new Exception('Identity verification required');
-   }
-   ```
-
-4. **Update cart quantity** (lines 765-791)
-5. **Terms confirmed** (lines 792-794)
-6. **Payment reference provided** (lines 795-797)
-7. **Receipt uploaded** (lines 798-800)
-8. **Quantity limits** (lines 801-808):
-   - Card payment: max 3 units
-   - Bank transfer: max 10 units
+1. **User logged in**
+2. **Email verified**
+3. **Purchase OTP verified**
+4. **Terms confirmed**
+5. **Payment reference provided**
+6. **Receipt uploaded**
+7. **Quantity limits**
 
 **If any validation fails**: Order placement blocked, user sees error
 
 ---
 
 ### Step 8: Receipt Upload Handler
-**File**: `functions.php` (lines 811-854)
-**Function**: `unico_handle_voucher_receipt_upload()`
+**File**: `includes/class-checkout.php`
+**Method**: `handle_receipt_upload()`
 
 **Process**:
 1. Check file uploaded
 2. Validate file type (JPG, PNG, GIF, WEBP)
 3. Handle WordPress upload
-4. Create attachment
-5. Generate metadata
-6. Return attachment ID and URL
+4. Return attachment ID and URL
 
 ---
 
-### Step 9: Save Order Metadata
-**File**: `functions.php` (lines 856-923)
-**Hook**: `woocommerce_checkout_update_order_meta`
+### Step 9: Save Order
+**File**: `includes/class-checkout.php`
+**Method**: `create_order()`
 
-**Saved Data**:
-- `voucher_buyer_full_name`
-- `voucher_buyer_email`
-- `voucher_payment_mode` (bank_transfer / card_payment)
-- `voucher_payment_reference` (transaction ID)
-- `voucher_terms_confirmed`
-- `selected_bank_id`
-- `_voucher_payment_receipt_id`
-- `_voucher_payment_receipt_url`
-- `_voucher_verification_status` (pending)
+**Saved Data (Unico Orders Table)**:
+- `user_id`
+- `order_number`
+- `status` (pending_payment)
+- `currency`
+- `total_amount`
+- `payment_method`
+- `payment_reference`
+- `receipt_url`
+- `customer_name`
+- `customer_email`
+- `billing_details` (JSON)
 
-**Bank Details Saved** (lines 876-900):
-- `_bank_name`
-- `_bank_account_holder`
-- `_bank_account_number`
-- `_bank_ifsc_code`
-- `_bank_swift_code`
-- `_bank_branch`
-
-**Order Note Added**: "Voucher order marked as pending payment verification"
+**Bank Details Saved in Metadata**:
+- Bank name
+- Account holder
+- Account number
+- IFSC/SWIFT code
 
 ---
 
 ### Step 10: Order Placed
-**WooCommerce Flow**:
-1. Order created
-2. Order status: "Pending payment"
-3. User redirected to "Thank You" page
-4. Order confirmation email sent (optional)
+**Flow**:
+1. Order created in `unico_orders` table
+2. Order items created in `unico_order_items` table
+3. Cart cleared
+4. User redirected to "Thank You" page (`/order-received?order_id=...`)
+5. Order confirmation email sent
 
-**Clean Up** (functions.php:926-931):
-```php
-add_action('woocommerce_thankyou', function($order_id) {
-    // Clear purchase verification for next purchase
-    $security->clear_purchase_verification(get_current_user_id());
-});
-```
+**Clean Up**:
+- Clear purchase verification for next purchase
 
 ---
 
@@ -309,12 +269,11 @@ add_action('woocommerce_thankyou', function($order_id) {
 **File**: `includes/class-voucher-system.php`
 
 **Auto-Delivery** (when order status changes to "completed"):
-- Hook: `woocommerce_order_status_changed`
 - Assigns voucher from inventory
 - Sends voucher code via email
 - Updates voucher status to "delivered"
 
-**Manual Delivery** (via admin dashboard):
+**Manual Delivery** (via Management Dashboard):
 - Admin verifies payment
 - Changes order status to "completed"
 - Auto-delivery triggers
@@ -327,9 +286,8 @@ add_action('woocommerce_thankyou', function($order_id) {
 **File**: `assets/js/checkout.js`
 
 **Features**:
-- Quantity validation (+/- buttons)
+- Quantity validation
 - Payment method switching
-- Quantity limits enforcement
 - Receipt file validation
 - Bank details copy-to-clipboard
 - Real-time error display
@@ -376,25 +334,27 @@ add_action('woocommerce_thankyou', function($order_id) {
 
 ## Database Schema
 
-### Order Meta Keys
-```
-_customer_user                      → User ID
-voucher_buyer_full_name             → Buyer name
-voucher_buyer_email                 → Buyer email
-voucher_payment_mode                → bank_transfer / card_payment
-voucher_payment_reference           → Transaction ID
-selected_bank_id                    → Bank account ID
-_bank_name                          → Bank name
-_bank_account_holder                → Account holder
-_bank_account_number                → Account number
-_bank_ifsc_code                     → IFSC code
-_bank_swift_code                    → SWIFT code
-_bank_branch                        → Branch name
-_voucher_payment_receipt_id         → Attachment ID
-_voucher_payment_receipt_url        → Image URL
-_voucher_verification_status        → pending / verified / rejected
-voucher_terms_confirmed             → 1
-```
+### Unico Orders Table (`wp_unico_orders`)
+- `id` (Primary Key)
+- `order_number` (Unique)
+- `user_id`
+- `status`
+- `currency`
+- `total_amount`
+- `payment_method`
+- `payment_reference`
+- `receipt_url`
+- `created_at`
+- `updated_at`
+
+### Unico Order Items Table (`wp_unico_order_items`)
+- `id` (Primary Key)
+- `order_id`
+- `product_id`
+- `product_name`
+- `quantity`
+- `price`
+- `subtotal`
 
 ---
 
@@ -422,14 +382,6 @@ voucher_terms_confirmed             → 1
 - No receipt uploaded
 - Fix: Upload receipt image
 
-**"Card Payment is limited to 3 units"**
-- Quantity > 3 for card payment
-- Fix: Reduce quantity or switch to bank transfer
-
-**"Bank Transfer is limited to 10 units"**
-- Quantity > 10 for bank transfer
-- Fix: Reduce quantity
-
 ---
 
 ## File Structure Summary
@@ -437,8 +389,9 @@ voucher_terms_confirmed             → 1
 ```
 /home/user/Unico/
 ├── page-vouchers.php              → Voucher catalog page
-├── page-checkout.php              → WooCommerce checkout wrapper
-├── checkout-voucher-card.php      → Custom checkout card
+├── page-checkout.php              → Custom checkout page
+├── templates/
+│   └── checkout-form.php          → Custom checkout form template
 ├── page-email-verification.php    → Email verification page
 ├── functions.php                  → Backend logic & hooks
 ├── header.php                     → HTML header
@@ -451,6 +404,9 @@ voucher_terms_confirmed             → 1
 │       └── checkout.js           → Checkout interactions
 └── includes/
     ├── class-security.php        → Security & verification
+    ├── class-order.php           → Order management
+    ├── class-cart.php            → Cart management
+    ├── class-checkout.php        → Checkout processing
     ├── class-voucher-system.php  → Voucher management
     ├── class-bank-accounts.php   → Bank accounts system
     └── class-init.php            → System initialization
@@ -458,60 +414,11 @@ voucher_terms_confirmed             → 1
 
 ---
 
-## Testing Checklist
-
-### Vouchers Page
-- [ ] Displays voucher products
-- [ ] Filter by exam type works
-- [ ] Purchase button shows correct label
-- [ ] Non-logged-in users redirected to login
-- [ ] Logged-in users can proceed to checkout
-
-### Email Verification
-- [ ] Unverified users redirected
-- [ ] Email sent successfully
-- [ ] Verification link works
-- [ ] Returns to checkout after verification
-- [ ] Already verified users skip this step
-
-### Checkout Page
-- [ ] Custom voucher card displays
-- [ ] Email verification badge shows
-- [ ] OTP verification form appears
-- [ ] OTP code sent to email
-- [ ] Code validation works
-- [ ] Page reloads after verification
-
-### Payment Details
-- [ ] Bank details display
-- [ ] Copy buttons work
-- [ ] Quantity controls functional
-- [ ] Payment method switching works
-- [ ] Receipt upload accepts images only
-- [ ] Terms checkbox required
-
-### Order Placement
-- [ ] All validations enforced
-- [ ] Order created successfully
-- [ ] Metadata saved correctly
-- [ ] Receipt uploaded and attached
-- [ ] Thank you page displays
-- [ ] Purchase verification cleared
-
-### Delivery
-- [ ] Admin can verify payment
-- [ ] Order status change to "completed"
-- [ ] Voucher auto-delivered
-- [ ] Email sent with voucher code
-
----
-
 ## Maintenance Notes
 
 ### Adding New Exam Types
-1. Add to `$exam_filters` in `page-vouchers.php`
-2. Add tagline to `$taglines` array
-3. Create WooCommerce product with `exam_name` meta
+1. Add to `unico_get_voucher_catalog_definitions()` in `functions.php`
+2. Sync products via Management Dashboard
 
 ### Adding New Bank Account
 1. Use Management Dashboard → Bank Accounts
@@ -519,9 +426,8 @@ voucher_terms_confirmed             → 1
 3. Set status to "Active"
 
 ### Enabling/Disabling Card Payment
-1. WooCommerce → Settings → Unico Settings
+1. Management Dashboard → Settings
 2. Toggle "Enable Card Payment" option
-3. Save changes
 
 ### Customizing OTP Expiry
 - File: `includes/class-security.php`
@@ -562,6 +468,11 @@ voucher_terms_confirmed             → 1
 ---
 
 ## Revision History
+
+**Version 2.0** (2026-01-23)
+- Removed WooCommerce dependencies
+- Updated to use Unico Custom Payment System
+- Updated file structure and database schema
 
 **Version 1.0** (2026-01-21)
 - Initial documentation

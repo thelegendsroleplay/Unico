@@ -20,13 +20,7 @@ class Unico_Pricing {
     }
 
     public function __construct() {
-        // Hook into WooCommerce pricing (optional - only if WooCommerce is active)
-        // Custom cart system uses get_product_price() method which applies pricing rules directly
-        if (class_exists('WooCommerce')) {
-            add_filter('woocommerce_product_get_price', [$this, 'apply_dynamic_pricing'], 99, 2);
-            add_filter('woocommerce_product_get_regular_price', [$this, 'apply_dynamic_pricing'], 99, 2);
-            add_filter('woocommerce_cart_item_price', [$this, 'display_cart_item_price'], 10, 3);
-        }
+        // Constructor left empty as we don't rely on WooCommerce hooks anymore
     }
 
     /**
@@ -147,8 +141,9 @@ class Unico_Pricing {
         }
 
         // If in cart, get actual quantity
-        if (class_exists('WooCommerce') && WC()->cart) {
-            foreach (WC()->cart->get_cart() as $cart_item) {
+        if (class_exists('Unico_Cart')) {
+            $cart = Unico_Cart::get_instance();
+            foreach ($cart->get_cart() as $cart_item) {
                 if ($cart_item['product_id'] === $product_id) {
                     $quantity = $cart_item['quantity'];
                     break;
@@ -191,7 +186,7 @@ class Unico_Pricing {
             $rule = $rules[0];
             $discount_text = $rule->discount_type === 'percentage'
                 ? $rule->discount_value . '% off'
-                : wc_price($rule->discount_value) . ' off';
+                : unico_format_price($rule->discount_value) . ' off';
 
             $price_html .= '<br><small style="color: #e95134;">(' . $discount_text . ' applied)</small>';
         }

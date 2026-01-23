@@ -26,10 +26,10 @@ $security = Unico_Security::get_instance();
 $is_verified = $security->is_email_verified($user_id);
 
 // Get recent orders
-$customer_orders = wc_get_orders([
-    'customer_id' => $user_id,
+$customer_orders = Unico_Order::get_orders([
+    'user_id' => $user_id,
     'limit' => 10,
-    'orderby' => 'date',
+    'orderby' => 'created_at',
     'order' => 'DESC'
 ]);
 
@@ -310,16 +310,16 @@ get_header();
                 <tbody>
                     <?php foreach ($customer_orders as $order): ?>
                     <tr>
-                        <td><strong>#<?php echo $order->get_id(); ?></strong></td>
-                        <td><?php echo $order->get_date_created()->format('M j, Y'); ?></td>
-                        <td><?php echo $order->get_formatted_order_total(); ?></td>
+                        <td><strong>#<?php echo $order->get_order_number(); ?></strong></td>
+                        <td><?php echo date('M j, Y', strtotime($order->get_date_created())); ?></td>
+                        <td><?php echo $order->get_formatted_total(); ?></td>
                         <td>
                             <span class="status-badge status-<?php echo esc_attr($order->get_status()); ?>">
-                                <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
+                                <?php echo esc_html(ucfirst($order->get_status())); ?>
                             </span>
                         </td>
                         <td>
-                            <a href="<?php echo $order->get_view_order_url(); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
+                            <a href="<?php echo home_url('/view-order/?id=' . $order->get_id()); ?>" style="color: #e95134; font-weight: 600; text-decoration: none;">View</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>

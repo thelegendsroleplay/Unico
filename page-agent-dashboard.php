@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 if (!is_user_logged_in()) {
-    wp_redirect(wc_get_page_permalink('myaccount'));
+    wp_redirect(home_url('/login'));
     exit;
 }
 
@@ -28,7 +28,7 @@ if (!$is_admin && !$is_agent) {
     if (class_exists('Unico_User_Roles') && Unico_User_Roles::user_can('access_agent_dashboard')) {
         // Allowed via capability
     } else {
-        wc_add_notice('You do not have permission to access the Agent Dashboard.', 'error');
+        // Redirect if no permission
         wp_redirect(home_url());
         exit;
     }
@@ -70,11 +70,11 @@ if ($wpdb->get_var("SHOW TABLES LIKE '$commissions_table'") === $commissions_tab
 
 // C. Recent Orders
 $agent_orders = [];
-if (function_exists('wc_get_orders')) {
-    $agent_orders = wc_get_orders([
-        'customer_id' => $user_id,
+if (class_exists('Unico_Order')) {
+    $agent_orders = Unico_Order::get_orders([
+        'user_id' => $user_id,
         'limit' => 5,
-        'orderby' => 'date',
+        'orderby' => 'created_at',
         'order' => 'DESC'
     ]);
 }
@@ -121,8 +121,8 @@ get_header();
             <a href="<?php echo esc_url(home_url('/vouchers')); ?>" class="action-btn btn-primary">
                 <span class="dashicons dashicons-cart"></span> Purchase Vouchers
             </a>
-            <a href="<?php echo esc_url(wc_get_account_endpoint_url('edit-account')); ?>" class="action-btn btn-secondary">
-                <span class="dashicons dashicons-admin-users"></span> My Profile
+            <a href="<?php echo esc_url(home_url('/dashboard')); ?>" class="action-btn btn-secondary">
+                <span class="dashicons dashicons-admin-users"></span> My Dashboard
             </a>
         </div>
     </header>
@@ -136,7 +136,7 @@ get_header();
             </div>
             <div class="metric-content">
                 <h3>Wallet Balance</h3>
-                <div class="metric-value"><?php echo wc_price($wallet_balance); ?></div>
+                <div class="metric-value"><?php echo unico_format_price($wallet_balance); ?></div>
                 <p class="metric-sub">Available for use</p>
             </div>
         </div>
@@ -148,7 +148,7 @@ get_header();
             </div>
             <div class="metric-content">
                 <h3>Total Earnings</h3>
-                <div class="metric-value"><?php echo wc_price($commission_stats->total_paid ? $commission_stats->total_paid : 0); ?></div>
+                <div class="metric-value"><?php echo unico_format_price($commission_stats->total_paid ? $commission_stats->total_paid : 0); ?></div>
                 <p class="metric-sub">Paid commissions</p>
             </div>
         </div>
@@ -160,7 +160,7 @@ get_header();
             </div>
             <div class="metric-content">
                 <h3>Pending Payout</h3>
-                <div class="metric-value"><?php echo wc_price($commission_stats->total_pending ? $commission_stats->total_pending : 0); ?></div>
+                <div class="metric-value"><?php echo unico_format_price($commission_stats->total_pending ? $commission_stats->total_pending : 0); ?></div>
                 <p class="metric-sub">Processing</p>
             </div>
         </div>
@@ -298,7 +298,7 @@ get_header();
             <div class="content-panel">
                 <div class="panel-header">
                     <h2><span class="dashicons dashicons-list-view"></span> Recent Orders</h2>
-                    <a href="<?php echo esc_url(wc_get_endpoint_url('orders', '', wc_get_page_permalink('myaccount'))); ?>" class="view-all-link">View All</a>
+                    <a href="<?php echo esc_url(home_url('/dashboard?tab=orders')); ?>" class="view-all-link">View All</a>
                 </div>
                 <div class="panel-body">
                     <?php if (!empty($agent_orders)) : ?>
@@ -316,16 +316,16 @@ get_header();
                                 <tbody>
                                     <?php foreach ($agent_orders as $order) : ?>
                                         <tr>
-                                            <td>#<?php echo $order->get_id(); ?></td>
-                                            <td><?php echo wc_format_datetime($order->get_date_created()); ?></td>
+                                            <td>#<?php echo $order->get_order_number(); ?></td>
+                                            <td><?php echo date('M j, Y', strtotime($order->get_date_created())); ?></td>
                                             <td>
                                                 <span class="status-pill status-<?php echo esc_attr($order->get_status()); ?>">
-                                                    <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
+                                                    <?php echo esc_html(ucfirst($order->get_status())); ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo $order->get_formatted_order_total(); ?></td>
+                                            <td><?php echo $order->get_formatted_total(); ?></td>
                                             <td>
-                                                <a href="<?php echo esc_url($order->get_view_order_url()); ?>" class="btn-sm btn-outline">View</a>
+                                                <a href="<?php echo home_url('/order-details?id=' . $order->get_id()); ?>" class="btn-sm btn-outline">View</a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -360,7 +360,7 @@ get_header();
                                         <span>Qty: <?php echo esc_html($rule->min_quantity); ?><?php echo $rule->max_quantity ? ' - ' . esc_html($rule->max_quantity) : '+'; ?></span>
                                     </div>
                                     <div class="discount-badge">
-                                        <?php echo ($rule->discount_type === 'percentage') ? esc_html($rule->discount_value) . '% OFF' : wc_price($rule->discount_value) . ' OFF'; ?>
+                                        <?php echo ($rule->discount_type === 'percentage') ? esc_html($rule->discount_value) . '% OFF' : unico_format_price($rule->discount_value) . ' OFF'; ?>
                                     </div>
                                 </li>
                             <?php endforeach; ?>

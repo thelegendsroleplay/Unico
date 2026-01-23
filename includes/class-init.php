@@ -175,6 +175,49 @@ class Unico_Init {
             ],
             'map_meta_cap' => true
         ]);
+
+        // Products (Replacement for WooCommerce)
+        register_post_type('product', [
+            'labels' => [
+                'name' => 'Products',
+                'singular_name' => 'Product',
+                'add_new' => 'Add New Product',
+                'add_new_item' => 'Add New Product',
+                'edit_item' => 'Edit Product',
+                'all_items' => 'All Products'
+            ],
+            'public' => true,
+            'has_archive' => true,
+            'show_in_menu' => true,
+            'menu_position' => 5,
+            'menu_icon' => 'dashicons-cart',
+            'supports' => ['title', 'editor', 'thumbnail', 'excerpt', 'custom-fields'],
+            'show_in_rest' => true,
+            'rewrite' => ['slug' => 'product']
+        ]);
+
+        // Product Categories (Replacement for WooCommerce)
+        register_taxonomy('product_cat', ['product'], [
+            'labels' => [
+                'name' => 'Product Categories',
+                'singular_name' => 'Category',
+                'search_items' => 'Search Categories',
+                'all_items' => 'All Categories',
+                'parent_item' => 'Parent Category',
+                'parent_item_colon' => 'Parent Category:',
+                'edit_item' => 'Edit Category',
+                'update_item' => 'Update Category',
+                'add_new_item' => 'Add New Category',
+                'new_item_name' => 'New Category Name',
+                'menu_name' => 'Categories',
+            ],
+            'hierarchical' => true,
+            'show_ui' => true,
+            'show_admin_column' => true,
+            'query_var' => true,
+            'rewrite' => ['slug' => 'product-category'],
+            'show_in_rest' => true,
+        ]);
     }
 
     /**
