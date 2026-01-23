@@ -77,7 +77,7 @@ class Unico_Pricing {
         }
 
         $user_roles = $user->roles;
-        $product = wc_get_product($product_id);
+        // Get product categories directly without WooCommerce
         $product_categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'slugs']);
 
         $rules = [];
@@ -147,7 +147,7 @@ class Unico_Pricing {
         }
 
         // If in cart, get actual quantity
-        if (WC()->cart) {
+        if (class_exists('WooCommerce') && WC()->cart) {
             foreach (WC()->cart->get_cart() as $cart_item) {
                 if ($cart_item['product_id'] === $product_id) {
                     $quantity = $cart_item['quantity'];

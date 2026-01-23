@@ -20,7 +20,10 @@ class Unico_Voucher_System {
     }
 
     public function __construct() {
-        add_action('woocommerce_check_cart_items', [$this, 'enforce_sales_lock']);
+        // Only hook into WooCommerce if it's active
+        if (class_exists('WooCommerce')) {
+            add_action('woocommerce_check_cart_items', [$this, 'enforce_sales_lock']);
+        }
 
         // Hook into custom order system
         add_action('unico_payment_approved', [$this, 'handle_payment_approved'], 10, 2);
@@ -496,7 +499,9 @@ class Unico_Voucher_System {
             }
         }
         if ($block) {
-            wc_add_notice('Voucher sales are temporarily paused. Please contact support.', 'error');
+            if (function_exists('wc_add_notice')) {
+                wc_add_notice('Voucher sales are temporarily paused. Please contact support.', 'error');
+            }
             if (class_exists('Unico_Security')) {
                 $user_id = get_current_user_id();
                 if ($user_id) {

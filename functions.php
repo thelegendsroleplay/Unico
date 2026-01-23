@@ -40,8 +40,10 @@ require_once get_template_directory() . '/includes/class-unico-mail-settings.php
 // Include Bank Accounts Management
 require_once get_template_directory() . '/includes/class-bank-accounts.php';
 
-// Include Custom Payment Gateway
-require_once get_template_directory() . '/includes/class-bank-transfer-gateway.php';
+// Include Custom Payment Gateway (only if WooCommerce is active)
+if (class_exists('WooCommerce')) {
+    require_once get_template_directory() . '/includes/class-bank-transfer-gateway.php';
+}
 
 // Initialize Bank Accounts System
 add_action('init', function() {
@@ -50,12 +52,14 @@ add_action('init', function() {
     }
 }, 5);
 
-// Register Custom Payment Gateway
-add_filter('woocommerce_payment_gateways', function($gateways) {
-    $gateways[] = 'Unico_Bank_Transfer_Gateway';
-    error_log('Unico: Payment gateway registered');
-    return $gateways;
-});
+// Register Custom Payment Gateway (only if WooCommerce is active)
+if (class_exists('WooCommerce')) {
+    add_filter('woocommerce_payment_gateways', function($gateways) {
+        $gateways[] = 'Unico_Bank_Transfer_Gateway';
+        error_log('Unico: Payment gateway registered');
+        return $gateways;
+    });
+}
 
 // Ensure gateway is available for voucher orders
 add_filter('woocommerce_available_payment_gateways', function($available_gateways) {
