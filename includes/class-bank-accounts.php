@@ -183,7 +183,7 @@ class Unico_Bank_Accounts {
      * Get random active bank account
      * This is used during checkout to select one bank to display
      */
-    public function get_random_active_bank() {
+    public function get_random_active_bank($exclude_ids = []) {
         global $wpdb;
         $table = $wpdb->prefix . 'unico_bank_accounts';
 
@@ -193,7 +193,21 @@ class Unico_Bank_Accounts {
             return null;
         }
 
-        // Return random bank from active banks
+        $exclude_ids = array_filter(array_map('intval', (array) $exclude_ids));
+        if (!empty($exclude_ids)) {
+            $banks = array_values(array_filter($banks, function ($bank) use ($exclude_ids) {
+                return !in_array((int) $bank->id, $exclude_ids, true);
+            }));
+        }
+
+        if (empty($banks)) {
+            $banks = $wpdb->get_results("SELECT * FROM $table WHERE is_active = 1 ORDER BY display_order ASC");
+        }
+
+        if (empty($banks)) {
+            return null;
+        }
+
         $random_index = array_rand($banks);
         return $banks[$random_index];
     }
