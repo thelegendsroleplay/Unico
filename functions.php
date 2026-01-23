@@ -100,26 +100,6 @@ add_action('init', function() {
     }
 }, 5);
 
-// Handle Add to Cart Action
-add_action('init', function() {
-    if (isset($_GET['unico_add_to_cart']) && isset($_GET['unico_add_to_cart_nonce'])) {
-        $product_id = intval($_GET['unico_add_to_cart']);
-        $nonce = $_GET['unico_add_to_cart_nonce'];
-
-        if (!wp_verify_nonce($nonce, 'unico_add_to_cart')) {
-            return;
-        }
-
-        if (class_exists('Unico_Cart')) {
-            $cart = Unico_Cart::get_instance();
-            $cart->add_to_cart($product_id);
-            
-            // Redirect to checkout
-            wp_redirect(home_url('/checkout'));
-            exit;
-        }
-    }
-});
 
 
 function unico_get_required_pages() {

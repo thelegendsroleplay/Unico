@@ -21,7 +21,7 @@ class Unico_Cart_Handlers {
 
     public function __construct() {
         // Handle add-to-cart actions
-        add_action('init', [$this, 'handle_add_to_cart']);
+        add_action('template_redirect', [$this, 'handle_add_to_cart']);
 
         // AJAX add to cart
         add_action('wp_ajax_unico_add_to_cart', [$this, 'ajax_add_to_cart']);
@@ -39,7 +39,15 @@ class Unico_Cart_Handlers {
      * Handle add-to-cart form submission
      */
     public function handle_add_to_cart() {
-        if (!isset($_REQUEST['add-to-cart']) || !isset($_REQUEST['unico_add_to_cart_nonce'])) {
+        $product_id = 0;
+        
+        if (isset($_REQUEST['unico_add_to_cart'])) {
+            $product_id = intval($_REQUEST['unico_add_to_cart']);
+        } elseif (isset($_REQUEST['add-to-cart'])) {
+            $product_id = intval($_REQUEST['add-to-cart']);
+        }
+        
+        if (!$product_id || !isset($_REQUEST['unico_add_to_cart_nonce'])) {
             return;
         }
 
@@ -47,7 +55,6 @@ class Unico_Cart_Handlers {
             return;
         }
 
-        $product_id = intval($_REQUEST['add-to-cart']);
         $quantity = isset($_REQUEST['quantity']) ? intval($_REQUEST['quantity']) : 1;
 
         // Check if user is logged in

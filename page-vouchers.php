@@ -448,7 +448,7 @@ get_header();
                             $button_label = 'Secure Checkout →';
                             // Use custom add-to-cart with nonce
                             $button_url = add_query_arg([
-                                'add-to-cart' => $product_id,
+                                'unico_add_to_cart' => $product_id,
                                 'unico_add_to_cart_nonce' => wp_create_nonce('unico_add_to_cart')
                             ], home_url('/'));
                         } else {
