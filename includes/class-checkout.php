@@ -183,15 +183,26 @@ class Unico_Checkout {
 
         $receipt_upload = null;
         if (!empty($_FILES['voucher_payment_receipt']['name']) && $_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['voucher_payment_receipt'];
+            if ($file['size'] > 5 * 1024 * 1024) {
+                $this->add_error('Receipt must be under 5MB.');
+                return false;
+            }
+
+            $image_info = @getimagesize($file['tmp_name']);
+            if ($image_info === false) {
+                $this->add_error('Invalid image file. Please upload a real screenshot.');
+                return false;
+            }
+
             require_once ABSPATH . 'wp-admin/includes/file.php';
 
-            $receipt_upload = wp_handle_upload($_FILES['voucher_payment_receipt'], [
+            $receipt_upload = wp_handle_upload($file, [
                 'test_form' => false,
                 'mimes' => [
                     'jpg' => 'image/jpeg',
                     'jpeg' => 'image/jpeg',
                     'png' => 'image/png',
-                    'gif' => 'image/gif',
                     'webp' => 'image/webp',
                 ],
             ]);

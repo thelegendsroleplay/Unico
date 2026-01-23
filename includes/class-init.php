@@ -36,18 +36,7 @@ class Unico_Init {
      * Reset and create required pages on theme activation
      */
     public function reset_and_create_pages() {
-        // 1. Delete ALL existing pages
-        $all_pages = get_posts([
-            'post_type' => 'page',
-            'post_status' => 'any',
-            'numberposts' => -1
-        ]);
-        
-        foreach ($all_pages as $page) {
-            wp_delete_post($page->ID, true); // Force delete
-        }
-
-        // 2. Define required pages and their templates
+        // 1. Define required pages and their templates
         $pages_to_create = [
             'Home' => [
                 'slug' => 'home',
@@ -161,27 +150,44 @@ class Unico_Init {
             ]
         ];
 
-        // 3. Create pages
+        // 2. Create or update pages
         foreach ($pages_to_create as $title => $data) {
-            $page_id = wp_insert_post([
-                'post_title' => $title,
-                'post_name' => $data['slug'],
-                'post_content' => $data['content'],
-                'post_status' => 'publish',
-                'post_type' => 'page',
-                'post_author' => 1
-            ]);
-
-            if ($page_id && !is_wp_error($page_id)) {
+            $existing_page = get_page_by_path($data['slug']);
+            if ($existing_page) {
+                $updates = [];
                 if (!empty($data['template'])) {
-                    update_post_meta($page_id, '_wp_page_template', $data['template']);
+                    update_post_meta($existing_page->ID, '_wp_page_template', $data['template']);
+                }
+                if (empty(trim($existing_page->post_content)) && !empty($data['content'])) {
+                    $updates['ID'] = $existing_page->ID;
+                    $updates['post_content'] = $data['content'];
+                }
+                if (!empty($updates)) {
+                    wp_update_post($updates);
                 }
 
-                // Set homepage
-                if ($data['slug'] === 'home') {
-                    update_option('show_on_front', 'page');
-                    update_option('page_on_front', $page_id);
+                $page_id = $existing_page->ID;
+            } else {
+                $page_id = wp_insert_post([
+                    'post_title' => $title,
+                    'post_name' => $data['slug'],
+                    'post_content' => $data['content'],
+                    'post_status' => 'publish',
+                    'post_type' => 'page',
+                    'post_author' => 1
+                ]);
+
+                if ($page_id && !is_wp_error($page_id)) {
+                    if (!empty($data['template'])) {
+                        update_post_meta($page_id, '_wp_page_template', $data['template']);
+                    }
                 }
+            }
+
+            // Set homepage
+            if ($page_id && !is_wp_error($page_id) && $data['slug'] === 'home') {
+                update_option('show_on_front', 'page');
+                update_option('page_on_front', $page_id);
             }
         }
         
@@ -258,10 +264,6 @@ class Unico_Init {
             $pricing->create_default_rules();
             update_option('unico_db_version', '1.3.0');
         }
-
-        // Add AJAX handlers for custom cart
-        add_action('wp_ajax_unico_update_cart_quantity_custom', [$this, 'ajax_update_cart_quantity']);
-        add_action('wp_ajax_nopriv_unico_update_cart_quantity_custom', [$this, 'ajax_update_cart_quantity']);
 
         // Register custom post types
         $this->register_post_types();
@@ -381,8 +383,6 @@ class Unico_Init {
         add_rewrite_endpoint('support-dashboard', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('finance-dashboard', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('management-dashboard', EP_ROOT | EP_PAGES);
-
-        flush_rewrite_rules();
     }
 
     /**
@@ -443,36 +443,6 @@ class Unico_Init {
                 }
             }
         });
-    }
-
-    /**
-     * AJAX: Update cart quantity (custom payment system)
-     */
-    public function ajax_update_cart_quantity() {
-        check_ajax_referer('unico_update_cart', 'nonce');
-
-        $product_id = isset($_POST['product_id']) ? intval($_POST['product_id']) : 0;
-        $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
-
-        if ($product_id < 1 || $quantity < 1) {
-            wp_send_json_error(['message' => 'Invalid product ID or quantity']);
-        }
-
-        $cart = Unico_Cart::get_instance();
-
-        // Find the cart item and update quantity
-        $cart_item_key = $cart->find_product_in_cart($product_id);
-
-        if ($cart_item_key) {
-            $cart->set_quantity($cart_item_key, $quantity);
-            wp_send_json_success([
-                'message' => 'Cart updated successfully',
-                'quantity' => $quantity,
-                'total' => $cart->get_total('edit')
-            ]);
-        } else {
-            wp_send_json_error(['message' => 'Product not found in cart']);
-        }
     }
 
     /**

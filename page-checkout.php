@@ -525,86 +525,6 @@ if ($bank_unavailable) {
     min-width: 160px;
 }
 
-.payment-option-badge {
-    font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #e2e8f0;
-    color: #334155;
-    font-weight: 600;
-}
-
-.payment-option.is-active .payment-option-badge {
-    background: #ccfbf1;
-    color: #0f766e;
-}
-
-/* OTP Modal */
-.otp-modal {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.otp-modal.is-open {
-    display: flex;
-}
-
-.otp-modal-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-}
-
-.otp-modal-card {
-    position: relative;
-    z-index: 2;
-    background: #fff;
-    border-radius: 20px;
-    padding: 28px;
-    width: min(420px, 90vw);
-    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
-}
-
-.otp-modal-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 8px;
-}
-
-.otp-modal-text {
-    font-size: 14px;
-    color: #475569;
-    margin-bottom: 18px;
-}
-
-.otp-modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: transparent;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    color: #64748b;
-}
-
-.otp-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-}
-
-.otp-modal .otp-input {
-    flex: 1;
-    min-width: 160px;
-}
-
 /* Bank Card */
 .bank-card {
     background: #f8fafc;
@@ -877,6 +797,7 @@ if ($bank_unavailable) {
         align-items: center;
         justify-content: space-between;
     }
+}
 
     .checkout-total {
         margin-bottom: 0;
@@ -965,9 +886,9 @@ if ($bank_unavailable) {
                                     <div class="form-group">
                                         <label class="form-label">Quantity</label>
                                         <div class="qty-controls">
-                                            <button type="button" class="qty-btn" onclick="updateCartQty('<?php echo esc_attr($item['product_id']); ?>', -1)">−</button>
+                                            <button type="button" class="qty-btn" onclick="updateCartQty('<?php echo esc_attr($item['product_id']); ?>', -1, this)">−</button>
                                             <input type="text" class="qty-value" value="<?php echo esc_attr($item['quantity']); ?>" readonly>
-                                            <button type="button" class="qty-btn" onclick="updateCartQty('<?php echo esc_attr($item['product_id']); ?>', 1)">+</button>
+                                            <button type="button" class="qty-btn" onclick="updateCartQty('<?php echo esc_attr($item['product_id']); ?>', 1, this)">+</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1083,7 +1004,7 @@ if ($bank_unavailable) {
                                         <label class="form-label">Upload Payment Screenshot</label>
                                         <div class="upload-box" id="upload-box">
                                             <input type="file" name="voucher_payment_receipt" id="receipt-input"
-                                                   accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" required>
+                                                   accept="image/png,image/jpeg,image/jpg,image/webp" required>
                                             <div class="upload-icon">📄</div>
                                             <div class="upload-text">
                                                 <strong>Click to upload</strong> or drag and drop
@@ -1350,14 +1271,18 @@ function copyToClipboard(elementId, button) {
 }
 
 // Update cart quantity
-function updateCartQty(productId, change) {
+function updateCartQty(productId, change, button) {
+    var qtyInput = button ? button.closest('.qty-controls').querySelector('.qty-value') : null;
+    var currentQty = qtyInput ? parseInt(qtyInput.value || '1', 10) : 1;
+    var newQty = Math.max(1, currentQty + change);
+
     jQuery.ajax({
         url: unicoCheckout.ajax_url,
         type: 'POST',
         data: {
             action: 'unico_update_cart_quantity',
             product_id: productId,
-            change: change,
+            quantity: newQty,
             nonce: unicoCheckout.nonce_update_cart
         },
         success: function(response) {
