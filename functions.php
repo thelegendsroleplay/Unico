@@ -526,11 +526,16 @@ add_action('wp_ajax_unico_send_purchase_otp', function() {
     
     if (class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
-        if ($security->send_purchase_otp($user_id)) {
-            wp_send_json_success(['message' => 'Verification code sent to your email']);
-        } else {
-            wp_send_json_error(['message' => 'Failed to send verification code']);
+        $result = $security->send_purchase_otp($user_id);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
         }
+
+        if ($result) {
+            wp_send_json_success(['message' => 'Verification code sent to your email']);
+        }
+
+        wp_send_json_error(['message' => 'Failed to send verification code']);
     }
     wp_send_json_error(['message' => 'Security system not available']);
 });
@@ -550,11 +555,16 @@ add_action('wp_ajax_unico_verify_purchase_otp', function() {
     
     if (class_exists('Unico_Security')) {
         $security = Unico_Security::get_instance();
-        if ($security->verify_purchase_otp($user_id, $code)) {
-            wp_send_json_success(['message' => 'Identity verified successfully']);
-        } else {
-            wp_send_json_error(['message' => 'Invalid or expired verification code']);
+        $result = $security->verify_purchase_otp($user_id, $code);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
         }
+
+        if ($result) {
+            wp_send_json_success(['message' => 'Identity verified successfully']);
+        }
+
+        wp_send_json_error(['message' => 'Invalid or expired verification code']);
     }
     wp_send_json_error(['message' => 'Security system not available']);
 });
