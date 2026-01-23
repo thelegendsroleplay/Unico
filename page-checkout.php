@@ -30,6 +30,33 @@ $checkout = Unico_Checkout::get_instance();
 $errors = $checkout->get_errors();
 $notices = $checkout->get_notices();
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+    $post_max = ini_get('post_max_size');
+    $content_length = isset($_SERVER['CONTENT_LENGTH']) ? (int) $_SERVER['CONTENT_LENGTH'] : 0;
+
+    $to_bytes = function ($value) {
+        $value = trim($value);
+        $unit = strtolower(substr($value, -1));
+        $number = (float) $value;
+        switch ($unit) {
+            case 'g':
+                return (int) ($number * 1024 * 1024 * 1024);
+            case 'm':
+                return (int) ($number * 1024 * 1024);
+            case 'k':
+                return (int) ($number * 1024);
+            default:
+                return (int) $number;
+        }
+    };
+
+    if ($content_length > 0 && $content_length > $to_bytes($post_max)) {
+        $errors[] = 'Upload too large. Please use a smaller payment screenshot and try again.';
+    } else {
+        $errors[] = 'Your submission could not be processed. Please try again and ensure the form is fully completed.';
+    }
+}
+
 // Get current user and verification status
 $current_user = wp_get_current_user();
 $is_purchase_verified = false;
