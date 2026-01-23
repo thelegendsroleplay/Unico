@@ -133,10 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
       try {
-        // Use wc_checkout_params if available, otherwise use localized unicoCheckout
-        var ajaxUrl = (typeof wc_checkout_params !== 'undefined' && wc_checkout_params.ajax_url)
-          ? wc_checkout_params.ajax_url
-          : (typeof unicoCheckout !== 'undefined' ? unicoCheckout.ajax_url : '/wp-admin/admin-ajax.php');
+        // AJAX request
+        var ajaxUrl = unicoCheckout.ajax_url;
+        var nonce = unicoCheckout.nonce;
 
         const res = await fetch(ajaxUrl, {
           method: 'POST',

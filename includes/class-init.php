@@ -25,10 +25,168 @@ class Unico_Init {
 
         // Initialize system
         add_action('after_setup_theme', [$this, 'setup_theme']);
+        add_action('after_switch_theme', [$this, 'reset_and_create_pages']);
         add_action('init', [$this, 'init_system']);
 
         // Activation hook
         register_activation_hook(__FILE__, [$this, 'activate']);
+    }
+
+    /**
+     * Reset and create required pages on theme activation
+     */
+    public function reset_and_create_pages() {
+        // 1. Delete ALL existing pages
+        $all_pages = get_posts([
+            'post_type' => 'page',
+            'post_status' => 'any',
+            'numberposts' => -1
+        ]);
+        
+        foreach ($all_pages as $page) {
+            wp_delete_post($page->ID, true); // Force delete
+        }
+
+        // 2. Define required pages and their templates
+        $pages_to_create = [
+            'Home' => [
+                'slug' => 'home',
+                'template' => 'front-page.php',
+                'content' => ''
+            ],
+            'Login' => [
+                'slug' => 'login',
+                'template' => 'page-login.php',
+                'content' => '[unico_login_form]'
+            ],
+            'Register' => [
+                'slug' => 'register',
+                'template' => 'page-register.php',
+                'content' => '[unico_register_form]'
+            ],
+            'Forgot Password' => [
+                'slug' => 'forgot-password',
+                'template' => 'page-forgot-password.php',
+                'content' => '[unico_forgot_password]'
+            ],
+            'Reset Password' => [
+                'slug' => 'reset-password',
+                'template' => 'page-reset-password.php',
+                'content' => '[unico_reset_password]'
+            ],
+            'Vouchers' => [
+                'slug' => 'vouchers',
+                'template' => 'page-vouchers.php',
+                'content' => ''
+            ],
+            'Checkout' => [
+                'slug' => 'checkout',
+                'template' => 'page-checkout.php',
+                'content' => ''
+            ],
+            'Order Received' => [
+                'slug' => 'order-received',
+                'template' => 'page-order-received.php',
+                'content' => ''
+            ],
+            'Student Dashboard' => [
+                'slug' => 'student-dashboard',
+                'template' => 'page-student-dashboard.php',
+                'content' => ''
+            ],
+            'Agent Dashboard' => [
+                'slug' => 'agent-dashboard',
+                'template' => 'page-agent-dashboard.php',
+                'content' => ''
+            ],
+            'Reseller Dashboard' => [
+                'slug' => 'reseller-dashboard',
+                'template' => 'page-reseller-dashboard.php',
+                'content' => ''
+            ],
+            'Management Dashboard' => [
+                'slug' => 'management-dashboard',
+                'template' => 'page-management-dashboard.php',
+                'content' => ''
+            ],
+            'Finance Dashboard' => [
+                'slug' => 'finance-dashboard',
+                'template' => 'page-finance-dashboard.php',
+                'content' => ''
+            ],
+            'Customer Dashboard' => [
+                'slug' => 'customer-dashboard',
+                'template' => 'page-customer-dashboard.php',
+                'content' => ''
+            ],
+            'Support' => [
+                'slug' => 'support',
+                'template' => 'page-support.php',
+                'content' => ''
+            ],
+            'Support Dashboard' => [
+                'slug' => 'support-dashboard',
+                'template' => 'page-support-dashboard.php',
+                'content' => ''
+            ],
+            'About Us' => [
+                'slug' => 'about-us',
+                'template' => 'page-about-us.php',
+                'content' => ''
+            ],
+            'Study Abroad' => [
+                'slug' => 'study-abroad',
+                'template' => 'page-study-abroad.php',
+                'content' => ''
+            ],
+            'Student Application' => [
+                'slug' => 'student-application',
+                'template' => 'page-student-application-form.php',
+                'content' => ''
+            ],
+            'Agent Application' => [
+                'slug' => 'agent-application',
+                'template' => 'page-agent-application-form.php',
+                'content' => ''
+            ],
+            'Terms and Conditions' => [
+                'slug' => 'terms-conditions',
+                'template' => '',
+                'content' => 'Terms and conditions content goes here.'
+            ],
+            'Privacy Policy' => [
+                'slug' => 'privacy-policy',
+                'template' => '',
+                'content' => 'Privacy policy content goes here.'
+            ]
+        ];
+
+        // 3. Create pages
+        foreach ($pages_to_create as $title => $data) {
+            $page_id = wp_insert_post([
+                'post_title' => $title,
+                'post_name' => $data['slug'],
+                'post_content' => $data['content'],
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_author' => 1
+            ]);
+
+            if ($page_id && !is_wp_error($page_id)) {
+                if (!empty($data['template'])) {
+                    update_post_meta($page_id, '_wp_page_template', $data['template']);
+                }
+
+                // Set homepage
+                if ($data['slug'] === 'home') {
+                    update_option('show_on_front', 'page');
+                    update_option('page_on_front', $page_id);
+                }
+            }
+        }
+        
+        // Flush rules to ensure permalinks work for new pages
+        flush_rewrite_rules();
     }
 
     /**
@@ -43,7 +201,7 @@ class Unico_Init {
             'class-wallet.php',
             'class-pricing.php',
             'class-application-form.php',
-            // Custom payment system (WooCommerce replacement)
+            // Custom payment system
             'class-cart.php',
             'class-order.php',
             'class-checkout.php',
@@ -63,13 +221,6 @@ class Unico_Init {
      * Setup theme support
      */
     public function setup_theme() {
-        // WooCommerce support (optional - only needed if WooCommerce is still installed)
-        // Commented out as custom payment system now handles checkout/orders
-        // add_theme_support('woocommerce');
-        // add_theme_support('wc-product-gallery-zoom');
-        // add_theme_support('wc-product-gallery-lightbox');
-        // add_theme_support('wc-product-gallery-slider');
-
         // Add title tag support
         add_theme_support('title-tag');
 
