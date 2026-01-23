@@ -67,7 +67,7 @@ class Unico_Checkout {
         }
 
         // Redirect to thank you page
-        wp_redirect(home_url('/checkout/order-received/?order_id=' . $order_id));
+        wp_redirect(home_url('/order-received/?order_id=' . $order_id));
         exit;
     }
 
@@ -130,21 +130,51 @@ class Unico_Checkout {
                 return false;
             }
 
-            // Check for receipt in session
+            // Check for receipt - first in session (AJAX upload), then in form upload
             if (!session_id()) {
                 session_start();
             }
 
             $receipt_in_session = isset($_SESSION['unico_receipt_upload']) ? $_SESSION['unico_receipt_upload'] : null;
+            $has_valid_receipt = false;
 
-            if (!$receipt_in_session || empty($receipt_in_session['url']) || empty($receipt_in_session['file'])) {
-                $this->add_error('Payment receipt is required. Please upload your bank transfer receipt.');
-                return false;
+            // Check session first (AJAX uploaded receipt)
+            if ($receipt_in_session && !empty($receipt_in_session['url']) && !empty($receipt_in_session['file'])) {
+                if (file_exists($receipt_in_session['file'])) {
+                    $has_valid_receipt = true;
+                }
             }
 
-            // Verify file still exists
-            if (!file_exists($receipt_in_session['file'])) {
-                $this->add_error('Payment receipt file is no longer available. Please upload again.');
+            // If no session receipt, check for form-uploaded file
+            if (!$has_valid_receipt && !empty($_FILES['voucher_payment_receipt']['name'])) {
+                if ($_FILES['voucher_payment_receipt']['error'] === UPLOAD_ERR_OK) {
+                    // Process form upload
+                    require_once ABSPATH . 'wp-admin/includes/file.php';
+
+                    $upload = wp_handle_upload($_FILES['voucher_payment_receipt'], [
+                        'test_form' => false,
+                        'mimes' => [
+                            'jpg' => 'image/jpeg',
+                            'jpeg' => 'image/jpeg',
+                            'png' => 'image/png',
+                            'gif' => 'image/gif',
+                            'webp' => 'image/webp',
+                            'pdf' => 'application/pdf',
+                        ],
+                    ]);
+
+                    if (!isset($upload['error'])) {
+                        $_SESSION['unico_receipt_upload'] = $upload;
+                        $has_valid_receipt = true;
+                    } else {
+                        $this->add_error('Error uploading receipt: ' . $upload['error']);
+                        return false;
+                    }
+                }
+            }
+
+            if (!$has_valid_receipt) {
+                $this->add_error('Payment receipt is required. Please upload your bank transfer receipt.');
                 return false;
             }
         }

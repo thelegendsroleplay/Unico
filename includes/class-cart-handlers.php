@@ -34,8 +34,7 @@ class Unico_Cart_Handlers {
         // Add to cart redirect filter
         add_filter('unico_add_to_cart_redirect', [$this, 'add_to_cart_redirect'], 10, 2);
 
-        // Clear cart on non-checkout pages
-        add_action('template_redirect', [$this, 'maybe_clear_cart']);
+        // Note: Removed aggressive cart clearing - cart persists in session until order is placed
     }
 
     /**

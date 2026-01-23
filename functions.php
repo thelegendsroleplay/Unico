@@ -637,12 +637,21 @@ function unico_force_dashboard_templates() {
     $routes = [
         'study-abroad'             => 'page-study-abroad.php',
         'student-application-form' => 'page-student-application-form.php',
+        'agent-application-form'   => 'page-agent-application-form.php',
         'about-us'                 => 'page-about-us.php',
         'management-dashboard'     => 'page-management-dashboard.php',
         'agent-dashboard'          => 'page-agent-dashboard.php',
         'student-dashboard'        => 'page-student-dashboard.php',
         'customer-dashboard'       => 'page-customer-dashboard.php',
         'reseller-dashboard'       => 'page-reseller-dashboard.php',
+        'support-dashboard'        => 'page-support-dashboard.php',
+        'finance-dashboard'        => 'page-finance-dashboard.php',
+        'vouchers'                 => 'page-vouchers.php',
+        'checkout'                 => 'page-checkout.php',
+        'order-received'           => 'page-order-received.php',
+        'login'                    => 'page-login.php',
+        'register'                 => 'page-register.php',
+        'support'                  => 'page-support.php',
     ];
 
     if (array_key_exists($request_path, $routes)) {
@@ -744,7 +753,7 @@ add_action('wp_enqueue_scripts', function () {
         );
     }
 
-    if ((function_exists('is_checkout') && is_checkout()) || is_page('checkout')) {
+    if (is_page('checkout')) {
         wp_enqueue_style(
             'unico-checkout',
             get_template_directory_uri() . '/assets/css/checkout.css',
@@ -965,29 +974,39 @@ add_action('template_redirect', function () {
 });
 
 
-add_action('template_redirect', function () {
-    if (is_page(array('customer-dashboard', 'agent-dashboard', 'reseller-dashboard', 'support-dashboard', 'finance-dashboard', 'management-dashboard'))) {
-        wp_redirect(home_url('/'));
-        exit;
-    }
-});
-
-
 /* --------------------------------------------------
- * REDIRECT WOO MY ACCOUNT TO ROLE DASHBOARDS
+ * PROTECT ROLE-BASED DASHBOARDS
+ * Redirect to login if not logged in, otherwise allow access
  * -------------------------------------------------- */
 add_action('template_redirect', function () {
-    if (function_exists('is_account_page') && is_account_page()) {
-        if (!is_user_logged_in()) {
-            wp_redirect(home_url('/login'));
-            exit;
-        }
+    $dashboard_pages = array(
+        'customer-dashboard',
+        'agent-dashboard',
+        'reseller-dashboard',
+        'support-dashboard',
+        'finance-dashboard',
+        'management-dashboard',
+        'student-dashboard'
+    );
 
-        $user = wp_get_current_user();
-        if ($user && $user->ID) {
-            wp_redirect(home_url('/'));
-            exit;
-        }
+    // Check if current page is a dashboard
+    $current_page = get_queried_object();
+    $is_dashboard = false;
+
+    if ($current_page && isset($current_page->post_name)) {
+        $is_dashboard = in_array($current_page->post_name, $dashboard_pages);
+    }
+
+    if (!$is_dashboard) {
+        // Also check by request path for forced templates
+        $request_path = trim(parse_url(add_query_arg([]), PHP_URL_PATH), '/');
+        $is_dashboard = in_array($request_path, $dashboard_pages);
+    }
+
+    // If it's a dashboard page and user is not logged in, redirect to login
+    if ($is_dashboard && !is_user_logged_in()) {
+        wp_redirect(home_url('/login?redirect=' . urlencode($_SERVER['REQUEST_URI'])));
+        exit;
     }
 });
 
