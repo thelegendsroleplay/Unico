@@ -13,7 +13,7 @@ get_header();
 
 // Get cart instance
 $cart = Unico_Cart::get_instance();
-$cart_items = $cart->get_cart_contents();
+$cart_items = $cart->get_cart();
 $is_empty = empty($cart_items);
 
 // Get errors/notices from Unico_Checkout
@@ -234,11 +234,11 @@ $notices = $checkout->get_notices();
                             <h3>Order Summary</h3>
                             <div class="unico-summary-row">
                                 <span>Subtotal</span>
-                                <span><?php echo $cart->get_total(); ?></span>
+                                <span><?php echo $cart->get_total('display'); ?></span>
                             </div>
                             <div class="unico-summary-total">
                                 <span>Total</span>
-                                <span><?php echo $cart->get_total(); ?></span>
+                                <span><?php echo $cart->get_total('display'); ?></span>
                             </div>
                         </div>
                     </div>
