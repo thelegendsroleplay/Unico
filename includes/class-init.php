@@ -207,12 +207,6 @@ class Unico_Init {
             'class-wallet.php',
             'class-pricing.php',
             'class-application-form.php',
-            // Custom payment system
-            'class-cart.php',
-            'class-order.php',
-            'class-checkout.php',
-            'class-cart-handlers.php',
-            'class-admin-orders.php',
         ];
 
         foreach ($classes as $class) {
@@ -247,15 +241,7 @@ class Unico_Init {
         $pricing = Unico_Pricing::get_instance();
         $application_form = Unico_Application_Form::get_instance();
 
-        // Initialize custom payment system
-        $cart = Unico_Cart::get_instance();
-        $checkout = Unico_Checkout::get_instance();
-        $cart_handlers = Unico_Cart_Handlers::get_instance();
-
-        // Initialize admin interface
-        if (is_admin()) {
-            $admin_orders = Unico_Admin_Orders::get_instance();
-        }
+        // WooCommerce now handles checkout/order flows.
 
         $db_version = get_option('unico_db_version');
         if (!$db_version || version_compare($db_version, '1.3.0', '<')) {

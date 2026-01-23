@@ -8,17 +8,16 @@ if (!is_user_logged_in()) {
     exit;
 }
 
-$order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
+$order_key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+$order_id = $order_key ? wc_get_order_id_by_order_key($order_key) : 0;
+$order = $order_id ? wc_get_order($order_id) : null;
 
-if (!$order_id) {
+if (!$order) {
     wp_redirect(home_url('/'));
     exit;
 }
 
-$order = new Unico_Order($order_id);
-
-// Verify order belongs to current user
-if ($order->get_user_id() != get_current_user_id()) {
+if ((int) $order->get_user_id() !== get_current_user_id()) {
     wp_redirect(home_url('/'));
     exit;
 }
@@ -122,7 +121,7 @@ get_header();
     font-weight: 600;
 }
 
-.status-pending-verification {
+.status-under-review {
     background: #fff3cd;
     color: #856404;
 }
@@ -160,112 +159,82 @@ get_header();
     border-radius: 6px;
     text-decoration: none;
     font-weight: 600;
-    display: inline-block;
-    text-align: center;
 }
 
 .btn-primary {
-    background: #103e54;
+    background: #f97316;
     color: #fff;
 }
 
 .btn-secondary {
-    background: #fff;
-    color: #103e54;
-    border: 2px solid #103e54;
-}
-
-.btn:hover {
-    opacity: 0.9;
+    background: #6b7280;
+    color: #fff;
 }
 </style>
 
 <div class="order-received-container">
     <div class="order-success-icon">
-        <svg viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M8 12l2 2 4-4"></path>
+        <svg fill="none" viewBox="0 0 24 24">
+            <path d="M20 6L9 17L4 12" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     </div>
 
     <div class="order-received-header">
-        <h1>Thank You for Your Order!</h1>
-        <p>Your order has been received and is being processed.</p>
+        <h1>Order Received</h1>
+        <p>Thank you! Your order has been created and is under review.</p>
     </div>
 
     <div class="order-details-card">
-        <h2>Order Details</h2>
-
         <div class="order-details-row">
-            <span class="order-details-label">Order Number:</span>
+            <span class="order-details-label">Order Number</span>
             <span class="order-details-value">#<?php echo esc_html($order->get_order_number()); ?></span>
         </div>
-
         <div class="order-details-row">
-            <span class="order-details-label">Date:</span>
-            <span class="order-details-value"><?php echo date('F j, Y', strtotime($order->get_date_created())); ?></span>
+            <span class="order-details-label">Date</span>
+            <span class="order-details-value"><?php echo esc_html(wc_format_datetime($order->get_date_created())); ?></span>
         </div>
-
         <div class="order-details-row">
-            <span class="order-details-label">Email:</span>
-            <span class="order-details-value"><?php echo esc_html($order->get_customer_email()); ?></span>
+            <span class="order-details-label">Total</span>
+            <span class="order-details-value"><?php echo wp_kses_post($order->get_formatted_order_total()); ?></span>
         </div>
-
         <div class="order-details-row">
-            <span class="order-details-label">Payment Method:</span>
-            <span class="order-details-value">Bank Transfer</span>
-        </div>
-
-        <div class="order-details-row">
-            <span class="order-details-label">Status:</span>
+            <span class="order-details-label">Status</span>
             <span class="order-details-value">
-                <span class="order-status-badge status-pending-verification">
-                    Pending Verification
+                <span class="order-status-badge status-<?php echo esc_attr($order->get_status()); ?>">
+                    <?php echo esc_html(wc_get_order_status_name($order->get_status())); ?>
                 </span>
             </span>
         </div>
+    </div>
 
-        <div class="order-details-row">
-            <span class="order-details-label">Payment Reference:</span>
-            <span class="order-details-value"><?php echo esc_html($order->get_payment_reference()); ?></span>
-        </div>
-
-        <div class="order-items">
-            <h3>Order Items</h3>
-            <?php foreach ($order->get_items() as $item): ?>
-                <div class="order-item">
-                    <div>
-                        <strong><?php echo esc_html($item['product_name']); ?></strong>
-                        <br>
-                        <small>Exam: <?php echo esc_html($item['exam_name']); ?></small>
-                    </div>
-                    <div>
-                        <?php echo esc_html($item['quantity']); ?> × $<?php echo number_format($item['unit_price'], 2); ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-
+    <div class="order-items">
+        <h3>Order Items</h3>
+        <?php foreach ($order->get_items() as $item) : ?>
+            <div class="order-item">
+                <span><?php echo esc_html($item->get_name()); ?></span>
+                <span><?php echo wp_kses_post($order->get_formatted_line_subtotal($item)); ?></span>
+            </div>
+        <?php endforeach; ?>
         <div class="order-total">
-            Total: <?php echo $order->get_formatted_total(); ?>
+            <?php echo wp_kses_post($order->get_formatted_order_total()); ?>
         </div>
     </div>
 
     <div class="order-next-steps">
-        <h3>What Happens Next?</h3>
+        <h3>Next Steps</h3>
         <ul>
-            <li><strong>Payment Verification:</strong> Our team will verify your payment receipt within 24 hours.</li>
-            <li><strong>Order Processing:</strong> Once verified, your order will be processed immediately.</li>
-            <li><strong>Voucher Delivery:</strong> Your voucher(s) will be delivered to your email: <strong><?php echo esc_html($order->get_customer_email()); ?></strong></li>
-            <li><strong>Email Notification:</strong> You'll receive a confirmation email with your voucher code(s).</li>
+            <li>Your payment proof has been submitted for review.</li>
+            <li>Our team will verify your bank transfer.</li>
+            <li>You will receive your voucher details after approval.</li>
         </ul>
-        <p><strong>Need help?</strong> Contact our support team 24/7.</p>
     </div>
 
     <div class="button-group">
-        <a href="<?php echo home_url('/'); ?>" class="btn btn-primary">Continue Shopping</a>
-        <a href="<?php echo home_url('/support'); ?>" class="btn btn-secondary">Contact Support</a>
+        <a class="btn btn-primary" href="<?php echo esc_url(wc_get_page_permalink('myaccount')); ?>">View My Orders</a>
+        <a class="btn btn-secondary" href="<?php echo esc_url(home_url('/support')); ?>">Contact Support</a>
     </div>
 </div>
 
-<?php get_footer(); ?>
+<?php
+get_footer();
+?>

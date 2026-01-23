@@ -37,15 +37,7 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
 // Include Mail Settings
 require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
 
-// Include Bank Accounts Management
-require_once get_template_directory() . '/includes/class-bank-accounts.php';
-
-// Initialize Bank Accounts System
-add_action('init', function() {
-    if (class_exists('Unico_Bank_Accounts')) {
-        Unico_Bank_Accounts::get_instance();
-    }
-}, 5);
+// Bank accounts now handled via WooCommerce plugin (unico-woo-checkout).
 
 
 
