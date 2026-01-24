@@ -37,6 +37,7 @@ class Unico_VC_Checkout_Page {
 		wp_localize_script('unico-vc-checkout', 'UnicoVC', [
 			'ajaxUrl' => admin_url('admin-ajax.php'),
 			'nonce' => wp_create_nonce('unico_vc_create_order'),
+			'otpNonce' => wp_create_nonce('unico_vc_otp'),
 			'currencySymbol' => get_woocommerce_currency_symbol(),
 			'currencyCode' => get_woocommerce_currency(),
 			'allowGuest' => (bool) get_option('unico_vc_allow_guest', false),
@@ -181,6 +182,23 @@ class Unico_VC_Checkout_Page {
 						<button type="button" class="unico-vc-submit" id="unico-vc-submit" <?php echo ($bank_available && $bank) ? '' : 'disabled'; ?>>CONFIRM ORDER</button>
 					</div>
 				<?php endif; ?>
+			</div>
+		</div>
+		<div class="unico-vc-otp-modal" id="unico-vc-otp-modal" aria-hidden="true">
+			<div class="unico-vc-otp-dialog" role="dialog" aria-modal="true" aria-labelledby="unico-vc-otp-title">
+				<button type="button" class="unico-vc-otp-close" id="unico-vc-otp-close" aria-label="Close verification">&times;</button>
+				<div class="unico-vc-kicker">SECURITY CHECK</div>
+				<h3 class="unico-vc-otp-title" id="unico-vc-otp-title">Verify your email</h3>
+				<p class="unico-vc-otp-text">We sent a 6-digit code to <strong id="unico-vc-otp-email"></strong>.</p>
+				<div class="unico-vc-otp-errors" id="unico-vc-otp-errors" role="alert" aria-live="polite"></div>
+				<div class="unico-vc-otp-field">
+					<label class="unico-vc-label" for="unico-vc-otp-code">ENTER CODE</label>
+					<input type="text" id="unico-vc-otp-code" inputmode="numeric" maxlength="6" />
+				</div>
+				<div class="unico-vc-otp-actions">
+					<button type="button" class="unico-vc-otp-btn" id="unico-vc-otp-verify">VERIFY</button>
+					<button type="button" class="unico-vc-otp-link" id="unico-vc-otp-resend">RESEND CODE</button>
+				</div>
 			</div>
 		</div>
 		<?php
