@@ -91,25 +91,6 @@ class Unico_Database {
         ) $charset_collate;";
         dbDelta($sql_email_verify);
 
-        // Table 7: Reseller/Agent Commissions
-        $table_commissions = $wpdb->prefix . 'unico_commissions';
-        $sql_commissions = "CREATE TABLE $table_commissions (
-            id bigint(20) NOT NULL AUTO_INCREMENT,
-            user_id bigint(20) NOT NULL,
-            order_id bigint(20) NOT NULL,
-            commission_amount decimal(10,2) NOT NULL,
-            commission_percentage decimal(5,2) NOT NULL,
-            order_total decimal(10,2) NOT NULL,
-            status varchar(50) NOT NULL DEFAULT 'pending',
-            paid_at datetime DEFAULT NULL,
-            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY user_id (user_id),
-            KEY order_id (order_id),
-            KEY status (status)
-        ) $charset_collate;";
-        dbDelta($sql_commissions);
-
         // Table 8: Support Tickets
         $table_tickets = $wpdb->prefix . 'unico_support_tickets';
         $sql_tickets = "CREATE TABLE $table_tickets (
@@ -122,7 +103,6 @@ class Unico_Database {
             priority varchar(50) NOT NULL DEFAULT 'medium',
             assigned_to bigint(20) DEFAULT NULL,
             category varchar(100) DEFAULT NULL,
-            order_id bigint(20) DEFAULT NULL,
             last_reply_at datetime DEFAULT NULL,
             closed_at datetime DEFAULT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -204,7 +184,6 @@ class Unico_Database {
             'unico_activity_logs',
             'unico_security_checks',
             'unico_email_verification',
-            'unico_commissions',
             'unico_support_tickets',
             'unico_ticket_replies',
             'unico_user_approvals',
