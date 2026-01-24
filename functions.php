@@ -37,10 +37,6 @@ if (!defined('UNICO_SOFT_LOCK_MINUTES')) {
 // Include Mail Settings
 require_once get_template_directory() . '/includes/class-unico-mail-settings.php';
 
-// Bank accounts now handled via WooCommerce plugin (unico-woo-checkout).
-
-
-
 function unico_get_required_pages() {
     return array(
         'home' => array('title' => 'Home', 'template' => 'front-page.php'),
@@ -126,18 +122,6 @@ function unico_get_home_page_id() {
 function unico_get_required_plugins() {
     return array();
 }
-
-/**
- * Format price with currency symbol
- */
-function unico_format_price($amount, $currency = 'USD') {
-    $symbol = '$';
-    if ($currency === 'GBP') $symbol = '£';
-    if ($currency === 'EUR') $symbol = '€';
-    
-    return $symbol . number_format((float)$amount, 2);
-}
-
 
 function unico_dev_sync_required_pages() {
     if (!UNICO_DEV_MODE) {
