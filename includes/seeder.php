@@ -90,7 +90,13 @@ function unico_seed_exam_products() {
 
     foreach ($products as $p) {
         // Check if product exists by title
-        $existing = get_page_by_title($p['title'], OBJECT, 'product');
+        $existing_products = get_posts([
+            'post_type' => 'product',
+            'title' => $p['title'],
+            'post_status' => 'any',
+            'numberposts' => 1,
+        ]);
+        $existing = !empty($existing_products) ? $existing_products[0] : null;
         
         if (!$existing) {
             $product = new WC_Product_Simple();

@@ -629,9 +629,14 @@ function unico_get_destination_page_url($key)
     }
 
     if (!empty($config['title'])) {
-        $page = get_page_by_title($config['title']);
-        if ($page) {
-            return get_permalink($page->ID);
+        $pages = get_posts([
+            'post_type' => 'page',
+            'title' => $config['title'],
+            'post_status' => 'publish',
+            'numberposts' => 1,
+        ]);
+        if (!empty($pages)) {
+            return get_permalink($pages[0]->ID);
         }
     }
 
