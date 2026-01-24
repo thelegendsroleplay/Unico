@@ -1,0 +1,140 @@
+(function ($) {
+	function setErrors(errors) {
+		var $box = $('#unico-vc-errors');
+		if (!$box.length) return;
+		if (!errors || !errors.length) {
+			$box.removeClass('is-visible').empty();
+			return;
+		}
+		var list = '<ul>';
+		for (var i = 0; i < errors.length; i++) {
+			list += '<li>' + $('<div/>').text(errors[i]).html() + '</li>';
+		}
+		list += '</ul>';
+		$box.html(list).addClass('is-visible');
+	}
+
+	function getQty() {
+		var qty = parseInt($('#unico-vc-qty').val(), 10);
+		if (!Number.isFinite(qty) || qty < 1) qty = 1;
+		return qty;
+	}
+
+	function syncQtyBadge() {
+		$('#unico-vc-qty-badge').text('X' + getQty());
+	}
+
+	function formatTotal(amount) {
+		var symbol = (window.UnicoVC && UnicoVC.currencySymbol) ? UnicoVC.currencySymbol : '';
+		return symbol + amount.toFixed(2);
+	}
+
+	function syncTotal() {
+		var $wrap = $('#unico-vc-checkout');
+		var price = parseFloat($wrap.data('product-price'));
+		if (!Number.isFinite(price)) return;
+		var total = price * getQty();
+		$('#unico-vc-total').text(formatTotal(total));
+	}
+
+	function bindUpload() {
+		var $input = $('#unico-vc-receipt');
+		if (!$input.length) return;
+		$('#unico-vc-upload-btn').on('click', function () {
+			$input.trigger('click');
+		});
+		$input.on('change', function () {
+			var name = 'No file selected';
+			if (this.files && this.files.length) name = this.files[0].name;
+			$('#unico-vc-upload-meta').text(name);
+		});
+	}
+
+	function bindQty() {
+		$(document).on('click', '.unico-vc-qty-btn', function () {
+			var $input = $('#unico-vc-qty');
+			var current = parseInt($input.val(), 10);
+			if (!Number.isFinite(current) || current < 1) current = 1;
+			var action = $(this).data('action');
+			if (action === 'increase') current += 1;
+			if (action === 'decrease') current = Math.max(1, current - 1);
+			$input.val(current).trigger('change');
+		});
+		$(document).on('input change', '#unico-vc-qty', function () {
+			syncQtyBadge();
+			syncTotal();
+		});
+	}
+
+	function submitOrder() {
+		var $btn = $('#unico-vc-submit');
+		if ($btn.prop('disabled')) return;
+
+		setErrors([]);
+
+		var $wrap = $('#unico-vc-checkout');
+		var productId = parseInt($wrap.data('product-id'), 10);
+		var qty = getQty();
+		var buyerName = $('#unico-vc-buyer-name').val() || '';
+		var buyerEmail = $('#unico-vc-buyer-email').val() || '';
+		var txnId = $('#unico-vc-txn').val() || '';
+		var confirm = $('#unico-vc-confirm').is(':checked') ? 1 : 0;
+		var bankKey = $wrap.data('bank-key') || '';
+
+		var fileInput = document.getElementById('unico-vc-receipt');
+		var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
+
+		var fd = new FormData();
+		fd.append('action', 'unico_vc_create_order');
+		fd.append('nonce', UnicoVC.nonce);
+		fd.append('product_id', String(productId));
+		fd.append('qty', String(qty));
+		fd.append('buyer_name', buyerName);
+		fd.append('buyer_email', buyerEmail);
+		fd.append('txn_id', txnId);
+		fd.append('confirm', String(confirm));
+		fd.append('bank_key', String(bankKey));
+		if (file) fd.append('receipt', file);
+
+		$btn.prop('disabled', true);
+
+		$.ajax({
+			url: UnicoVC.ajaxUrl,
+			method: 'POST',
+			data: fd,
+			processData: false,
+			contentType: false,
+		})
+			.done(function (res) {
+				if (res && res.success && res.data && res.data.redirect) {
+					window.location.href = res.data.redirect;
+					return;
+				}
+				var msg = (res && res.data && res.data.message) || 'Order failed.';
+				var errors = (res && res.data && res.data.errors) || [msg];
+				setErrors(errors);
+			})
+			.fail(function (xhr) {
+				var errors = ['Order failed. Please try again.'];
+				try {
+					var json = xhr.responseJSON;
+					if (json && json.data && json.data.errors) errors = json.data.errors;
+					else if (json && json.data && json.data.message) errors = [json.data.message];
+				} catch (e) {}
+				setErrors(errors);
+			})
+			.always(function () {
+				$btn.prop('disabled', false);
+			});
+	}
+
+	$(function () {
+		if (!$('#unico-vc-checkout').length) return;
+		bindQty();
+		bindUpload();
+		syncQtyBadge();
+		syncTotal();
+		$('#unico-vc-submit').on('click', submitOrder);
+	});
+})(jQuery);
+

@@ -143,6 +143,13 @@ add_action('init', 'unico_dev_sync_required_pages');
 require_once get_template_directory() . '/includes/class-init.php';
 require_once get_template_directory() . '/includes/class-smtp-settings.php'; // Load SMTP Settings
 
+// Run Product Seeder (Temporary)
+require_once get_template_directory() . '/includes/seeder.php';
+
+require_once get_template_directory() . '/includes/unico-vc-bootstrap.php';
+ 
+ 
+
 function unico_template_override($template) {
     if (is_page()) {
         $pages = unico_get_required_pages();
@@ -286,6 +293,16 @@ add_action('wp_enqueue_scripts', function () {
             'unico-about',
             get_template_directory_uri() . '/assets/css/about.css',
             [],
+            '1.0'
+        );
+    }
+
+    // Vouchers Page Styles
+    if (is_page('vouchers') || is_page_template('page-vouchers.php')) {
+        wp_enqueue_style(
+            'unico-vouchers',
+            get_template_directory_uri() . '/assets/css/vouchers.css',
+            ['unico-header', 'unico-footer'],
             '1.0'
         );
     }
@@ -465,6 +482,18 @@ add_action('edit_user_profile_update', function ($user_id) {
         update_user_meta($user_id, 'email_verified_at', current_time('mysql'));
     }
 });
+
+add_action('template_redirect', function () {
+    if (!isset($_GET['unico_buy_now'])) {
+        return;
+    }
+    $product_id = absint($_GET['unico_buy_now']);
+    if ($product_id <= 0) {
+        return;
+    }
+    wp_redirect(add_query_arg('product_id', $product_id, home_url('/checkout/')));
+    exit;
+}, 0);
 
 
 /* --------------------------------------------------
