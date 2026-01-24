@@ -225,13 +225,6 @@ class Unico_VC_Checkout_Page {
 						</div>
 					</div>
 					<div class="unico-vc-bank-note">Your order is under review. Voucher codes will be delivered after approval.</div>
-					<?php if (current_user_can('manage_woocommerce')) : ?>
-						<div class="unico-vc-bank-note">
-							<a href="<?php echo esc_url(get_edit_post_link($order->get_id())); ?>">Open order in admin</a>
-							&nbsp;|&nbsp;
-							<a href="<?php echo esc_url(admin_url('admin.php?page=unico-vc-verification&debug_order_id=' . $order->get_id())); ?>">Open verification debug</a>
-						</div>
-					<?php endif; ?>
 				<?php else : ?>
 					<div class="unico-vc-bank-note">We couldn't verify this order.</div>
 				<?php endif; ?>

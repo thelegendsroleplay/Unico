@@ -6,6 +6,18 @@
     font-family: 'Inter', sans-serif;
 }
 
+.unico-vouchers-page,
+.unico-vouchers-page * {
+    box-sizing: border-box;
+}
+
+.unico-vouchers-page .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
 /* Hero */
 .vouchers-hero {
     background: #fff;
@@ -50,6 +62,11 @@
     flex-wrap: wrap;
 }
 
+.vouchers-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .filter-btn {
     background: #fff;
     border: 1px solid #e2e8f0;
@@ -87,7 +104,8 @@
 /* Grid */
 .vouchers-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 380px));
+    justify-content: center;
     gap: 30px;
 }
 
@@ -114,6 +132,7 @@
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .badge-provider {
@@ -142,6 +161,7 @@
     margin: 0 0 10px 0;
     line-height: 1.4;
     min-height: 3.6em; /* Align cards */
+    word-break: break-word;
 }
 
 .card-desc {
@@ -172,6 +192,10 @@
     font-size: 2rem;
     font-weight: 800;
     color: #0f3b52;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
 }
 
 .price-value .woocommerce-Price-amount {
@@ -182,7 +206,7 @@
     font-size: 0.9rem;
     color: #64748b;
     font-weight: 600;
-    margin-left: 5px;
+    margin-left: 0;
 }
 
 /* Actions */
@@ -211,4 +235,73 @@
 .checkout-btn.disabled {
     background: #94a3b8;
     cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+    .unico-vouchers-page .container {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .unico-vouchers-page .container {
+        padding: 0 16px;
+    }
+
+    .vouchers-hero {
+        padding: 44px 0 28px;
+    }
+
+    .vouchers-hero h1 {
+        font-size: clamp(2rem, 7vw, 2.6rem);
+    }
+
+    .vouchers-toolbar {
+        margin: 28px 0;
+        gap: 14px;
+        align-items: stretch;
+    }
+
+    .vouchers-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .partner-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .filter-btn {
+        padding: 10px 16px;
+        font-size: 0.8rem;
+    }
+
+    .vouchers-grid {
+        gap: 20px;
+    }
+
+    .voucher-card {
+        padding: 22px;
+        border-radius: 18px;
+    }
+
+    .card-title {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-btn {
+        padding: 10px 14px;
+        font-size: 0.75rem;
+    }
+
+    .price-value {
+        font-size: 1.75rem;
+    }
+
+    .checkout-btn {
+        padding: 14px;
+    }
 }

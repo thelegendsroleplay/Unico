@@ -142,6 +142,12 @@ add_action('init', 'unico_dev_sync_required_pages');
  * -------------------------------------------------- */
 require_once get_template_directory() . '/includes/class-init.php';
 require_once get_template_directory() . '/includes/class-smtp-settings.php'; // Load SMTP Settings
+require_once get_template_directory() . '/includes/class-user-roles.php';
+require_once get_template_directory() . '/includes/class-application-form.php';
+require_once get_template_directory() . '/includes/class-order.php';
+require_once get_template_directory() . '/includes/class-voucher-system.php';
+require_once get_template_directory() . '/includes/class-bank-accounts.php';
+require_once get_template_directory() . '/includes/dashboard-helpers.php';
 
 // Run Product Seeder (Temporary)
 require_once get_template_directory() . '/includes/seeder.php';

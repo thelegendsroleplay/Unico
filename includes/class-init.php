@@ -189,6 +189,10 @@ class Unico_Init {
             'class-user-roles.php',
             'class-security.php',
             'class-application-form.php',
+            'class-order.php',
+            'class-voucher-system.php',
+            'class-bank-accounts.php',
+            'dashboard-helpers.php',
         ];
 
         foreach ($classes as $class) {

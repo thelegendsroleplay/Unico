@@ -728,7 +728,7 @@ foreach ($orders_30days as $order) {
     if (!$created) {
         continue;
     }
-    $day_key = $created->date('Y-m-d');
+    $day_key = date('Y-m-d', strtotime($created));
     if (!isset($orders_per_day[$day_key])) {
         $orders_per_day[$day_key] = 0;
     }

@@ -34,6 +34,7 @@ class Unico_VC_Plugin {
 		add_filter('woocommerce_product_supports', [$this, 'disable_ajax_add_to_cart_for_vouchers'], 10, 3);
 
 		add_action('wp_loaded', [$this, 'intercept_add_to_cart_request'], 0);
+		add_filter('woocommerce_checkout_redirect_empty_cart', [$this, 'maybe_disable_empty_cart_checkout_redirect'], 10, 1);
 
 		Unico_VC_Checkout_Page::instance();
 		Unico_VC_Ajax_Order::instance();
@@ -180,5 +181,12 @@ class Unico_VC_Plugin {
 			wp_safe_redirect(self::checkout_url(['product_id' => $product_id]));
 			exit;
 		}
+	}
+
+	public function maybe_disable_empty_cart_checkout_redirect($should_redirect) {
+		if (isset($_GET['product_id']) && absint($_GET['product_id']) > 0) {
+			return false;
+		}
+		return $should_redirect;
 	}
 }
