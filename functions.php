@@ -629,18 +629,14 @@ function unico_get_destination_page_url($key)
     }
 
     if (!empty($config['title'])) {
-        $page_query = new WP_Query([
+        $pages = get_posts([
             'post_type' => 'page',
-            'post_status' => 'publish',
             'title' => $config['title'],
-            'posts_per_page' => 1,
-            'no_found_rows' => true,
-            'fields' => 'ids',
+            'post_status' => 'publish',
+            'numberposts' => 1,
         ]);
-        if (!empty($page_query->posts)) {
-            $page_id = (int) $page_query->posts[0];
-            wp_reset_postdata();
-            return get_permalink($page_id);
+        if (!empty($pages)) {
+            return get_permalink($pages[0]->ID);
         }
         wp_reset_postdata();
     }

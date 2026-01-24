@@ -17,6 +17,7 @@
 	function getQty() {
 		var qty = parseInt($('#unico-vc-qty').val(), 10);
 		if (!Number.isFinite(qty) || qty < 1) qty = 1;
+		if (qty > 10) qty = 10;
 		return qty;
 	}
 
@@ -56,7 +57,7 @@
 			var current = parseInt($input.val(), 10);
 			if (!Number.isFinite(current) || current < 1) current = 1;
 			var action = $(this).data('action');
-			if (action === 'increase') current += 1;
+			if (action === 'increase') current = Math.min(10, current + 1);
 			if (action === 'decrease') current = Math.max(1, current - 1);
 			$input.val(current).trigger('change');
 		});
@@ -71,6 +72,30 @@
 		if ($btn.prop('disabled')) return;
 
 		setErrors([]);
+
+		var clientErrors = [];
+		var qty = getQty();
+		if (qty > 10) {
+			clientErrors.push('Maximum quantity is 10 units per order.');
+		}
+
+		var fileInput = document.getElementById('unico-vc-receipt');
+		var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
+		if (file) {
+			var maxSize = 5 * 1024 * 1024;
+			if (file.size > maxSize) {
+				clientErrors.push('Receipt file must be 5MB or smaller.');
+			}
+			var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+			if (allowedTypes.indexOf(file.type) === -1) {
+				clientErrors.push('Receipt must be JPG, PNG, or WEBP format.');
+			}
+		}
+
+		if (clientErrors.length > 0) {
+			setErrors(clientErrors);
+			return;
+		}
 
 		var $wrap = $('#unico-vc-checkout');
 		var productId = parseInt($wrap.data('product-id'), 10);
@@ -96,7 +121,8 @@
 		fd.append('bank_key', String(bankKey));
 		if (file) fd.append('receipt', file);
 
-		$btn.prop('disabled', true);
+		var originalText = $btn.text();
+		$btn.prop('disabled', true).text('PROCESSING...');
 
 		$.ajax({
 			url: UnicoVC.ajaxUrl,
@@ -124,7 +150,7 @@
 				setErrors(errors);
 			})
 			.always(function () {
-				$btn.prop('disabled', false);
+				$btn.prop('disabled', false).text(originalText);
 			});
 	}
 

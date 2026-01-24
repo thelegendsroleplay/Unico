@@ -38,7 +38,7 @@ class Unico_VC_Ajax_Order {
 		}
 
 		$product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
-		$qty = isset($_POST['qty']) ? max(1, absint($_POST['qty'])) : 1;
+		$qty = isset($_POST['qty']) ? max(1, min(10, absint($_POST['qty']))) : 1;
 		$buyer_name = isset($_POST['buyer_name']) ? sanitize_text_field(wp_unslash($_POST['buyer_name'])) : '';
 		$buyer_email = isset($_POST['buyer_email']) ? sanitize_email(wp_unslash($_POST['buyer_email'])) : '';
 		$txn_id = isset($_POST['txn_id']) ? sanitize_text_field(wp_unslash($_POST['txn_id'])) : '';
@@ -56,6 +56,9 @@ class Unico_VC_Ajax_Order {
 		}
 		if ($qty < 1) {
 			$errors[] = 'Quantity must be at least 1.';
+		}
+		if ($qty > 10) {
+			$errors[] = 'Maximum quantity is 10 units per order.';
 		}
 		if (empty($buyer_name)) {
 			$errors[] = 'Buyer name is required.';
@@ -150,6 +153,8 @@ class Unico_VC_Ajax_Order {
 		if (function_exists('wc_update_order_stats')) {
 			wc_update_order_stats($order->get_id());
 		}
+
+		Unico_VC_Emails::instance()->send_order_placed($order->get_id());
 
 		delete_transient('unico_vc_bank_' . $bank_key);
 
