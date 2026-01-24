@@ -117,7 +117,7 @@ class Unico_VC_Checkout_Page {
 						<div class="unico-vc-label">QUANTITY</div>
 						<div class="unico-vc-qty">
 							<button type="button" class="unico-vc-qty-btn" data-action="decrease">-</button>
-							<input type="number" min="1" step="1" value="1" class="unico-vc-qty-input" id="unico-vc-qty" inputmode="numeric" />
+							<input type="number" min="1" max="10" step="1" value="1" class="unico-vc-qty-input" id="unico-vc-qty" inputmode="numeric" />
 							<button type="button" class="unico-vc-qty-btn" data-action="increase">+</button>
 						</div>
 					</div>
@@ -240,14 +240,33 @@ class Unico_VC_Checkout_Page {
 						<div class="unico-vc-bank-lines">
 							<div>Order ID: <strong>#<?php echo esc_html($order->get_order_number()); ?></strong></div>
 							<div>Total: <strong><?php echo wp_kses_post($total); ?></strong></div>
+							<div>Date: <strong><?php echo esc_html(wc_format_datetime($order->get_date_created())); ?></strong></div>
 						</div>
 					</div>
-					<div class="unico-vc-bank-note">Your order is under review. Voucher codes will be delivered after approval.</div>
+					<div class="unico-vc-bank-note">
+						<strong>What happens next?</strong><br>
+						Your order is currently under review. Our team will verify your payment within 24-48 hours.
+						Once approved, you will receive an email with your voucher codes.
+					</div>
+					<?php if ($order->get_status() === 'completed') : ?>
+						<div class="unico-vc-bank-box" style="background: #f0fdf4; border-color: #86efac;">
+							<div class="unico-vc-bank-lines">
+								<div><strong>✓ Order Approved</strong></div>
+								<div>Your voucher codes have been sent to your email: <?php echo esc_html($order->get_billing_email()); ?></div>
+							</div>
+						</div>
+					<?php endif; ?>
 				<?php else : ?>
-					<div class="unico-vc-bank-note">We couldn't verify this order.</div>
+					<div class="unico-vc-bank-note">
+						We couldn't verify this order. Please check your order confirmation email for the correct link,
+						or contact support if you need assistance.
+					</div>
 				<?php endif; ?>
 
 				<div class="unico-vc-footer">
+					<?php if ($is_valid && is_user_logged_in()) : ?>
+						<a class="unico-vc-submit unico-vc-linkbtn" href="<?php echo esc_url($order->get_view_order_url()); ?>" style="background: #0b3b4a; margin-right: 8px;">VIEW ORDER</a>
+					<?php endif; ?>
 					<a class="unico-vc-submit unico-vc-linkbtn" href="<?php echo esc_url(home_url('/')); ?>">GO HOME</a>
 				</div>
 			</div>

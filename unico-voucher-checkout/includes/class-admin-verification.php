@@ -115,6 +115,17 @@ class Unico_VC_Admin_Verification {
 		echo '<div class="wrap">';
 		echo '<h1>Bank Transfer Verification</h1>';
 
+		$notice = isset($_GET['notice']) ? sanitize_text_field(wp_unslash($_GET['notice'])) : '';
+		if ($notice === 'approved') {
+			echo '<div class="notice notice-success is-dismissible"><p>Order approved and customer notified via email.</p></div>';
+		} elseif ($notice === 'rejected') {
+			echo '<div class="notice notice-success is-dismissible"><p>Order rejected and customer notified via email.</p></div>';
+		} elseif ($notice === 'already_approved') {
+			echo '<div class="notice notice-warning is-dismissible"><p>This order has already been approved.</p></div>';
+		} elseif ($notice === 'already_cancelled') {
+			echo '<div class="notice notice-warning is-dismissible"><p>This order is already cancelled.</p></div>';
+		}
+
 		if ($debug_order_id) {
 			$this->render_debug($debug_order_id);
 		}
@@ -247,20 +258,32 @@ class Unico_VC_Admin_Verification {
 			wp_die('Order not found');
 		}
 
+		$existing_codes = $order->get_meta('_unico_voucher_codes', true);
+		if (!empty($existing_codes) && is_array($existing_codes)) {
+			$order->add_order_note('Approval attempted but codes already exist. No new codes generated.');
+			wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification&notice=already_approved'));
+			exit;
+		}
+
 		$total_qty = 0;
 		foreach ($order->get_items() as $item) {
 			$total_qty += (int) $item->get_quantity();
 		}
 
+		if ($total_qty <= 0) {
+			wp_die('No items to generate codes for');
+		}
+
 		$codes = Unico_VC_Voucher_Generator::generate_codes($total_qty);
 		$order->update_meta_data('_unico_voucher_codes', $codes);
-		$order->add_order_note('Payment approved. Voucher codes generated.');
+		$order->update_meta_data('_unico_approved_email_sent', current_time('mysql'));
+		$order->add_order_note('Payment approved. Voucher codes generated and email sent.');
 		$order->set_status('completed');
 		$order->save();
 
 		Unico_VC_Emails::instance()->send_approved($order_id);
 
-		wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification'));
+		wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification&notice=approved'));
 		exit;
 	}
 
@@ -271,19 +294,30 @@ class Unico_VC_Admin_Verification {
 		}
 
 		$reason = isset($_POST['reason']) ? sanitize_textarea_field(wp_unslash($_POST['reason'])) : '';
+		if (empty($reason)) {
+			wp_die('Rejection reason is required');
+		}
+
 		$order = wc_get_order($order_id);
 		if (!$order) {
 			wp_die('Order not found');
 		}
 
+		if ($order->get_status() === 'cancelled') {
+			$order->add_order_note('Rejection attempted but order already cancelled.');
+			wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification&notice=already_cancelled'));
+			exit;
+		}
+
 		$order->update_meta_data('_unico_reject_reason', $reason);
-		$order->add_order_note('Payment rejected. Reason: ' . $reason);
+		$order->update_meta_data('_unico_rejected_email_sent', current_time('mysql'));
+		$order->add_order_note('Payment rejected. Reason: ' . $reason . ' | Email sent to customer.');
 		$order->set_status('cancelled');
 		$order->save();
 
 		Unico_VC_Emails::instance()->send_rejected($order_id);
 
-		wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification'));
+		wp_safe_redirect(admin_url('admin.php?page=unico-vc-verification&notice=rejected'));
 		exit;
 	}
 

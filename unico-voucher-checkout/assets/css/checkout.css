@@ -120,6 +120,19 @@
     color: #0b2f3b;
     font-weight: 800;
     line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.unico-vc-qty-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.unico-vc-qty-btn:focus {
+    outline: none;
+    border-color: #0b3b4a;
+    box-shadow: 0 0 0 3px rgba(11, 59, 74, 0.1);
 }
 
 .unico-vc-qty-input {
@@ -129,6 +142,9 @@
     background: transparent;
     font-weight: 800;
     color: #0b2f3b;
+}
+
+.unico-vc-qty-input:focus {
     outline: none;
 }
 
@@ -152,11 +168,23 @@
     font-weight: 700;
     color: #0b2f3b;
     box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.unico-vc-field input:focus {
+    outline: none;
+    border-color: #0b3b4a;
+    box-shadow: 0 0 0 3px rgba(11, 59, 74, 0.1);
 }
 
 .unico-vc-field input[readonly] {
     background: #f1f5f9;
     color: #64748b;
+}
+
+.unico-vc-field input[readonly]:focus {
+    border-color: #e6edf6;
+    box-shadow: none;
 }
 
 .unico-vc-pay {
@@ -176,6 +204,18 @@
     font-size: 12px;
     text-transform: uppercase;
     color: #0b2f3b;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.unico-vc-pay-btn:not(.is-disabled):hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.unico-vc-pay-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(11, 59, 74, 0.1);
 }
 
 .unico-vc-pay-btn span {
@@ -252,6 +292,19 @@
     letter-spacing: 1.1px;
     text-transform: uppercase;
     color: #94a3b8;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.unico-vc-upload-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.unico-vc-upload-btn:focus {
+    outline: none;
+    border-color: #0b3b4a;
+    box-shadow: 0 0 0 3px rgba(11, 59, 74, 0.1);
 }
 
 .unico-vc-upload-meta {
@@ -272,10 +325,17 @@
     background: #fff;
     font-size: 11px;
     color: #475569;
+    cursor: pointer;
 }
 
 .unico-vc-confirm input {
     margin-top: 3px;
+    cursor: pointer;
+}
+
+.unico-vc-confirm input:focus {
+    outline: 2px solid #0b3b4a;
+    outline-offset: 2px;
 }
 
 .unico-vc-danger {
@@ -324,6 +384,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.unico-vc-submit:hover:not([disabled]) {
+    background: #ea580c;
+}
+
+.unico-vc-submit:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.3);
 }
 
 .unico-vc-submit[disabled] {
@@ -473,6 +544,12 @@
     }
 }
 
+@media (max-width: 768px) {
+    .unico-vc-field {
+        width: 100%;
+    }
+}
+
 @media (max-width: 480px) {
     .unico-vc-page {
         padding: 24px 12px;
@@ -481,10 +558,6 @@
     .unico-vc-card {
         padding: 18px;
         border-radius: 18px;
-    }
-
-    .unico-vc-field {
-        width: 100%;
     }
 
     .unico-vc-pay {
@@ -500,9 +573,14 @@
         flex-direction: column;
         align-items: stretch;
         text-align: center;
+        gap: 8px;
     }
 
     .unico-vc-total {
         text-align: left;
+    }
+
+    .unico-vc-title {
+        font-size: 18px;
     }
 }
