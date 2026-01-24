@@ -4,6 +4,10 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+if (!class_exists('WC_Payment_Gateway')) {
+	return;
+}
+
 class Unico_VC_Gateway_Bank_Transfer extends WC_Payment_Gateway {
 	public function __construct() {
 		$this->id = 'unico_bank_transfer_verify';

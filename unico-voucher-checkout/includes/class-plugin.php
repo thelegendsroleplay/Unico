@@ -105,7 +105,9 @@ class Unico_VC_Plugin {
 	}
 
 	public function register_gateway($gateways) {
-		$gateways[] = 'Unico_VC_Gateway_Bank_Transfer';
+		if (class_exists('Unico_VC_Gateway_Bank_Transfer')) {
+			$gateways[] = 'Unico_VC_Gateway_Bank_Transfer';
+		}
 		return $gateways;
 	}
 
