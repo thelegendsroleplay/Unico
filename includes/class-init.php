@@ -63,21 +63,6 @@ class Unico_Init {
                 'template' => 'page-reset-password.php',
                 'content' => '[unico_reset_password]'
             ],
-            'Vouchers' => [
-                'slug' => 'vouchers',
-                'template' => 'page-vouchers.php',
-                'content' => ''
-            ],
-            'Checkout' => [
-                'slug' => 'checkout',
-                'template' => 'page-checkout.php',
-                'content' => ''
-            ],
-            'Order Received' => [
-                'slug' => 'order-received',
-                'template' => 'page-order-received.php',
-                'content' => ''
-            ],
             'Student Dashboard' => [
                 'slug' => 'student-dashboard',
                 'template' => 'page-student-dashboard.php',
@@ -203,9 +188,7 @@ class Unico_Init {
             'class-database.php',
             'class-user-roles.php',
             'class-security.php',
-            'class-voucher-system.php',
             'class-wallet.php',
-            'class-pricing.php',
             'class-application-form.php',
         ];
 
@@ -236,18 +219,13 @@ class Unico_Init {
         $database = Unico_Database::get_instance();
         $user_roles = Unico_User_Roles::get_instance();
         $security = Unico_Security::get_instance();
-        $voucher_system = Unico_Voucher_System::get_instance();
         $wallet = Unico_Wallet::get_instance();
-        $pricing = Unico_Pricing::get_instance();
         $application_form = Unico_Application_Form::get_instance();
-
-        // WooCommerce now handles checkout/order flows.
 
         $db_version = get_option('unico_db_version');
         if (!$db_version || version_compare($db_version, '1.3.0', '<')) {
             $database->create_tables();
             $user_roles->create_roles();
-            $pricing->create_default_rules();
             update_option('unico_db_version', '1.3.0');
         }
 
@@ -440,9 +418,6 @@ class Unico_Init {
 
         $user_roles = Unico_User_Roles::get_instance();
         $user_roles->create_roles();
-
-        $pricing = Unico_Pricing::get_instance();
-        $pricing->create_default_rules();
 
         flush_rewrite_rules();
     }
