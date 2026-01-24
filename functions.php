@@ -638,6 +638,7 @@ function unico_get_destination_page_url($key)
         if (!empty($pages)) {
             return get_permalink($pages[0]->ID);
         }
+        wp_reset_postdata();
     }
 
     return home_url('/');
