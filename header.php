@@ -88,31 +88,7 @@
         </svg>
     </button>
 
-    <?php if ( is_user_logged_in() ) :
-        // Get user's role-appropriate dashboard
-        $user = wp_get_current_user();
-        $dashboard_url = home_url('/');
-
-        if (in_array('administrator', $user->roles)) {
-            $dashboard_url = home_url('/management-dashboard');
-        } elseif (in_array('unico_agent', $user->roles)) {
-            $dashboard_url = home_url('/agent-dashboard');
-        } elseif (in_array('unico_reseller', $user->roles)) {
-            $dashboard_url = home_url('/reseller-dashboard');
-        } elseif (in_array('unico_support', $user->roles)) {
-            $dashboard_url = home_url('/support-dashboard');
-        } elseif (in_array('unico_finance', $user->roles)) {
-            $dashboard_url = home_url('/finance-dashboard');
-        } elseif (in_array('unico_student', $user->roles)) {
-            $dashboard_url = home_url('/student-dashboard');
-        } elseif (in_array('unico_customer', $user->roles)) {
-            $dashboard_url = home_url('/customer-dashboard');
-        }
-    ?>
-
-        <a class="signin" href="<?php echo esc_url($dashboard_url); ?>">
-            DASHBOARD
-        </a>
+    <?php if ( is_user_logged_in() ) : ?>
 
         <a class="signup" href="<?php echo esc_url( wp_logout_url( home_url('/') ) ); ?>">
             LOG OUT

@@ -1427,6 +1427,26 @@ get_header();
                                             <?php else: ?>
                                                 <div class="mgmt-small-note">Verification: Pending</div>
                                             <?php endif; ?>
+                                            <?php
+                                            $receipt_id = (int) get_post_meta($order_id, '_unico_receipt_attachment_id', true);
+                                            $receipt_url = get_post_meta($order_id, '_unico_receipt_url', true);
+                                            if (!$receipt_url && $receipt_id) {
+                                                $receipt_url = wp_get_attachment_url($receipt_id);
+                                            }
+                                            ?>
+                                            <div class="mgmt-payment-proof">
+                                                <?php if ($receipt_url): ?>
+                                                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener">
+                                                        <?php if ($receipt_id): ?>
+                                                            <?php echo wp_get_attachment_image($receipt_id, 'thumbnail', false, ['class' => 'mgmt-payment-thumb']); ?>
+                                                        <?php else: ?>
+                                                            <img class="mgmt-payment-thumb" src="<?php echo esc_url($receipt_url); ?>" alt="Payment receipt">
+                                                        <?php endif; ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <div class="mgmt-small-note">No receipt uploaded.</div>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
                                         <td>
                                             <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px;max-width:260px;">

@@ -239,6 +239,18 @@ body {
 
 /* Note: 'pending' and 'submitted' both use the same styling for backwards compatibility */
 
+.mgmt-payment-proof {
+    margin-top: 6px;
+}
+
+.mgmt-payment-thumb {
+    width: 72px;
+    height: auto;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    display: block;
+}
+
 .mgmt-form-row {
     display: flex;
     flex-direction: column;
