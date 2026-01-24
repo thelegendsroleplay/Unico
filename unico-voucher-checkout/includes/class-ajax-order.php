@@ -17,6 +17,10 @@ class Unico_VC_Ajax_Order {
 	private function __construct() {
 		add_action('wp_ajax_unico_vc_create_order', [$this, 'handle']);
 		add_action('wp_ajax_nopriv_unico_vc_create_order', [$this, 'handle']);
+		add_action('wp_ajax_unico_vc_request_otp', [$this, 'handle_request_otp']);
+		add_action('wp_ajax_nopriv_unico_vc_request_otp', [$this, 'handle_request_otp']);
+		add_action('wp_ajax_unico_vc_verify_otp', [$this, 'handle_verify_otp']);
+		add_action('wp_ajax_nopriv_unico_vc_verify_otp', [$this, 'handle_verify_otp']);
 	}
 
 	public function handle() {
@@ -44,6 +48,7 @@ class Unico_VC_Ajax_Order {
 		$txn_id = isset($_POST['txn_id']) ? sanitize_text_field(wp_unslash($_POST['txn_id'])) : '';
 		$confirm = isset($_POST['confirm']) ? (int) $_POST['confirm'] : 0;
 		$bank_key = isset($_POST['bank_key']) ? sanitize_text_field(wp_unslash($_POST['bank_key'])) : '';
+		$otp_key = isset($_POST['otp_key']) ? sanitize_text_field(wp_unslash($_POST['otp_key'])) : '';
 
 		$errors = [];
 
@@ -87,6 +92,10 @@ class Unico_VC_Ajax_Order {
 		}
 		if (!$bank_snapshot || !is_array($bank_snapshot) || empty($bank_snapshot['bank_id'])) {
 			$errors[] = 'No bank account available. Please refresh and try again.';
+		}
+
+		if (!$this->is_otp_verified($otp_key, $buyer_email)) {
+			$errors[] = 'Email verification is required.';
 		}
 
 		if (!empty($errors)) {
@@ -135,6 +144,9 @@ class Unico_VC_Ajax_Order {
 		$order->update_meta_data('_unico_receipt_url', esc_url_raw($upload_result['url']));
 		$order->update_meta_data('_unico_selected_bank_id', (int) $bank_snapshot['bank_id']);
 		$order->update_meta_data('_unico_selected_bank_snapshot', $bank_snapshot);
+		$order->update_meta_data('_unico_otp_verified', 1);
+		$order->update_meta_data('_unico_otp_verified_email', $buyer_email);
+		$order->update_meta_data('_unico_otp_verified_at', current_time('mysql'));
 
 		$order->calculate_totals();
 		$target_status = 'unico-verify';
@@ -167,6 +179,8 @@ class Unico_VC_Ajax_Order {
 		if ($logger) {
 			$logger->info('Order created. order_id=' . (int) $order->get_id() . ' receipt_id=' . (int) $upload_result['attachment_id'], $log_context);
 		}
+
+		$this->clear_otp($otp_key);
 
 		$redirect = Unico_VC_Plugin::thankyou_url([
 			'order_id' => $order->get_id(),
@@ -246,5 +260,153 @@ class Unico_VC_Ajax_Order {
 			'attachment_id' => (int) $attachment_id,
 			'url' => $uploaded['url'],
 		];
+	}
+
+	public function handle_request_otp() {
+		if (!class_exists('WooCommerce')) {
+			wp_send_json_error(['message' => 'WooCommerce is required.'], 400);
+		}
+
+		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+		if (!wp_verify_nonce($nonce, 'unico_vc_otp')) {
+			wp_send_json_error(['message' => 'Invalid request.'], 403);
+		}
+
+		$allow_guest = (bool) get_option('unico_vc_allow_guest', false);
+		if (!$allow_guest && !is_user_logged_in()) {
+			wp_send_json_error(['message' => 'Please log in to continue.'], 401);
+		}
+
+		$buyer_name = isset($_POST['buyer_name']) ? sanitize_text_field(wp_unslash($_POST['buyer_name'])) : '';
+		$buyer_email = isset($_POST['buyer_email']) ? sanitize_email(wp_unslash($_POST['buyer_email'])) : '';
+		$otp_key = isset($_POST['otp_key']) ? sanitize_text_field(wp_unslash($_POST['otp_key'])) : '';
+
+		if (empty($buyer_name)) {
+			wp_send_json_error(['message' => 'Buyer name is required.'], 422);
+		}
+		if (empty($buyer_email) || !is_email($buyer_email)) {
+			wp_send_json_error(['message' => 'Valid email is required.'], 422);
+		}
+
+		$otp_data = $otp_key ? $this->get_otp($otp_key) : null;
+		if (!$otp_data) {
+			$otp_key = wp_generate_uuid4();
+		}
+
+		$now = time();
+		if ($otp_data && !empty($otp_data['last_sent']) && ($now - (int) $otp_data['last_sent']) < 60) {
+			$remaining = 60 - ($now - (int) $otp_data['last_sent']);
+			wp_send_json_error(['message' => 'Please wait ' . $remaining . ' seconds before requesting another code.'], 429);
+		}
+
+		$code = (string) random_int(100000, 999999);
+		$payload = [
+			'email' => $buyer_email,
+			'name' => $buyer_name,
+			'code_hash' => wp_hash_password($code),
+			'created' => $now,
+			'last_sent' => $now,
+			'verified' => false,
+			'attempts' => $otp_data['attempts'] ?? 0,
+		];
+
+		$this->store_otp($otp_key, $payload);
+
+		$sent = $this->send_otp_email($buyer_email, $buyer_name, $code);
+		if (!$sent) {
+			wp_send_json_error(['message' => 'Unable to send verification code. Please try again.'], 500);
+		}
+
+		wp_send_json_success([
+			'otp_key' => $otp_key,
+			'message' => 'Verification code sent.',
+		]);
+	}
+
+	public function handle_verify_otp() {
+		if (!class_exists('WooCommerce')) {
+			wp_send_json_error(['message' => 'WooCommerce is required.'], 400);
+		}
+
+		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+		if (!wp_verify_nonce($nonce, 'unico_vc_otp')) {
+			wp_send_json_error(['message' => 'Invalid request.'], 403);
+		}
+
+		$buyer_email = isset($_POST['buyer_email']) ? sanitize_email(wp_unslash($_POST['buyer_email'])) : '';
+		$otp_key = isset($_POST['otp_key']) ? sanitize_text_field(wp_unslash($_POST['otp_key'])) : '';
+		$otp_code = isset($_POST['otp_code']) ? sanitize_text_field(wp_unslash($_POST['otp_code'])) : '';
+
+		if (empty($buyer_email) || !is_email($buyer_email)) {
+			wp_send_json_error(['message' => 'Valid email is required.'], 422);
+		}
+		if (empty($otp_key) || empty($otp_code)) {
+			wp_send_json_error(['message' => 'Verification code is required.'], 422);
+		}
+
+		$otp_data = $this->get_otp($otp_key);
+		if (!$otp_data || empty($otp_data['code_hash'])) {
+			wp_send_json_error(['message' => 'Verification code expired. Please request a new one.'], 410);
+		}
+		if (!empty($otp_data['email']) && strtolower($otp_data['email']) !== strtolower($buyer_email)) {
+			wp_send_json_error(['message' => 'Email does not match the verification request.'], 403);
+		}
+
+		$attempts = (int) ($otp_data['attempts'] ?? 0);
+		if ($attempts >= 5) {
+			wp_send_json_error(['message' => 'Too many failed attempts. Request a new code.'], 429);
+		}
+
+		if (!wp_check_password($otp_code, $otp_data['code_hash'])) {
+			$otp_data['attempts'] = $attempts + 1;
+			$this->store_otp($otp_key, $otp_data);
+			wp_send_json_error(['message' => 'Incorrect verification code.'], 422);
+		}
+
+		$otp_data['verified'] = true;
+		$otp_data['verified_at'] = time();
+		$this->store_otp($otp_key, $otp_data);
+
+		wp_send_json_success(['message' => 'Email verified.']);
+	}
+
+	private function store_otp($otp_key, array $data) {
+		set_transient('unico_vc_otp_' . $otp_key, $data, 10 * MINUTE_IN_SECONDS);
+	}
+
+	private function get_otp($otp_key) {
+		if (empty($otp_key)) {
+			return null;
+		}
+		$data = get_transient('unico_vc_otp_' . $otp_key);
+		return is_array($data) ? $data : null;
+	}
+
+	private function clear_otp($otp_key) {
+		if (!empty($otp_key)) {
+			delete_transient('unico_vc_otp_' . $otp_key);
+		}
+	}
+
+	private function is_otp_verified($otp_key, $buyer_email) {
+		$otp_data = $this->get_otp($otp_key);
+		if (!$otp_data || empty($otp_data['verified'])) {
+			return false;
+		}
+		if (!empty($otp_data['email']) && strtolower($otp_data['email']) !== strtolower((string) $buyer_email)) {
+			return false;
+		}
+		return true;
+	}
+
+	private function send_otp_email($email, $name, $code) {
+		$subject = 'Your Unico verification code';
+		$message = sprintf(
+			"Hi %s,\n\nYour verification code is: %s\n\nThis code will expire in 10 minutes.\n\nIf you did not request this, you can ignore this email.",
+			$name ? $name : 'there',
+			$code
+		);
+		$headers = ['Content-Type: text/plain; charset=UTF-8'];
+		return wp_mail($email, $subject, $message, $headers);
 	}
 }

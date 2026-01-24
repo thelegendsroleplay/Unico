@@ -357,6 +357,116 @@
     background: #fff;
 }
 
+.unico-vc-otp-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 9999;
+}
+
+.unico-vc-otp-modal.is-active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.unico-vc-otp-dialog {
+    width: 100%;
+    max-width: 360px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+    position: relative;
+}
+
+.unico-vc-otp-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    border: 0;
+    background: transparent;
+    font-size: 22px;
+    line-height: 1;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.unico-vc-otp-title {
+    margin: 8px 0 6px;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.unico-vc-otp-text {
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 12px;
+}
+
+.unico-vc-otp-field input {
+    width: 100%;
+    border: 1px solid #e6edf6;
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    font-weight: 700;
+    color: #0b2f3b;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.unico-vc-otp-actions {
+    margin-top: 14px;
+    display: grid;
+    gap: 10px;
+}
+
+.unico-vc-otp-btn {
+    border: 0;
+    background: #0b3b4a;
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.unico-vc-otp-link {
+    border: 1px solid #e6edf6;
+    background: #f8fafc;
+    color: #0b2f3b;
+    border-radius: 12px;
+    padding: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-size: 11px;
+}
+
+.unico-vc-otp-errors {
+    display: none;
+    margin: 8px 0 12px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.06);
+    color: #b91c1c;
+    font-size: 12px;
+}
+
+.unico-vc-otp-errors.is-visible {
+    display: block;
+}
+
 @media (max-width: 768px) {
     .unico-vc-page {
         padding: 36px 14px;
