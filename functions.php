@@ -755,3 +755,103 @@ function unico_get_ticket_details_ajax() {
 }
 
 add_action('wp_ajax_get_ticket_details', 'unico_get_ticket_details_ajax');
+
+/* --------------------------------------------------
+ * RESTRICT EDITOR ROLE FROM PLUGINS AND THEMES
+ * Editor can see everything except plugin and theme management
+ * -------------------------------------------------- */
+
+/**
+ * Remove plugin and theme capabilities from editor role
+ */
+function unico_restrict_editor_capabilities() {
+    $editor = get_role('editor');
+    if (!$editor) {
+        return;
+    }
+
+    // Remove plugin capabilities
+    $editor->remove_cap('install_plugins');
+    $editor->remove_cap('activate_plugins');
+    $editor->remove_cap('update_plugins');
+    $editor->remove_cap('delete_plugins');
+    $editor->remove_cap('edit_plugins');
+
+    // Remove theme capabilities
+    $editor->remove_cap('install_themes');
+    $editor->remove_cap('switch_themes');
+    $editor->remove_cap('update_themes');
+    $editor->remove_cap('delete_themes');
+    $editor->remove_cap('edit_themes');
+    $editor->remove_cap('edit_theme_options');
+}
+add_action('admin_init', 'unico_restrict_editor_capabilities');
+
+/**
+ * Hide plugins and themes menu items from editor role
+ */
+function unico_hide_admin_menus_for_editor() {
+    if (!is_admin()) {
+        return;
+    }
+
+    $user = wp_get_current_user();
+    if (!$user || !in_array('editor', (array) $user->roles)) {
+        return;
+    }
+
+    // Hide plugins menu completely
+    remove_menu_page('plugins.php');
+
+    // Hide themes/appearance menu completely
+    remove_menu_page('themes.php');
+
+    // Also hide any submenus that might be accessible
+    remove_submenu_page('themes.php', 'themes.php');
+    remove_submenu_page('themes.php', 'theme-editor.php');
+    remove_submenu_page('themes.php', 'customize.php');
+    remove_submenu_page('themes.php', 'widgets.php');
+    remove_submenu_page('themes.php', 'nav-menus.php');
+    remove_submenu_page('plugins.php', 'plugins.php');
+    remove_submenu_page('plugins.php', 'plugin-install.php');
+    remove_submenu_page('plugins.php', 'plugin-editor.php');
+}
+add_action('admin_menu', 'unico_hide_admin_menus_for_editor', 999);
+
+/**
+ * Block direct access to plugin and theme pages for editor
+ */
+function unico_block_editor_plugin_theme_access() {
+    if (!is_admin()) {
+        return;
+    }
+
+    $user = wp_get_current_user();
+    if (!$user || !in_array('editor', (array) $user->roles)) {
+        return;
+    }
+
+    global $pagenow;
+
+    // Block plugin pages
+    $blocked_pages = [
+        'plugins.php',
+        'plugin-install.php',
+        'plugin-editor.php',
+        'themes.php',
+        'theme-install.php',
+        'theme-editor.php',
+        'customize.php',
+        'widgets.php',
+        'nav-menus.php'
+    ];
+
+    if (in_array($pagenow, $blocked_pages)) {
+        wp_die(
+            '<h1>Access Denied</h1><p>You do not have permission to access this page.</p><p><a href="' . admin_url() . '">Return to Dashboard</a></p>',
+            'Access Denied',
+            ['response' => 403]
+        );
+    }
+}
+add_action('admin_init', 'unico_block_editor_plugin_theme_access', 1);
