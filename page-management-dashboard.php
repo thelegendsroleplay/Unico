@@ -11,7 +11,12 @@ if (!is_user_logged_in()) {
 $current_user = wp_get_current_user();
 $user_id = $current_user->ID;
 
-if (!Unico_User_Roles::user_can('access_management_dashboard') && !current_user_can('administrator')) {
+// Allow management role, administrators, and editors to access
+$has_access = Unico_User_Roles::user_can('access_management_dashboard')
+    || current_user_can('administrator')
+    || current_user_can('editor');
+
+if (!$has_access) {
     wp_die(
         '<h1>Access Denied</h1><p>You do not have permission to access the Management Dashboard.</p><p><a href="' . home_url() . '">Return to Home</a></p>',
         'Access Denied',

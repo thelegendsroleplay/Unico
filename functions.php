@@ -762,9 +762,11 @@ add_action('wp_ajax_get_ticket_details', 'unico_get_ticket_details_ajax');
  * -------------------------------------------------- */
 
 /**
- * Remove plugin and theme capabilities from editor role
+ * Configure editor role capabilities
+ * - Remove plugin and theme capabilities
+ * - Add management dashboard and WooCommerce access
  */
-function unico_restrict_editor_capabilities() {
+function unico_configure_editor_capabilities() {
     $editor = get_role('editor');
     if (!$editor) {
         return;
@@ -784,8 +786,45 @@ function unico_restrict_editor_capabilities() {
     $editor->remove_cap('delete_themes');
     $editor->remove_cap('edit_themes');
     $editor->remove_cap('edit_theme_options');
+
+    // Add management dashboard access
+    $editor->add_cap('access_management_dashboard');
+
+    // Add WooCommerce capabilities for orders and products
+    $editor->add_cap('manage_woocommerce');
+    $editor->add_cap('view_woocommerce_reports');
+
+    // Order management capabilities
+    $editor->add_cap('edit_shop_orders');
+    $editor->add_cap('read_shop_orders');
+    $editor->add_cap('delete_shop_orders');
+    $editor->add_cap('edit_others_shop_orders');
+    $editor->add_cap('read_private_shop_orders');
+    $editor->add_cap('edit_private_shop_orders');
+    $editor->add_cap('delete_private_shop_orders');
+    $editor->add_cap('delete_others_shop_orders');
+    $editor->add_cap('edit_published_shop_orders');
+    $editor->add_cap('delete_published_shop_orders');
+
+    // Product management capabilities
+    $editor->add_cap('edit_products');
+    $editor->add_cap('read_products');
+    $editor->add_cap('delete_products');
+    $editor->add_cap('edit_others_products');
+    $editor->add_cap('read_private_products');
+    $editor->add_cap('edit_private_products');
+    $editor->add_cap('delete_private_products');
+    $editor->add_cap('delete_others_products');
+    $editor->add_cap('edit_published_products');
+    $editor->add_cap('delete_published_products');
+    $editor->add_cap('publish_products');
+
+    // Additional Unico capabilities
+    $editor->add_cap('view_all_orders');
+    $editor->add_cap('view_all_vouchers');
+    $editor->add_cap('manage_voucher_system');
 }
-add_action('admin_init', 'unico_restrict_editor_capabilities');
+add_action('admin_init', 'unico_configure_editor_capabilities');
 
 /**
  * Hide plugins and themes menu items from editor role
