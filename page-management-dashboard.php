@@ -449,7 +449,7 @@ if (isset($_POST['unico_verify_and_deliver']) && isset($_POST['order_management_
             $order->update_meta('_voucher_verification_status', 'verified');
             $order->add_note('Management verified payment for voucher order. Triggering voucher delivery.');
             $voucher_system->auto_deliver_vouchers($order_id, $order);
-            
+
             // Reload order to check status
             $order = new Unico_Order($order_id);
             if ($order && $order->get_meta('_vouchers_delivered')) {
@@ -461,6 +461,100 @@ if (isset($_POST['unico_verify_and_deliver']) && isset($_POST['order_management_
                 $mgmt_notices[] = [
                     'type' => 'error',
                     'message' => 'Voucher delivery could not be completed. Check stock and order notes.'
+                ];
+            }
+        }
+    }
+}
+
+// Payment Approval Handler (matches wp-admin verification)
+if (isset($_POST['unico_approve_payment']) && isset($_POST['order_management_nonce']) && wp_verify_nonce($_POST['order_management_nonce'], 'unico_update_order_status')) {
+    $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+    if ($order_id > 0) {
+        $wc_order = wc_get_order($order_id);
+        if ($wc_order) {
+            // Check if codes already exist
+            $existing_codes = $wc_order->get_meta('_unico_voucher_codes', true);
+            if (!empty($existing_codes) && is_array($existing_codes)) {
+                $wc_order->add_order_note('Approval attempted but codes already exist. No new codes generated.');
+                $mgmt_notices[] = [
+                    'type' => 'warning',
+                    'message' => 'Order #' . $wc_order->get_order_number() . ' has already been approved.'
+                ];
+            } else {
+                // Calculate total quantity
+                $total_qty = 0;
+                foreach ($wc_order->get_items() as $item) {
+                    $total_qty += (int) $item->get_quantity();
+                }
+
+                if ($total_qty > 0) {
+                    // Generate voucher codes
+                    if (class_exists('Unico_VC_Voucher_Generator')) {
+                        $codes = Unico_VC_Voucher_Generator::generate_codes($total_qty);
+                        $wc_order->update_meta_data('_unico_voucher_codes', $codes);
+                        $wc_order->update_meta_data('_unico_approved_email_sent', current_time('mysql'));
+                        $wc_order->update_meta_data('_voucher_verification_status', 'approved');
+                        $wc_order->add_order_note('Payment approved by management. Voucher codes generated and email sent.');
+                        $wc_order->set_status('completed');
+                        $wc_order->save();
+
+                        // Send approval email
+                        if (class_exists('Unico_VC_Emails')) {
+                            Unico_VC_Emails::instance()->send_approved($order_id);
+                        }
+
+                        $mgmt_notices[] = [
+                            'type' => 'success',
+                            'message' => 'Order #' . $wc_order->get_order_number() . ' approved. Voucher codes generated and customer notified via email.'
+                        ];
+                    } else {
+                        $mgmt_notices[] = [
+                            'type' => 'error',
+                            'message' => 'Voucher generator class not found.'
+                        ];
+                    }
+                } else {
+                    $mgmt_notices[] = [
+                        'type' => 'error',
+                        'message' => 'No items to generate codes for in this order.'
+                    ];
+                }
+            }
+        }
+    }
+}
+
+// Payment Rejection Handler (matches wp-admin verification)
+if (isset($_POST['unico_reject_payment']) && isset($_POST['order_management_nonce']) && wp_verify_nonce($_POST['order_management_nonce'], 'unico_update_order_status')) {
+    $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
+    $reject_reason = isset($_POST['reject_reason']) ? sanitize_textarea_field($_POST['reject_reason']) : '';
+
+    if ($order_id > 0) {
+        $wc_order = wc_get_order($order_id);
+        if ($wc_order) {
+            if ($wc_order->get_status() === 'cancelled') {
+                $wc_order->add_order_note('Rejection attempted but order already cancelled.');
+                $mgmt_notices[] = [
+                    'type' => 'warning',
+                    'message' => 'Order #' . $wc_order->get_order_number() . ' is already cancelled.'
+                ];
+            } else {
+                $wc_order->update_meta_data('_unico_reject_reason', $reject_reason);
+                $wc_order->update_meta_data('_unico_rejected_email_sent', current_time('mysql'));
+                $wc_order->update_meta_data('_voucher_verification_status', 'rejected');
+                $wc_order->add_order_note('Payment rejected by management. Reason: ' . ($reject_reason ?: 'No reason provided') . ' | Email sent to customer.');
+                $wc_order->set_status('cancelled');
+                $wc_order->save();
+
+                // Send rejection email
+                if (class_exists('Unico_VC_Emails')) {
+                    Unico_VC_Emails::instance()->send_rejected($order_id);
+                }
+
+                $mgmt_notices[] = [
+                    'type' => 'success',
+                    'message' => 'Order #' . $wc_order->get_order_number() . ' rejected. Customer notified via email.'
                 ];
             }
         }
@@ -1383,112 +1477,160 @@ get_header();
                             <thead>
                                 <tr>
                                     <th>Order</th>
-                                    <th>Date</th>
+                                    <th>Status</th>
                                     <th>Customer</th>
                                     <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Payment</th>
-                                    <th>Update</th>
+                                    <th>Transaction ID</th>
+                                    <th>Receipt</th>
+                                    <th>Payment Method</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($recent_orders as $order): ?>
                                     <?php
                                     $order_id = $order->get_id();
+                                    $wc_order = wc_get_order($order_id);
                                     $billing_name = $order->get_customer_name();
                                     $billing_email = $order->get_customer_email();
                                     $status_key = $order->get_status();
-                                    $transaction_id = $order->get_payment_reference();
-                                    $payment_method = ucfirst($order->get_payment_method());
+                                    $transaction_id = get_post_meta($order_id, '_unico_txn_id', true);
+                                    if (!$transaction_id) {
+                                        $transaction_id = $order->get_payment_reference();
+                                    }
+                                    $payment_method = $order->get_payment_method();
+                                    $payment_method_title = $wc_order ? $wc_order->get_payment_method_title() : ucfirst($payment_method);
+                                    if (!$payment_method_title) {
+                                        $payment_method_title = ucfirst($payment_method);
+                                    }
                                     $verification_status = get_post_meta($order_id, '_voucher_verification_status', true);
+                                    $existing_codes = get_post_meta($order_id, '_unico_voucher_codes', true);
+                                    $is_bank_transfer = ($payment_method === 'unico_bank_transfer_verify');
+                                    $can_approve = !in_array($status_key, ['completed', 'cancelled', 'refunded', 'failed'], true) && empty($existing_codes);
+                                    $receipt_id = (int) get_post_meta($order_id, '_unico_receipt_attachment_id', true);
+                                    $receipt_url = get_post_meta($order_id, '_unico_receipt_url', true);
+                                    if (!$receipt_url && $receipt_id) {
+                                        $receipt_url = wp_get_attachment_url($receipt_id);
+                                    }
+                                    $bank_snapshot = get_post_meta($order_id, '_unico_selected_bank_snapshot', true);
+                                    $bank_label = is_array($bank_snapshot) ? ($bank_snapshot['display_name'] ?? ($bank_snapshot['bank_name'] ?? '')) : '';
+                                    $order_date = $wc_order && $wc_order->get_date_created() ? $wc_order->get_date_created()->date_i18n('M j, Y H:i') : ($order->get_date_created() ? date_i18n('M j, Y H:i', strtotime($order->get_date_created())) : '-');
+                                    $formatted_total = $wc_order ? $wc_order->get_formatted_order_total() : unico_format_price($order->get_total());
                                     ?>
                                     <tr>
-                                        <td>#<?php echo esc_html($order->get_order_number()); ?></td>
-                                        <td><?php echo esc_html($order->get_date_created() ? date_i18n('M j, Y H:i', strtotime($order->get_date_created())) : ''); ?></td>
+                                        <td><strong>#<?php echo esc_html($order->get_order_number()); ?></strong></td>
+                                        <td>
+                                            <span class="mgmt-status-pill <?php echo $status_key === 'completed' ? 'approved' : ($status_key === 'cancelled' || $status_key === 'failed' ? 'rejected' : 'pending'); ?>">
+                                                <?php echo esc_html(function_exists('wc_get_order_status_name') ? wc_get_order_status_name($status_key) : ucfirst($status_key)); ?>
+                                            </span>
+                                            <?php if ($verification_status): ?>
+                                                <div class="mgmt-small-note" style="margin-top:4px;">Verified: <?php echo esc_html(ucfirst($verification_status)); ?></div>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <?php echo esc_html($billing_name ?: 'Guest'); ?>
                                             <?php if ($billing_email): ?>
                                                 <div class="mgmt-muted-text"><?php echo esc_html($billing_email); ?></div>
                                             <?php endif; ?>
                                         </td>
-                                        <td><?php echo unico_format_price($order->get_total()); ?></td>
+                                        <td><?php echo wp_kses_post($formatted_total); ?></td>
+                                        <td><?php echo esc_html($transaction_id ?: '-'); ?></td>
                                         <td>
-                                            <span class="mgmt-status-pill <?php echo $order->get_status() === 'completed' ? 'approved' : ($order->get_status() === 'processing' ? 'pending' : 'rejected'); ?>">
-                                                <?php echo esc_html(ucfirst($order->get_status())); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="mgmt-muted-text"><?php echo esc_html($payment_method); ?></div>
-                                            <?php if ($transaction_id): ?>
-                                                <div class="mgmt-small-note">Txn: <?php echo esc_html($transaction_id); ?></div>
-                                            <?php endif; ?>
-                                            <?php if ($verification_status): ?>
-                                                <div class="mgmt-small-note">Verification: <?php echo esc_html(ucfirst($verification_status)); ?></div>
-                                            <?php else: ?>
-                                                <div class="mgmt-small-note">Verification: Pending</div>
-                                            <?php endif; ?>
-                                            <?php
-                                            $receipt_id = (int) get_post_meta($order_id, '_unico_receipt_attachment_id', true);
-                                            $receipt_url = get_post_meta($order_id, '_unico_receipt_url', true);
-                                            if (!$receipt_url && $receipt_id) {
-                                                $receipt_url = wp_get_attachment_url($receipt_id);
-                                            }
-                                            ?>
-                                            <div class="mgmt-payment-proof">
-                                                <?php if ($receipt_url): ?>
-                                                    <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener">
-                                                        <?php if ($receipt_id): ?>
-                                                            <?php echo wp_get_attachment_image($receipt_id, 'thumbnail', false, ['class' => 'mgmt-payment-thumb']); ?>
+                                            <?php if ($receipt_url): ?>
+                                                <a href="<?php echo esc_url($receipt_url); ?>" target="_blank" rel="noopener noreferrer">
+                                                    <?php if ($receipt_id): ?>
+                                                        <?php
+                                                        $mime = get_post_mime_type($receipt_id);
+                                                        if ($mime && strpos($mime, 'image/') === 0): ?>
+                                                            <?php echo wp_get_attachment_image($receipt_id, [48, 48], true, ['class' => 'mgmt-payment-thumb', 'style' => 'border-radius:4px;']); ?>
                                                         <?php else: ?>
-                                                            <img class="mgmt-payment-thumb" src="<?php echo esc_url($receipt_url); ?>" alt="Payment receipt">
+                                                            <span class="mgmt-btn mgmt-btn-secondary" style="font-size:11px;padding:2px 6px;">View</span>
                                                         <?php endif; ?>
-                                                    </a>
-                                                <?php else: ?>
-                                                    <div class="mgmt-small-note">No receipt uploaded.</div>
-                                                <?php endif; ?>
-                                            </div>
+                                                    <?php else: ?>
+                                                        <span class="mgmt-btn mgmt-btn-secondary" style="font-size:11px;padding:2px 6px;">View</span>
+                                                    <?php endif; ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="mgmt-muted-text">-</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px;max-width:260px;">
-                                                <select name="new_status">
-                                                    <?php 
-                                                    $statuses = [
-                                                        'pending' => 'Pending',
-                                                        'processing' => 'Processing', 
-                                                        'completed' => 'Completed',
-                                                        'cancelled' => 'Cancelled',
-                                                        'refunded' => 'Refunded',
-                                                        'failed' => 'Failed',
-                                                        'on-hold' => 'On Hold'
-                                                    ];
-                                                    foreach ($statuses as $status_slug => $status_label): ?>
-                                                        <option value="<?php echo esc_attr($status_slug); ?>" <?php selected($status_slug, $status_key); ?>>
-                                                            <?php echo esc_html($status_label); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
-                                                <input type="text" name="order_note" placeholder="Note (optional)">
-                                                <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
-                                                <button type="submit" name="unico_update_order_status" class="mgmt-btn mgmt-btn-primary">Update</button>
-                                            </form>
-                                            <form method="post" style="margin-top:6px;">
-                                                <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
-                                                <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
-                                                <button type="submit" name="unico_request_payment_proof" class="mgmt-btn mgmt-btn-secondary">Request payment screenshot</button>
-                                            </form>
-                                            <form method="post" style="margin-top:6px;">
-                                                <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
-                                                <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
-                                                <button type="submit" name="unico_verify_and_deliver" class="mgmt-btn mgmt-btn-primary">Verify &amp; send vouchers</button>
-                                            </form>
+                                            <?php echo esc_html($payment_method_title); ?>
+                                            <?php if ($bank_label): ?>
+                                                <div class="mgmt-small-note"><?php echo esc_html($bank_label); ?></div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo esc_html($order_date); ?></td>
+                                        <td>
+                                            <?php if ($can_approve): ?>
+                                                <!-- Approve/Reject buttons matching wp-admin verification -->
+                                                <div style="display:flex;gap:6px;margin-bottom:8px;">
+                                                    <form method="post" onsubmit="return confirm('Approve this payment? This will generate voucher codes and send email to customer.');">
+                                                        <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
+                                                        <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
+                                                        <button type="submit" name="unico_approve_payment" class="mgmt-btn" style="background-color:#28a745;border-color:#28a745;color:#fff;">Approve</button>
+                                                    </form>
+                                                    <button type="button" class="mgmt-btn" style="background-color:#dc3545;border-color:#dc3545;color:#fff;" onclick="document.getElementById('reject-form-<?php echo intval($order_id); ?>').style.display='block';this.style.display='none';">Reject</button>
+                                                </div>
+                                                <form method="post" id="reject-form-<?php echo intval($order_id); ?>" style="display:none;margin-bottom:8px;">
+                                                    <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
+                                                    <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
+                                                    <textarea name="reject_reason" placeholder="Rejection reason (required)" rows="2" style="width:100%;margin-bottom:4px;font-size:12px;" required></textarea>
+                                                    <button type="submit" name="unico_reject_payment" class="mgmt-btn" style="background-color:#dc3545;border-color:#dc3545;color:#fff;font-size:11px;">Confirm Reject</button>
+                                                    <button type="button" class="mgmt-btn mgmt-btn-secondary" style="font-size:11px;" onclick="this.parentElement.style.display='none';this.parentElement.previousElementSibling.querySelector('button[type=button]').style.display='inline-block';">Cancel</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <?php if (!empty($existing_codes)): ?>
+                                                    <span class="mgmt-small-note" style="color:#28a745;">Codes generated</span>
+                                                <?php elseif ($status_key === 'completed'): ?>
+                                                    <span class="mgmt-small-note" style="color:#28a745;">Completed</span>
+                                                <?php elseif ($status_key === 'cancelled'): ?>
+                                                    <span class="mgmt-small-note" style="color:#dc3545;">Cancelled</span>
+                                                <?php endif; ?>
+                                            <?php endif; ?>
+
+                                            <!-- Status update form -->
+                                            <details style="margin-top:8px;">
+                                                <summary style="cursor:pointer;font-size:12px;color:#666;">More options</summary>
+                                                <div style="padding-top:8px;">
+                                                    <form method="post" class="mgmt-form-row" style="align-items:center;gap:6px;flex-wrap:wrap;">
+                                                        <select name="new_status" style="font-size:12px;">
+                                                            <?php
+                                                            $statuses = [
+                                                                'pending' => 'Pending',
+                                                                'processing' => 'Processing',
+                                                                'completed' => 'Completed',
+                                                                'cancelled' => 'Cancelled',
+                                                                'refunded' => 'Refunded',
+                                                                'failed' => 'Failed',
+                                                                'on-hold' => 'On Hold'
+                                                            ];
+                                                            foreach ($statuses as $status_slug => $status_label): ?>
+                                                                <option value="<?php echo esc_attr($status_slug); ?>" <?php selected($status_slug, $status_key); ?>>
+                                                                    <?php echo esc_html($status_label); ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                        <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
+                                                        <input type="text" name="order_note" placeholder="Note" style="font-size:12px;width:100px;">
+                                                        <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
+                                                        <button type="submit" name="unico_update_order_status" class="mgmt-btn mgmt-btn-secondary" style="font-size:11px;">Update</button>
+                                                    </form>
+                                                    <form method="post" style="margin-top:6px;">
+                                                        <input type="hidden" name="order_id" value="<?php echo intval($order_id); ?>">
+                                                        <?php wp_nonce_field('unico_update_order_status', 'order_management_nonce'); ?>
+                                                        <button type="submit" name="unico_request_payment_proof" class="mgmt-btn mgmt-btn-secondary" style="font-size:11px;">Request receipt</button>
+                                                    </form>
+                                                </div>
+                                            </details>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
-                    <p class="mgmt-small-note">Use "Verify &amp; send vouchers" after checking payment. Vouchers are never emailed before verification.</p>
+                    <p class="mgmt-small-note">Click "Approve" to verify payment, generate voucher codes and send email. Click "Reject" to cancel with reason.</p>
                 <?php else: ?>
                     <p class="mgmt-muted-text">No recent orders found.</p>
                 <?php endif; ?>
